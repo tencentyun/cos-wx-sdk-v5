@@ -1,0 +1,42 @@
+/**index.wxss**/
+.title {
+    margin:auto;
+    font-size:14px;
+    color:#999;
+    display:block;
+    line-height:32px;
+}
+
+.list {
+    padding: 3px;
+}
+
+.button {
+    float: left;
+    margin: 0 3px 3px 0;
+    text-align: left;
+    font-size: 14px;
+    height: 28px;
+    line-height:28px;
+    padding:0 10px;
+}
+
+.PutBucketLifecycle,
+.DeleteBucketLifecycle {
+    background: red!important;
+}
+
+.PutBucket {
+    background: yellowgreen!important;
+}
+
+.PutObject,
+.AppendObject,
+.DeleteBucket,
+.PutBucketTagging,
+.DeleteBucketCORS,
+.PutBucketTagging,
+.PutObjectCopy,
+.DeleteMultipleObject,
+.PutBucketCORS {
+}
