@@ -59,11 +59,11 @@ var dao = {
             Region: 'ap-guangzhou'
         }, requestCallback);
     },
-    headBucket: function () {
-        cos.headBucket({Bucket: config.Bucket, Region: config.Region}, requestCallback);
-    },
     getBucket: function () {
         cos.getBucket({Bucket: config.Bucket, Region: config.Region}, requestCallback);
+    },
+    headBucket: function () {
+        cos.headBucket({Bucket: config.Bucket, Region: config.Region}, requestCallback);
     },
     deleteBucket: function () {
         cos.deleteBucket({
@@ -199,7 +199,7 @@ var dao = {
             CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/1.txt',
         }, requestCallback);
     },
-    // 上传
+    // 上传文件
     postObject: function () {
         wx.chooseImage({
             count: 1, // 默认9
