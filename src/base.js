@@ -1501,7 +1501,7 @@ function _submitRequest(params, callback) {
 
     // kill task
     var killTask = function (data) {
-        if (data.TaskId === TaskId) {
+        if (data.TaskId === TaskId) {debugger;
             sender && sender.abort && sender.abort();
             self.off('inner-kill-task', killTask);
         }

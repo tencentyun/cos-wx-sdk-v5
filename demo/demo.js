@@ -4,6 +4,7 @@ var config = {
     Region: 'ap-guangzhou'
 };
 
+var TaskId;
 var cos = new COS({
     getAuthorization: function (params, callback) {//获取签名 必填参数
 
@@ -190,12 +191,27 @@ var dao = {
                 cos.postObject({
                     Bucket: config.Bucket, Region: config.Region, Key: '1.png',
                     FilePath: res.tempFilePaths[0],
+                    TaskReady: function (taskId) {
+                        TaskId = taskId
+                    },
                     onProgress: function (info) {
                         console.log(JSON.stringify(info));
                     }
                 }, requestCallback);
             }
         })
+    },
+    cancelTask: function() {
+        cos.cancelTask(TaskId);
+        console.log('canceled');
+    },
+    pauseTask: function() {
+        cos.pauseTask(TaskId);
+        console.log('paused');
+    },
+    restartTask: function() {
+        cos.restartTask(TaskId);
+        console.log('restart');
     },
 };
 

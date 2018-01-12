@@ -11,8 +11,7 @@ var initTask = function (cos) {
 
     // 把上传方法替换成添加任务的方法
     util.each([
-        'putObject',
-        'sliceUploadFile',
+        'postObject',
     ], function (api) {
         originApiMap[api] = cos[api];
         cos[api] = function (params, callback) {
@@ -72,6 +71,7 @@ var initTask = function (cos) {
 
     var killTask = function (id, switchToState) {
         var task = tasks[id];
+        if (!task) return;
         var waiting = task && task.state === 'waiting';
         var running = task && (task.state === 'checking' || task.state === 'uploading');
         if (waiting || running || (switchToState === 'canceled' && task.state === 'paused')) {

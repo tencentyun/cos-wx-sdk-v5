@@ -1,7 +1,5503 @@
-!function(t,e){"object"==typeof exports&&"object"==typeof module?module.exports=e():"function"==typeof define&&define.amd?define([],e):"object"==typeof exports?exports.COS=e():t.COS=e()}(this,function(){return function(t){function e(r){if(n[r])return n[r].exports;var o=n[r]={i:r,l:!1,exports:{}};return t[r].call(o.exports,o,o.exports,e),o.l=!0,o.exports}var n={};return e.m=t,e.c=n,e.d=function(t,n,r){e.o(t,n)||Object.defineProperty(t,n,{configurable:!1,enumerable:!0,get:r})},e.n=function(t){var n=t&&t.__esModule?function(){return t.default}:function(){return t};return e.d(n,"a",n),n},e.o=function(t,e){return Object.prototype.hasOwnProperty.call(t,e)},e.p="D:\\github\\cos-wx-sdk-v5\\demo\\lib",e(e.s=2)}([function(t,e,n){"use strict";(function(e){function r(t){return encodeURIComponent(t).replace(/!/g,"%21").replace(/'/g,"%27").replace(/\(/g,"%28").replace(/\)/g,"%29").replace(/\*/g,"%2A")}function o(t){return u(t,function(t){return"object"==typeof t?o(t):t})}function i(t,e){return a(e,function(n,r){t[r]=e[r]}),t}function s(t){return t instanceof Array}function a(t,e){for(var n in t)t.hasOwnProperty(n)&&e(t[n],n)}function u(t,e){var n=s(t)?[]:{};for(var r in t)t.hasOwnProperty(r)&&(n[r]=e(t[r],r));return n}var c=n(8),l=n(9),f=n(10),h=n(11),d=function(t){t=t||{};var e=t.SecretId,n=t.SecretKey,o=(t.method||t.Method||"get").toLowerCase(),i=t.pathname||t.Key||"/",s=t.params||"",a=t.headers||"";if(0!==i.indexOf("/")&&(i="/"+i),!e)return console.error("lack of param SecretId");if(!n)return console.error("lack of param SecretKey");var u=function(t){var e=[];for(var n in t)t.hasOwnProperty(n)&&e.push(n);return e.sort()},c=function(t){var e,n,o,i=[],s=u(t);for(e=0;e<s.length;e++)n=s[e],o=t[n]||"",n=n.toLowerCase(),i.push(r(n)+"="+r(o));return i.join("&")},f=parseInt((new Date).getTime()/1e3)-1,h=f,d=t.Expires||t.expires;h+=void 0===d?900:1*d||0;var p=e,g=f+";"+h,y=f+";"+h,v=u(a).join(";").toLowerCase(),m=u(s).join(";").toLowerCase(),C=l.HmacSHA1(y,n).toString(),A=[o,i,c(s),c(a),""].join("\n"),_=["sha1",g,l.SHA1(A).toString(),""].join("\n");return["q-sign-algorithm=sha1","q-ak="+p,"q-sign-time="+g,"q-key-time="+y,"q-header-list="+v,"q-url-param-list="+m,"q-signature="+l.HmacSHA1(_,C).toString()].join("&")},p=function(t){var e={};for(var n in t)void 0!==t[n]&&null!==t[n]&&(e[n]=t[n]);return e},g=function(t){var n,r,o,i=[];for(n=0,r=t.length/2;n<r;n++)o=parseInt(t[2*n]+t[2*n+1],16),i.push(o);return new e(i).toString("base64")},y=function(){var t=function(){return(65536*(1+Math.random())|0).toString(16).substring(1)};return t()+t()+"-"+t()+"-"+t()+"-"+t()+"-"+t()+t()+t()},v=function(t,e){var n=e.Bucket,r=e.Region,o=e.Key;return t.indexOf("Bucket")>-1||"deleteMultipleObject"===t||"multipartList"===t?n&&r:!(t.indexOf("Object")>-1||t.indexOf("multipart")>-1||"sliceUploadFile"===t||"abortUploadTask"===t)||n&&r&&o},m=function(t,e){var n={gz:"ap-guangzhou",tj:"ap-beijing-2",sh:"ap-shanghai",cd:"ap-chengdu"};return function(r,o){if(o=o||function(){},"getService"!==t&&"abortUploadTask"!==t){if(!v(t,r))return void o({error:"lack of required params"});if(r.Region&&n[r.Region])return void o({error:"Region should be "+n[r.Region]});if(r.Region&&r.Region.indexOf("cos.")>-1)return void o({error:'Region should not be start with "cos."'});if(r.Bucket){if(!/^(.+)-(\d+)$/.test(r.Bucket))if(r.AppId)r.Bucket=r.Bucket+"-"+r.AppId;else{if(!this.options.AppId)return void o({error:'Bucket should format as "test-1250000000".'});r.Bucket=r.Bucket+"-"+this.options.AppId}r.AppId&&(console.warn('warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g Bucket:"test-1250000000" ).'),delete r.AppId)}r.Key&&"/"===r.Key.substr(0,1)&&(r.Key=r.Key.substr(1))}var i=e.call(this,r,o);if("getAuth"===t||"getObjectUrl"===t)return i}},C=function(t,e){function n(){if(o=0,e&&"function"==typeof e){r=Date.now();var n,i=Math.max(0,Math.round((a-s)/((r-u)/1e3)*100)/100);n=0===a&&0===t?1:Math.round(a/t*100)/100||0,u=r,s=a;try{e({loaded:a,total:t,speed:i,percent:n})}catch(t){}}}var r,o,i=this,s=0,a=0,u=Date.now();return function(e,r){if(e&&(a=e.loaded,t=e.total),r)clearTimeout(o),n();else{if(o)return;o=setTimeout(n,i.options.ProgressInterval)}}},A={apiWrapper:m,getAuth:d,xml2json:f,json2xml:h,md5:c,clearKey:p,binaryBase64:g,extend:i,isArray:s,each:a,map:u,clone:o,uuid:y,throttleOnProgress:C};t.exports=A}).call(e,n(1).Buffer)},function(t,e,n){"use strict";(function(t){function r(){return i.TYPED_ARRAY_SUPPORT?2147483647:1073741823}function o(t,e){if(r()<e)throw new RangeError("Invalid typed array length");return i.TYPED_ARRAY_SUPPORT?(t=new Uint8Array(e),t.__proto__=i.prototype):(null===t&&(t=new i(e)),t.length=e),t}function i(t,e,n){if(!(i.TYPED_ARRAY_SUPPORT||this instanceof i))return new i(t,e,n);if("number"==typeof t){if("string"==typeof e)throw new Error("If encoding is specified then the first argument must be a string");return c(this,t)}return s(this,t,e,n)}function s(t,e,n,r){if("number"==typeof e)throw new TypeError('"value" argument must not be a number');return"undefined"!=typeof ArrayBuffer&&e instanceof ArrayBuffer?h(t,e,n,r):"string"==typeof e?l(t,e,n):d(t,e)}function a(t){if("number"!=typeof t)throw new TypeError('"size" argument must be a number');if(t<0)throw new RangeError('"size" argument must not be negative')}function u(t,e,n,r){return a(e),e<=0?o(t,e):void 0!==n?"string"==typeof r?o(t,e).fill(n,r):o(t,e).fill(n):o(t,e)}function c(t,e){if(a(e),t=o(t,e<0?0:0|p(e)),!i.TYPED_ARRAY_SUPPORT)for(var n=0;n<e;++n)t[n]=0;return t}function l(t,e,n){if("string"==typeof n&&""!==n||(n="utf8"),!i.isEncoding(n))throw new TypeError('"encoding" must be a valid string encoding');var r=0|y(e,n);t=o(t,r);var s=t.write(e,n);return s!==r&&(t=t.slice(0,s)),t}function f(t,e){var n=e.length<0?0:0|p(e.length);t=o(t,n);for(var r=0;r<n;r+=1)t[r]=255&e[r];return t}function h(t,e,n,r){if(e.byteLength,n<0||e.byteLength<n)throw new RangeError("'offset' is out of bounds");if(e.byteLength<n+(r||0))throw new RangeError("'length' is out of bounds");return e=void 0===n&&void 0===r?new Uint8Array(e):void 0===r?new Uint8Array(e,n):new Uint8Array(e,n,r),i.TYPED_ARRAY_SUPPORT?(t=e,t.__proto__=i.prototype):t=f(t,e),t}function d(t,e){if(i.isBuffer(e)){var n=0|p(e.length);return t=o(t,n),0===t.length?t:(e.copy(t,0,0,n),t)}if(e){if("undefined"!=typeof ArrayBuffer&&e.buffer instanceof ArrayBuffer||"length"in e)return"number"!=typeof e.length||J(e.length)?o(t,0):f(t,e);if("Buffer"===e.type&&$(e.data))return f(t,e.data)}throw new TypeError("First argument must be a string, Buffer, ArrayBuffer, Array, or array-like object.")}function p(t){if(t>=r())throw new RangeError("Attempt to allocate Buffer larger than maximum size: 0x"+r().toString(16)+" bytes");return 0|t}function g(t){return+t!=t&&(t=0),i.alloc(+t)}function y(t,e){if(i.isBuffer(t))return t.length;if("undefined"!=typeof ArrayBuffer&&"function"==typeof ArrayBuffer.isView&&(ArrayBuffer.isView(t)||t instanceof ArrayBuffer))return t.byteLength;"string"!=typeof t&&(t=""+t);var n=t.length;if(0===n)return 0;for(var r=!1;;)switch(e){case"ascii":case"latin1":case"binary":return n;case"utf8":case"utf-8":case void 0:return z(t).length;case"ucs2":case"ucs-2":case"utf16le":case"utf-16le":return 2*n;case"hex":return n>>>1;case"base64":return W(t).length;default:if(r)return z(t).length;e=(""+e).toLowerCase(),r=!0}}function v(t,e,n){var r=!1;if((void 0===e||e<0)&&(e=0),e>this.length)return"";if((void 0===n||n>this.length)&&(n=this.length),n<=0)return"";if(n>>>=0,e>>>=0,n<=e)return"";for(t||(t="utf8");;)switch(t){case"hex":return O(this,e,n);case"utf8":case"utf-8":return b(this,e,n);case"ascii":return S(this,e,n);case"latin1":case"binary":return P(this,e,n);case"base64":return T(this,e,n);case"ucs2":case"ucs-2":case"utf16le":case"utf-16le":return I(this,e,n);default:if(r)throw new TypeError("Unknown encoding: "+t);t=(t+"").toLowerCase(),r=!0}}function m(t,e,n){var r=t[e];t[e]=t[n],t[n]=r}function C(t,e,n,r,o){if(0===t.length)return-1;if("string"==typeof n?(r=n,n=0):n>2147483647?n=2147483647:n<-2147483648&&(n=-2147483648),n=+n,isNaN(n)&&(n=o?0:t.length-1),n<0&&(n=t.length+n),n>=t.length){if(o)return-1;n=t.length-1}else if(n<0){if(!o)return-1;n=0}if("string"==typeof e&&(e=i.from(e,r)),i.isBuffer(e))return 0===e.length?-1:A(t,e,n,r,o);if("number"==typeof e)return e&=255,i.TYPED_ARRAY_SUPPORT&&"function"==typeof Uint8Array.prototype.indexOf?o?Uint8Array.prototype.indexOf.call(t,e,n):Uint8Array.prototype.lastIndexOf.call(t,e,n):A(t,[e],n,r,o);throw new TypeError("val must be string, number or Buffer")}function A(t,e,n,r,o){function i(t,e){return 1===s?t[e]:t.readUInt16BE(e*s)}var s=1,a=t.length,u=e.length;if(void 0!==r&&("ucs2"===(r=String(r).toLowerCase())||"ucs-2"===r||"utf16le"===r||"utf-16le"===r)){if(t.length<2||e.length<2)return-1;s=2,a/=2,u/=2,n/=2}var c;if(o){var l=-1;for(c=n;c<a;c++)if(i(t,c)===i(e,-1===l?0:c-l)){if(-1===l&&(l=c),c-l+1===u)return l*s}else-1!==l&&(c-=c-l),l=-1}else for(n+u>a&&(n=a-u),c=n;c>=0;c--){for(var f=!0,h=0;h<u;h++)if(i(t,c+h)!==i(e,h)){f=!1;break}if(f)return c}return-1}function _(t,e,n,r){n=Number(n)||0;var o=t.length-n;r?(r=Number(r))>o&&(r=o):r=o;var i=e.length;if(i%2!=0)throw new TypeError("Invalid hex string");r>i/2&&(r=i/2);for(var s=0;s<r;++s){var a=parseInt(e.substr(2*s,2),16);if(isNaN(a))return s;t[n+s]=a}return s}function w(t,e,n,r){return X(z(e,t.length-n),t,n,r)}function x(t,e,n,r){return X(H(e),t,n,r)}function R(t,e,n,r){return x(t,e,n,r)}function E(t,e,n,r){return X(W(e),t,n,r)}function B(t,e,n,r){return X(q(e,t.length-n),t,n,r)}function T(t,e,n){return 0===e&&n===t.length?Z.fromByteArray(t):Z.fromByteArray(t.slice(e,n))}function b(t,e,n){n=Math.min(t.length,n);for(var r=[],o=e;o<n;){var i=t[o],s=null,a=i>239?4:i>223?3:i>191?2:1;if(o+a<=n){var u,c,l,f;switch(a){case 1:i<128&&(s=i);break;case 2:u=t[o+1],128==(192&u)&&(f=(31&i)<<6|63&u)>127&&(s=f);break;case 3:u=t[o+1],c=t[o+2],128==(192&u)&&128==(192&c)&&(f=(15&i)<<12|(63&u)<<6|63&c)>2047&&(f<55296||f>57343)&&(s=f);break;case 4:u=t[o+1],c=t[o+2],l=t[o+3],128==(192&u)&&128==(192&c)&&128==(192&l)&&(f=(15&i)<<18|(63&u)<<12|(63&c)<<6|63&l)>65535&&f<1114112&&(s=f)}}null===s?(s=65533,a=1):s>65535&&(s-=65536,r.push(s>>>10&1023|55296),s=56320|1023&s),r.push(s),o+=a}return k(r)}function k(t){var e=t.length;if(e<=Q)return String.fromCharCode.apply(String,t);for(var n="",r=0;r<e;)n+=String.fromCharCode.apply(String,t.slice(r,r+=Q));return n}function S(t,e,n){var r="";n=Math.min(t.length,n);for(var o=e;o<n;++o)r+=String.fromCharCode(127&t[o]);return r}function P(t,e,n){var r="";n=Math.min(t.length,n);for(var o=e;o<n;++o)r+=String.fromCharCode(t[o]);return r}function O(t,e,n){var r=t.length;(!e||e<0)&&(e=0),(!n||n<0||n>r)&&(n=r);for(var o="",i=e;i<n;++i)o+=Y(t[i]);return o}function I(t,e,n){for(var r=t.slice(e,n),o="",i=0;i<r.length;i+=2)o+=String.fromCharCode(r[i]+256*r[i+1]);return o}function D(t,e,n){if(t%1!=0||t<0)throw new RangeError("offset is not uint");if(t+e>n)throw new RangeError("Trying to access beyond buffer length")}function M(t,e,n,r,o,s){if(!i.isBuffer(t))throw new TypeError('"buffer" argument must be a Buffer instance');if(e>o||e<s)throw new RangeError('"value" argument is out of bounds');if(n+r>t.length)throw new RangeError("Index out of range")}function L(t,e,n,r){e<0&&(e=65535+e+1);for(var o=0,i=Math.min(t.length-n,2);o<i;++o)t[n+o]=(e&255<<8*(r?o:1-o))>>>8*(r?o:1-o)}function U(t,e,n,r){e<0&&(e=4294967295+e+1);for(var o=0,i=Math.min(t.length-n,4);o<i;++o)t[n+o]=e>>>8*(r?o:3-o)&255}function j(t,e,n,r,o,i){if(n+r>t.length)throw new RangeError("Index out of range");if(n<0)throw new RangeError("Index out of range")}function F(t,e,n,r,o){return o||j(t,e,n,4,3.4028234663852886e38,-3.4028234663852886e38),V.write(t,e,n,r,23,4),n+4}function N(t,e,n,r,o){return o||j(t,e,n,8,1.7976931348623157e308,-1.7976931348623157e308),V.write(t,e,n,r,52,8),n+8}function K(t){if(t=G(t).replace(tt,""),t.length<2)return"";for(;t.length%4!=0;)t+="=";return t}function G(t){return t.trim?t.trim():t.replace(/^\s+|\s+$/g,"")}function Y(t){return t<16?"0"+t.toString(16):t.toString(16)}function z(t,e){e=e||1/0;for(var n,r=t.length,o=null,i=[],s=0;s<r;++s){if((n=t.charCodeAt(s))>55295&&n<57344){if(!o){if(n>56319){(e-=3)>-1&&i.push(239,191,189);continue}if(s+1===r){(e-=3)>-1&&i.push(239,191,189);continue}o=n;continue}if(n<56320){(e-=3)>-1&&i.push(239,191,189),o=n;continue}n=65536+(o-55296<<10|n-56320)}else o&&(e-=3)>-1&&i.push(239,191,189);if(o=null,n<128){if((e-=1)<0)break;i.push(n)}else if(n<2048){if((e-=2)<0)break;i.push(n>>6|192,63&n|128)}else if(n<65536){if((e-=3)<0)break;i.push(n>>12|224,n>>6&63|128,63&n|128)}else{if(!(n<1114112))throw new Error("Invalid code point");if((e-=4)<0)break;i.push(n>>18|240,n>>12&63|128,n>>6&63|128,63&n|128)}}return i}function H(t){for(var e=[],n=0;n<t.length;++n)e.push(255&t.charCodeAt(n));return e}function q(t,e){for(var n,r,o,i=[],s=0;s<t.length&&!((e-=2)<0);++s)n=t.charCodeAt(s),r=n>>8,o=n%256,i.push(o),i.push(r);return i}function W(t){return Z.toByteArray(K(t))}function X(t,e,n,r){for(var o=0;o<r&&!(o+n>=e.length||o>=t.length);++o)e[o+n]=t[o];return o}function J(t){return t!==t}/*!
+(function webpackUniversalModuleDefinition(root, factory) {
+	if(typeof exports === 'object' && typeof module === 'object')
+		module.exports = factory();
+	else if(typeof define === 'function' && define.amd)
+		define([], factory);
+	else if(typeof exports === 'object')
+		exports["COS"] = factory();
+	else
+		root["COS"] = factory();
+})(this, function() {
+return /******/ (function(modules) { // webpackBootstrap
+/******/ 	// The module cache
+/******/ 	var installedModules = {};
+/******/
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/
+/******/ 		// Check if module is in cache
+/******/ 		if(installedModules[moduleId]) {
+/******/ 			return installedModules[moduleId].exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = installedModules[moduleId] = {
+/******/ 			i: moduleId,
+/******/ 			l: false,
+/******/ 			exports: {}
+/******/ 		};
+/******/
+/******/ 		// Execute the module function
+/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+/******/
+/******/ 		// Flag the module as loaded
+/******/ 		module.l = true;
+/******/
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/
+/******/
+/******/ 	// expose the modules object (__webpack_modules__)
+/******/ 	__webpack_require__.m = modules;
+/******/
+/******/ 	// expose the module cache
+/******/ 	__webpack_require__.c = installedModules;
+/******/
+/******/ 	// define getter function for harmony exports
+/******/ 	__webpack_require__.d = function(exports, name, getter) {
+/******/ 		if(!__webpack_require__.o(exports, name)) {
+/******/ 			Object.defineProperty(exports, name, {
+/******/ 				configurable: false,
+/******/ 				enumerable: true,
+/******/ 				get: getter
+/******/ 			});
+/******/ 		}
+/******/ 	};
+/******/
+/******/ 	// getDefaultExport function for compatibility with non-harmony modules
+/******/ 	__webpack_require__.n = function(module) {
+/******/ 		var getter = module && module.__esModule ?
+/******/ 			function getDefault() { return module['default']; } :
+/******/ 			function getModuleExports() { return module; };
+/******/ 		__webpack_require__.d(getter, 'a', getter);
+/******/ 		return getter;
+/******/ 	};
+/******/
+/******/ 	// Object.prototype.hasOwnProperty.call
+/******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
+/******/
+/******/ 	// __webpack_public_path__
+/******/ 	__webpack_require__.p = "D:\\github\\cos-wx-sdk-v5\\demo\\lib";
+/******/
+/******/ 	// Load entry module and return exports
+/******/ 	return __webpack_require__(__webpack_require__.s = 2);
+/******/ })
+/************************************************************************/
+/******/ ([
+/* 0 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(Buffer) {
+
+var md5 = __webpack_require__(8);
+var CryptoJS = __webpack_require__(9);
+var xml2json = __webpack_require__(10);
+var json2xml = __webpack_require__(11);
+
+function camSafeUrlEncode(str) {
+    return encodeURIComponent(str)
+        .replace(/!/g, '%21')
+        .replace(/'/g, '%27')
+        .replace(/\(/g, '%28')
+        .replace(/\)/g, '%29')
+        .replace(/\*/g, '%2A');
+}
+
+//测试用的key后面可以去掉
+var getAuth = function (opt) {
+    opt = opt || {};
+
+    var SecretId = opt.SecretId;
+    var SecretKey = opt.SecretKey;
+    var method = (opt.method || opt.Method || 'get').toLowerCase();
+    var pathname = opt.pathname || opt.Key || '/';
+    var queryParams = opt.params || '';
+    var headers = opt.headers || '';
+    pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
+
+    if (!SecretId) return console.error('lack of param SecretId');
+    if (!SecretKey) return console.error('lack of param SecretKey');
+
+    var getObjectKeys = function (obj) {
+        var list = [];
+        for (var key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                list.push(key);
+            }
+        }
+        return list.sort();
+    };
+
+    var obj2str = function (obj) {
+        var i, key, val;
+        var list = [];
+        var keyList = getObjectKeys(obj);
+        for (i = 0; i < keyList.length; i++) {
+            key = keyList[i];
+            val = obj[key] || '';
+            key = key.toLowerCase();
+            list.push(camSafeUrlEncode(key) + '=' + camSafeUrlEncode(val));
+        }
+        return list.join('&');
+    };
+
+    // 签名有效起止时间
+    var now = parseInt(new Date().getTime() / 1000) - 1;
+    var exp = now;
+
+    var Expires = opt.Expires || opt.expires;
+    if (Expires === undefined) {
+        exp += 900; // 签名过期时间为当前 + 900s
+    } else {
+        exp += (Expires * 1) || 0;
+    }
+
+    // 要用到的 Authorization 参数列表
+    var qSignAlgorithm = 'sha1';
+    var qAk = SecretId;
+    var qSignTime = now + ';' + exp;
+    var qKeyTime = now + ';' + exp;
+    var qHeaderList = getObjectKeys(headers).join(';').toLowerCase();
+    var qUrlParamList = getObjectKeys(queryParams).join(';').toLowerCase();
+
+    // 签名算法说明文档：https://www.qcloud.com/document/product/436/7778
+    // 步骤一：计算 SignKey
+    var signKey = CryptoJS.HmacSHA1(qKeyTime, SecretKey).toString();
+
+    // 步骤二：构成 FormatString
+    var formatString = [method, pathname, obj2str(queryParams), obj2str(headers), ''].join('\n');
+
+    // 步骤三：计算 StringToSign
+    var stringToSign = ['sha1', qSignTime, CryptoJS.SHA1(formatString).toString(), ''].join('\n');
+
+    // 步骤四：计算 Signature
+    var qSignature = CryptoJS.HmacSHA1(stringToSign, signKey).toString();
+
+    // 步骤五：构造 Authorization
+    var authorization = [
+        'q-sign-algorithm=' + qSignAlgorithm,
+        'q-ak=' + qAk,
+        'q-sign-time=' + qSignTime,
+        'q-key-time=' + qKeyTime,
+        'q-header-list=' + qHeaderList,
+        'q-url-param-list=' + qUrlParamList,
+        'q-signature=' + qSignature
+    ].join('&');
+
+    return authorization;
+
+};
+
+// 清除对象里值为的 undefined 或 null 的属性
+var clearKey = function (obj) {
+    var retObj = {};
+    for (var key in obj) {
+        if (obj[key] !== undefined && obj[key] !== null) {
+            retObj[key] = obj[key];
+        }
+    }
+    return retObj;
+};
+
+var readAsBinaryString = function (blob, callback) {
+    var readFun;
+    var fr = new FileReader();
+    if (FileReader.prototype.readAsBinaryString) {
+        readFun = FileReader.prototype.readAsBinaryString;
+        fr.onload = function () {
+            callback(this.result);
+        };
+    } else if (FileReader.prototype.readAsArrayBuffer) { // 在 ie11 添加 readAsBinaryString 兼容
+        readFun = function (fileData) {
+            var binary = "";
+            var pt = this;
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                var bytes = new Uint8Array(reader.result);
+                var length = bytes.byteLength;
+                for (var i = 0; i < length; i++) {
+                    binary += String.fromCharCode(bytes[i]);
+                }
+                callback(binary);
+            };
+            reader.readAsArrayBuffer(fileData);
+        };
+    } else {
+        console.error('FileReader not support readAsBinaryString');
+    }
+    readFun.call(fr, blob);
+};
+
+// 获取文件 sha1 值
+var getFileSHA = function (blob, callback) {
+    readAsBinaryString(blob, function (content) {
+        var hash = CryptoJS.SHA1(content).toString();
+        callback(null, hash);
+    });
+};
+
+// 获取文件 md5 值
+var getFileMd5 = function (blob, callback) {
+    readAsBinaryString(blob, function (content) {
+        var hash = md5(content);
+        callback(null, hash);
+    });
+};
+function clone(obj) {
+    return map(obj, function (v) {
+        return typeof v === 'object' ? clone(v) : v;
+    });
+}
+function extend(target, source) {
+    each(source, function (val, key) {
+        target[key] = source[key];
+    });
+    return target;
+}
+function isArray(arr) {
+    return arr instanceof Array;
+}
+function each(obj, fn) {
+    for (var i in obj) {
+        if (obj.hasOwnProperty(i)) {
+            fn(obj[i], i);
+        }
+    }
+}
+function map(obj, fn) {
+    var o = isArray(obj) ? [] : {};
+    for (var i in obj) {
+        if (obj.hasOwnProperty(i)) {
+            o[i] = fn(obj[i], i);
+        }
+    }
+    return o;
+}
+function filter(obj, fn) {
+    var iaArr = isArray(obj);
+    var o = iaArr ? [] : {};
+    for (var i in obj) {
+        if (obj.hasOwnProperty(i)) {
+            if (fn(obj[i], i)) {
+                if (iaArr) {
+                    o.push(obj[i]);
+                } else {
+                    o[i] = obj[i];
+                }
+            }
+        }
+    }
+    return o;
+}
+var binaryBase64 = function (str) {
+    var i, len, char, arr = [];
+    for (i = 0, len = str.length / 2; i < len; i++) {
+        char = parseInt(str[i * 2] + str[i * 2 + 1], 16);
+        arr.push(char);
+    }
+    return new Buffer(arr).toString('base64');
+};
+var uuid = function () {
+    var S4 = function () {
+        return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+    };
+    return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
+};
+
+var checkParams = function (apiName, params) {
+    var bucket = params.Bucket;
+    var region = params.Region;
+    var object = params.Key;
+    if (apiName.indexOf('Bucket') > -1 || apiName === 'deleteMultipleObject' || apiName === 'multipartList') {
+        return bucket && region;
+    }
+    if (apiName.indexOf('Object') > -1 || apiName.indexOf('multipart') > -1 || apiName === 'sliceUploadFile' || apiName === 'abortUploadTask') {
+        return bucket && region && object;
+    }
+    return true;
+};
+
+var apiWrapper = function (apiName, apiFn) {
+    var regionMap = {
+        'gz': 'ap-guangzhou',
+        'tj': 'ap-beijing-2',
+        'sh': 'ap-shanghai',
+        'cd': 'ap-chengdu'
+    };
+    return function (params, callback) {
+        callback = callback || function () {
+            };
+        if (apiName !== 'getService' && apiName !== 'abortUploadTask') {
+            // 判断参数是否完整
+            if (!checkParams(apiName, params)) {
+                callback({error: 'lack of required params'});
+                return;
+            }
+            // 判断 region 格式
+            if (params.Region && regionMap[params.Region]) {
+                callback({error: 'Region should be ' + regionMap[params.Region]});
+                return;
+            }
+            // 判断 region 格式
+            if (params.Region && params.Region.indexOf('cos.') > -1) {
+                callback({error: 'Region should not be start with "cos."'});
+                return;
+            }
+            // 兼容不带 AppId 的 Bucket
+            if (params.Bucket) {
+                if (!/^(.+)-(\d+)$/.test(params.Bucket)) {
+                    if (params.AppId) {
+                        params.Bucket = params.Bucket + '-' + params.AppId;
+                    } else if (this.options.AppId) {
+                        params.Bucket = params.Bucket + '-' + this.options.AppId;
+                    } else {
+                        callback({error: 'Bucket should format as "test-1250000000".'});
+                        return;
+                    }
+                }
+                if (params.AppId) {
+                    console.warn('warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g Bucket:"test-1250000000" ).');
+                    delete params.AppId;
+                }
+            }
+            // 兼容带有斜杠开头的 Key
+            if (params.Key && params.Key.substr(0, 1) === '/') {
+                params.Key = params.Key.substr(1);
+            }
+        }
+        var res = apiFn.call(this, params, callback);
+        if (apiName === 'getAuth' || apiName === 'getObjectUrl') {
+            return res;
+        }
+    }
+};
+
+var throttleOnProgress = function (total, onProgress) {
+    var self = this;
+    var size0 = 0;
+    var size1 = 0;
+    var time0 = Date.now();
+    var time1;
+    var timer;
+    function update() {
+        timer = 0;
+        if (onProgress && (typeof onProgress === 'function')) {
+            time1 = Date.now();
+            var speed = Math.max(0, Math.round((size1 - size0) / ((time1 - time0) / 1000) * 100) / 100);
+            var percent;
+            if (size1 === 0 && total === 0) {
+                percent = 1;
+            } else {
+                percent = Math.round(size1 / total * 100) / 100 || 0;
+            }
+            time0 = time1;
+            size0 = size1;
+            try {
+                onProgress({loaded: size1, total: total, speed: speed, percent: percent});
+            } catch (e) {
+            }
+        }
+    }
+    return function (info, immediately) {
+        if (info) {
+            size1 = info.loaded;
+            total = info.total;
+        }
+        if (immediately) {
+            clearTimeout(timer);
+            update();
+        } else {
+            if (timer) return;
+            timer = setTimeout(update, self.options.ProgressInterval);
+        }
+    };
+};
+
+var fileSlice = function (file, start, end) {
+    if (file.slice) {
+        return file.slice(start, end);
+    } else if (file.mozSlice) {
+        return file.mozSlice(start, end);
+    } else if (file.webkitSlice) {
+        return file.webkitSlice(start, end);
+    }
+};
+
+var util = {
+    apiWrapper: apiWrapper,
+    getAuth: getAuth,
+    xml2json: xml2json,
+    json2xml: json2xml,
+    md5: md5,
+    clearKey: clearKey,
+    binaryBase64: binaryBase64,
+    extend: extend,
+    isArray: isArray,
+    each: each,
+    map: map,
+    clone: clone,
+    uuid: uuid,
+    throttleOnProgress: throttleOnProgress,
+};
+
+
+module.exports = util;
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1).Buffer))
+
+/***/ }),
+/* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(global) {/*!
  * The buffer module from node.js, for the browser.
  *
  * @author   Feross Aboukhadijeh <feross@feross.org> <http://feross.org>
  * @license  MIT
  */
-var Z=n(5),V=n(6),$=n(7);e.Buffer=i,e.SlowBuffer=g,e.INSPECT_MAX_BYTES=50,i.TYPED_ARRAY_SUPPORT=void 0!==t.TYPED_ARRAY_SUPPORT?t.TYPED_ARRAY_SUPPORT:function(){try{var t=new Uint8Array(1);return t.__proto__={__proto__:Uint8Array.prototype,foo:function(){return 42}},42===t.foo()&&"function"==typeof t.subarray&&0===t.subarray(1,1).byteLength}catch(t){return!1}}(),e.kMaxLength=r(),i.poolSize=8192,i._augment=function(t){return t.__proto__=i.prototype,t},i.from=function(t,e,n){return s(null,t,e,n)},i.TYPED_ARRAY_SUPPORT&&(i.prototype.__proto__=Uint8Array.prototype,i.__proto__=Uint8Array,"undefined"!=typeof Symbol&&Symbol.species&&i[Symbol.species]===i&&Object.defineProperty(i,Symbol.species,{value:null,configurable:!0})),i.alloc=function(t,e,n){return u(null,t,e,n)},i.allocUnsafe=function(t){return c(null,t)},i.allocUnsafeSlow=function(t){return c(null,t)},i.isBuffer=function(t){return!(null==t||!t._isBuffer)},i.compare=function(t,e){if(!i.isBuffer(t)||!i.isBuffer(e))throw new TypeError("Arguments must be Buffers");if(t===e)return 0;for(var n=t.length,r=e.length,o=0,s=Math.min(n,r);o<s;++o)if(t[o]!==e[o]){n=t[o],r=e[o];break}return n<r?-1:r<n?1:0},i.isEncoding=function(t){switch(String(t).toLowerCase()){case"hex":case"utf8":case"utf-8":case"ascii":case"latin1":case"binary":case"base64":case"ucs2":case"ucs-2":case"utf16le":case"utf-16le":return!0;default:return!1}},i.concat=function(t,e){if(!$(t))throw new TypeError('"list" argument must be an Array of Buffers');if(0===t.length)return i.alloc(0);var n;if(void 0===e)for(e=0,n=0;n<t.length;++n)e+=t[n].length;var r=i.allocUnsafe(e),o=0;for(n=0;n<t.length;++n){var s=t[n];if(!i.isBuffer(s))throw new TypeError('"list" argument must be an Array of Buffers');s.copy(r,o),o+=s.length}return r},i.byteLength=y,i.prototype._isBuffer=!0,i.prototype.swap16=function(){var t=this.length;if(t%2!=0)throw new RangeError("Buffer size must be a multiple of 16-bits");for(var e=0;e<t;e+=2)m(this,e,e+1);return this},i.prototype.swap32=function(){var t=this.length;if(t%4!=0)throw new RangeError("Buffer size must be a multiple of 32-bits");for(var e=0;e<t;e+=4)m(this,e,e+3),m(this,e+1,e+2);return this},i.prototype.swap64=function(){var t=this.length;if(t%8!=0)throw new RangeError("Buffer size must be a multiple of 64-bits");for(var e=0;e<t;e+=8)m(this,e,e+7),m(this,e+1,e+6),m(this,e+2,e+5),m(this,e+3,e+4);return this},i.prototype.toString=function(){var t=0|this.length;return 0===t?"":0===arguments.length?b(this,0,t):v.apply(this,arguments)},i.prototype.equals=function(t){if(!i.isBuffer(t))throw new TypeError("Argument must be a Buffer");return this===t||0===i.compare(this,t)},i.prototype.inspect=function(){var t="",n=e.INSPECT_MAX_BYTES;return this.length>0&&(t=this.toString("hex",0,n).match(/.{2}/g).join(" "),this.length>n&&(t+=" ... ")),"<Buffer "+t+">"},i.prototype.compare=function(t,e,n,r,o){if(!i.isBuffer(t))throw new TypeError("Argument must be a Buffer");if(void 0===e&&(e=0),void 0===n&&(n=t?t.length:0),void 0===r&&(r=0),void 0===o&&(o=this.length),e<0||n>t.length||r<0||o>this.length)throw new RangeError("out of range index");if(r>=o&&e>=n)return 0;if(r>=o)return-1;if(e>=n)return 1;if(e>>>=0,n>>>=0,r>>>=0,o>>>=0,this===t)return 0;for(var s=o-r,a=n-e,u=Math.min(s,a),c=this.slice(r,o),l=t.slice(e,n),f=0;f<u;++f)if(c[f]!==l[f]){s=c[f],a=l[f];break}return s<a?-1:a<s?1:0},i.prototype.includes=function(t,e,n){return-1!==this.indexOf(t,e,n)},i.prototype.indexOf=function(t,e,n){return C(this,t,e,n,!0)},i.prototype.lastIndexOf=function(t,e,n){return C(this,t,e,n,!1)},i.prototype.write=function(t,e,n,r){if(void 0===e)r="utf8",n=this.length,e=0;else if(void 0===n&&"string"==typeof e)r=e,n=this.length,e=0;else{if(!isFinite(e))throw new Error("Buffer.write(string, encoding, offset[, length]) is no longer supported");e|=0,isFinite(n)?(n|=0,void 0===r&&(r="utf8")):(r=n,n=void 0)}var o=this.length-e;if((void 0===n||n>o)&&(n=o),t.length>0&&(n<0||e<0)||e>this.length)throw new RangeError("Attempt to write outside buffer bounds");r||(r="utf8");for(var i=!1;;)switch(r){case"hex":return _(this,t,e,n);case"utf8":case"utf-8":return w(this,t,e,n);case"ascii":return x(this,t,e,n);case"latin1":case"binary":return R(this,t,e,n);case"base64":return E(this,t,e,n);case"ucs2":case"ucs-2":case"utf16le":case"utf-16le":return B(this,t,e,n);default:if(i)throw new TypeError("Unknown encoding: "+r);r=(""+r).toLowerCase(),i=!0}},i.prototype.toJSON=function(){return{type:"Buffer",data:Array.prototype.slice.call(this._arr||this,0)}};var Q=4096;i.prototype.slice=function(t,e){var n=this.length;t=~~t,e=void 0===e?n:~~e,t<0?(t+=n)<0&&(t=0):t>n&&(t=n),e<0?(e+=n)<0&&(e=0):e>n&&(e=n),e<t&&(e=t);var r;if(i.TYPED_ARRAY_SUPPORT)r=this.subarray(t,e),r.__proto__=i.prototype;else{var o=e-t;r=new i(o,void 0);for(var s=0;s<o;++s)r[s]=this[s+t]}return r},i.prototype.readUIntLE=function(t,e,n){t|=0,e|=0,n||D(t,e,this.length);for(var r=this[t],o=1,i=0;++i<e&&(o*=256);)r+=this[t+i]*o;return r},i.prototype.readUIntBE=function(t,e,n){t|=0,e|=0,n||D(t,e,this.length);for(var r=this[t+--e],o=1;e>0&&(o*=256);)r+=this[t+--e]*o;return r},i.prototype.readUInt8=function(t,e){return e||D(t,1,this.length),this[t]},i.prototype.readUInt16LE=function(t,e){return e||D(t,2,this.length),this[t]|this[t+1]<<8},i.prototype.readUInt16BE=function(t,e){return e||D(t,2,this.length),this[t]<<8|this[t+1]},i.prototype.readUInt32LE=function(t,e){return e||D(t,4,this.length),(this[t]|this[t+1]<<8|this[t+2]<<16)+16777216*this[t+3]},i.prototype.readUInt32BE=function(t,e){return e||D(t,4,this.length),16777216*this[t]+(this[t+1]<<16|this[t+2]<<8|this[t+3])},i.prototype.readIntLE=function(t,e,n){t|=0,e|=0,n||D(t,e,this.length);for(var r=this[t],o=1,i=0;++i<e&&(o*=256);)r+=this[t+i]*o;return o*=128,r>=o&&(r-=Math.pow(2,8*e)),r},i.prototype.readIntBE=function(t,e,n){t|=0,e|=0,n||D(t,e,this.length);for(var r=e,o=1,i=this[t+--r];r>0&&(o*=256);)i+=this[t+--r]*o;return o*=128,i>=o&&(i-=Math.pow(2,8*e)),i},i.prototype.readInt8=function(t,e){return e||D(t,1,this.length),128&this[t]?-1*(255-this[t]+1):this[t]},i.prototype.readInt16LE=function(t,e){e||D(t,2,this.length);var n=this[t]|this[t+1]<<8;return 32768&n?4294901760|n:n},i.prototype.readInt16BE=function(t,e){e||D(t,2,this.length);var n=this[t+1]|this[t]<<8;return 32768&n?4294901760|n:n},i.prototype.readInt32LE=function(t,e){return e||D(t,4,this.length),this[t]|this[t+1]<<8|this[t+2]<<16|this[t+3]<<24},i.prototype.readInt32BE=function(t,e){return e||D(t,4,this.length),this[t]<<24|this[t+1]<<16|this[t+2]<<8|this[t+3]},i.prototype.readFloatLE=function(t,e){return e||D(t,4,this.length),V.read(this,t,!0,23,4)},i.prototype.readFloatBE=function(t,e){return e||D(t,4,this.length),V.read(this,t,!1,23,4)},i.prototype.readDoubleLE=function(t,e){return e||D(t,8,this.length),V.read(this,t,!0,52,8)},i.prototype.readDoubleBE=function(t,e){return e||D(t,8,this.length),V.read(this,t,!1,52,8)},i.prototype.writeUIntLE=function(t,e,n,r){if(t=+t,e|=0,n|=0,!r){M(this,t,e,n,Math.pow(2,8*n)-1,0)}var o=1,i=0;for(this[e]=255&t;++i<n&&(o*=256);)this[e+i]=t/o&255;return e+n},i.prototype.writeUIntBE=function(t,e,n,r){if(t=+t,e|=0,n|=0,!r){M(this,t,e,n,Math.pow(2,8*n)-1,0)}var o=n-1,i=1;for(this[e+o]=255&t;--o>=0&&(i*=256);)this[e+o]=t/i&255;return e+n},i.prototype.writeUInt8=function(t,e,n){return t=+t,e|=0,n||M(this,t,e,1,255,0),i.TYPED_ARRAY_SUPPORT||(t=Math.floor(t)),this[e]=255&t,e+1},i.prototype.writeUInt16LE=function(t,e,n){return t=+t,e|=0,n||M(this,t,e,2,65535,0),i.TYPED_ARRAY_SUPPORT?(this[e]=255&t,this[e+1]=t>>>8):L(this,t,e,!0),e+2},i.prototype.writeUInt16BE=function(t,e,n){return t=+t,e|=0,n||M(this,t,e,2,65535,0),i.TYPED_ARRAY_SUPPORT?(this[e]=t>>>8,this[e+1]=255&t):L(this,t,e,!1),e+2},i.prototype.writeUInt32LE=function(t,e,n){return t=+t,e|=0,n||M(this,t,e,4,4294967295,0),i.TYPED_ARRAY_SUPPORT?(this[e+3]=t>>>24,this[e+2]=t>>>16,this[e+1]=t>>>8,this[e]=255&t):U(this,t,e,!0),e+4},i.prototype.writeUInt32BE=function(t,e,n){return t=+t,e|=0,n||M(this,t,e,4,4294967295,0),i.TYPED_ARRAY_SUPPORT?(this[e]=t>>>24,this[e+1]=t>>>16,this[e+2]=t>>>8,this[e+3]=255&t):U(this,t,e,!1),e+4},i.prototype.writeIntLE=function(t,e,n,r){if(t=+t,e|=0,!r){var o=Math.pow(2,8*n-1);M(this,t,e,n,o-1,-o)}var i=0,s=1,a=0;for(this[e]=255&t;++i<n&&(s*=256);)t<0&&0===a&&0!==this[e+i-1]&&(a=1),this[e+i]=(t/s>>0)-a&255;return e+n},i.prototype.writeIntBE=function(t,e,n,r){if(t=+t,e|=0,!r){var o=Math.pow(2,8*n-1);M(this,t,e,n,o-1,-o)}var i=n-1,s=1,a=0;for(this[e+i]=255&t;--i>=0&&(s*=256);)t<0&&0===a&&0!==this[e+i+1]&&(a=1),this[e+i]=(t/s>>0)-a&255;return e+n},i.prototype.writeInt8=function(t,e,n){return t=+t,e|=0,n||M(this,t,e,1,127,-128),i.TYPED_ARRAY_SUPPORT||(t=Math.floor(t)),t<0&&(t=255+t+1),this[e]=255&t,e+1},i.prototype.writeInt16LE=function(t,e,n){return t=+t,e|=0,n||M(this,t,e,2,32767,-32768),i.TYPED_ARRAY_SUPPORT?(this[e]=255&t,this[e+1]=t>>>8):L(this,t,e,!0),e+2},i.prototype.writeInt16BE=function(t,e,n){return t=+t,e|=0,n||M(this,t,e,2,32767,-32768),i.TYPED_ARRAY_SUPPORT?(this[e]=t>>>8,this[e+1]=255&t):L(this,t,e,!1),e+2},i.prototype.writeInt32LE=function(t,e,n){return t=+t,e|=0,n||M(this,t,e,4,2147483647,-2147483648),i.TYPED_ARRAY_SUPPORT?(this[e]=255&t,this[e+1]=t>>>8,this[e+2]=t>>>16,this[e+3]=t>>>24):U(this,t,e,!0),e+4},i.prototype.writeInt32BE=function(t,e,n){return t=+t,e|=0,n||M(this,t,e,4,2147483647,-2147483648),t<0&&(t=4294967295+t+1),i.TYPED_ARRAY_SUPPORT?(this[e]=t>>>24,this[e+1]=t>>>16,this[e+2]=t>>>8,this[e+3]=255&t):U(this,t,e,!1),e+4},i.prototype.writeFloatLE=function(t,e,n){return F(this,t,e,!0,n)},i.prototype.writeFloatBE=function(t,e,n){return F(this,t,e,!1,n)},i.prototype.writeDoubleLE=function(t,e,n){return N(this,t,e,!0,n)},i.prototype.writeDoubleBE=function(t,e,n){return N(this,t,e,!1,n)},i.prototype.copy=function(t,e,n,r){if(n||(n=0),r||0===r||(r=this.length),e>=t.length&&(e=t.length),e||(e=0),r>0&&r<n&&(r=n),r===n)return 0;if(0===t.length||0===this.length)return 0;if(e<0)throw new RangeError("targetStart out of bounds");if(n<0||n>=this.length)throw new RangeError("sourceStart out of bounds");if(r<0)throw new RangeError("sourceEnd out of bounds");r>this.length&&(r=this.length),t.length-e<r-n&&(r=t.length-e+n);var o,s=r-n;if(this===t&&n<e&&e<r)for(o=s-1;o>=0;--o)t[o+e]=this[o+n];else if(s<1e3||!i.TYPED_ARRAY_SUPPORT)for(o=0;o<s;++o)t[o+e]=this[o+n];else Uint8Array.prototype.set.call(t,this.subarray(n,n+s),e);return s},i.prototype.fill=function(t,e,n,r){if("string"==typeof t){if("string"==typeof e?(r=e,e=0,n=this.length):"string"==typeof n&&(r=n,n=this.length),1===t.length){var o=t.charCodeAt(0);o<256&&(t=o)}if(void 0!==r&&"string"!=typeof r)throw new TypeError("encoding must be a string");if("string"==typeof r&&!i.isEncoding(r))throw new TypeError("Unknown encoding: "+r)}else"number"==typeof t&&(t&=255);if(e<0||this.length<e||this.length<n)throw new RangeError("Out of range index");if(n<=e)return this;e>>>=0,n=void 0===n?this.length:n>>>0,t||(t=0);var s;if("number"==typeof t)for(s=e;s<n;++s)this[s]=t;else{var a=i.isBuffer(t)?t:z(new i(t,r).toString()),u=a.length;for(s=0;s<n-e;++s)this[s+e]=a[s%u]}return this};var tt=/[^+\/0-9A-Za-z-_]/g}).call(e,n(4))},function(t,e,n){var r=n(3);t.exports=r},function(t,e,n){"use strict";var r=n(0),o=n(12),i=n(13),s=n(14),a={SecretId:"",SecretKey:"",FileParallelLimit:3,ChunkParallelLimit:3,ChunkSize:1048576,ProgressInterval:1e3,Domain:"",ServiceDomain:""},u=function(t){this.options=r.extend(r.clone(a),t||{}),o.init(this),i.init(this)};r.extend(u.prototype,s),u.getAuthorization=r.getAuth,u.version="0.3.5",t.exports=u},function(t,e){var n;n=function(){return this}();try{n=n||Function("return this")()||(0,eval)("this")}catch(t){"object"==typeof window&&(n=window)}t.exports=n},function(t,e,n){"use strict";function r(t){var e=t.length;if(e%4>0)throw new Error("Invalid string. Length must be a multiple of 4");return"="===t[e-2]?2:"="===t[e-1]?1:0}function o(t){return 3*t.length/4-r(t)}function i(t){var e,n,o,i,s,a=t.length;i=r(t),s=new f(3*a/4-i),n=i>0?a-4:a;var u=0;for(e=0;e<n;e+=4)o=l[t.charCodeAt(e)]<<18|l[t.charCodeAt(e+1)]<<12|l[t.charCodeAt(e+2)]<<6|l[t.charCodeAt(e+3)],s[u++]=o>>16&255,s[u++]=o>>8&255,s[u++]=255&o;return 2===i?(o=l[t.charCodeAt(e)]<<2|l[t.charCodeAt(e+1)]>>4,s[u++]=255&o):1===i&&(o=l[t.charCodeAt(e)]<<10|l[t.charCodeAt(e+1)]<<4|l[t.charCodeAt(e+2)]>>2,s[u++]=o>>8&255,s[u++]=255&o),s}function s(t){return c[t>>18&63]+c[t>>12&63]+c[t>>6&63]+c[63&t]}function a(t,e,n){for(var r,o=[],i=e;i<n;i+=3)r=(t[i]<<16)+(t[i+1]<<8)+t[i+2],o.push(s(r));return o.join("")}function u(t){for(var e,n=t.length,r=n%3,o="",i=[],s=0,u=n-r;s<u;s+=16383)i.push(a(t,s,s+16383>u?u:s+16383));return 1===r?(e=t[n-1],o+=c[e>>2],o+=c[e<<4&63],o+="=="):2===r&&(e=(t[n-2]<<8)+t[n-1],o+=c[e>>10],o+=c[e>>4&63],o+=c[e<<2&63],o+="="),i.push(o),i.join("")}e.byteLength=o,e.toByteArray=i,e.fromByteArray=u;for(var c=[],l=[],f="undefined"!=typeof Uint8Array?Uint8Array:Array,h="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",d=0,p=h.length;d<p;++d)c[d]=h[d],l[h.charCodeAt(d)]=d;l["-".charCodeAt(0)]=62,l["_".charCodeAt(0)]=63},function(t,e){e.read=function(t,e,n,r,o){var i,s,a=8*o-r-1,u=(1<<a)-1,c=u>>1,l=-7,f=n?o-1:0,h=n?-1:1,d=t[e+f];for(f+=h,i=d&(1<<-l)-1,d>>=-l,l+=a;l>0;i=256*i+t[e+f],f+=h,l-=8);for(s=i&(1<<-l)-1,i>>=-l,l+=r;l>0;s=256*s+t[e+f],f+=h,l-=8);if(0===i)i=1-c;else{if(i===u)return s?NaN:1/0*(d?-1:1);s+=Math.pow(2,r),i-=c}return(d?-1:1)*s*Math.pow(2,i-r)},e.write=function(t,e,n,r,o,i){var s,a,u,c=8*i-o-1,l=(1<<c)-1,f=l>>1,h=23===o?Math.pow(2,-24)-Math.pow(2,-77):0,d=r?0:i-1,p=r?1:-1,g=e<0||0===e&&1/e<0?1:0;for(e=Math.abs(e),isNaN(e)||e===1/0?(a=isNaN(e)?1:0,s=l):(s=Math.floor(Math.log(e)/Math.LN2),e*(u=Math.pow(2,-s))<1&&(s--,u*=2),e+=s+f>=1?h/u:h*Math.pow(2,1-f),e*u>=2&&(s++,u/=2),s+f>=l?(a=0,s=l):s+f>=1?(a=(e*u-1)*Math.pow(2,o),s+=f):(a=e*Math.pow(2,f-1)*Math.pow(2,o),s=0));o>=8;t[n+d]=255&a,d+=p,a/=256,o-=8);for(s=s<<o|a,c+=o;c>0;t[n+d]=255&s,d+=p,s/=256,c-=8);t[n+d-p]|=128*g}},function(t,e){var n={}.toString;t.exports=Array.isArray||function(t){return"[object Array]"==n.call(t)}},function(t,e){var n=function(t){function e(t,e){return t<<e|t>>>32-e}function n(t,e){var n,r,o,i,s;return o=2147483648&t,i=2147483648&e,n=1073741824&t,r=1073741824&e,s=(1073741823&t)+(1073741823&e),n&r?2147483648^s^o^i:n|r?1073741824&s?3221225472^s^o^i:1073741824^s^o^i:s^o^i}function r(t,e,n){return t&e|~t&n}function o(t,e,n){return t&n|e&~n}function i(t,e,n){return t^e^n}function s(t,e,n){return e^(t|~n)}function a(t,o,i,s,a,u,c){return t=n(t,n(n(r(o,i,s),a),c)),n(e(t,u),o)}function u(t,r,i,s,a,u,c){return t=n(t,n(n(o(r,i,s),a),c)),n(e(t,u),r)}function c(t,r,o,s,a,u,c){return t=n(t,n(n(i(r,o,s),a),c)),n(e(t,u),r)}function l(t,r,o,i,a,u,c){return t=n(t,n(n(s(r,o,i),a),c)),n(e(t,u),r)}function f(t){var e,n,r="",o="";for(n=0;n<=3;n++)e=t>>>8*n&255,o="0"+e.toString(16),r+=o.substr(o.length-2,2);return r}var h,d,p,g,y,v,m,C,A,_=Array();for(t=function(t){t=t.replace(/\r\n/g,"\n");for(var e="",n=0;n<t.length;n++){var r=t.charCodeAt(n);r<128?e+=String.fromCharCode(r):r>127&&r<2048?(e+=String.fromCharCode(r>>6|192),e+=String.fromCharCode(63&r|128)):(e+=String.fromCharCode(r>>12|224),e+=String.fromCharCode(r>>6&63|128),e+=String.fromCharCode(63&r|128))}return e}(t),_=function(t){for(var e,n=t.length,r=n+8,o=(r-r%64)/64,i=16*(o+1),s=Array(i-1),a=0,u=0;u<n;)e=(u-u%4)/4,a=u%4*8,s[e]=s[e]|t.charCodeAt(u)<<a,u++;return e=(u-u%4)/4,a=u%4*8,s[e]=s[e]|128<<a,s[i-2]=n<<3,s[i-1]=n>>>29,s}(t),v=1732584193,m=4023233417,C=2562383102,A=271733878,h=0;h<_.length;h+=16)d=v,p=m,g=C,y=A,v=a(v,m,C,A,_[h+0],7,3614090360),A=a(A,v,m,C,_[h+1],12,3905402710),C=a(C,A,v,m,_[h+2],17,606105819),m=a(m,C,A,v,_[h+3],22,3250441966),v=a(v,m,C,A,_[h+4],7,4118548399),A=a(A,v,m,C,_[h+5],12,1200080426),C=a(C,A,v,m,_[h+6],17,2821735955),m=a(m,C,A,v,_[h+7],22,4249261313),v=a(v,m,C,A,_[h+8],7,1770035416),A=a(A,v,m,C,_[h+9],12,2336552879),C=a(C,A,v,m,_[h+10],17,4294925233),m=a(m,C,A,v,_[h+11],22,2304563134),v=a(v,m,C,A,_[h+12],7,1804603682),A=a(A,v,m,C,_[h+13],12,4254626195),C=a(C,A,v,m,_[h+14],17,2792965006),m=a(m,C,A,v,_[h+15],22,1236535329),v=u(v,m,C,A,_[h+1],5,4129170786),A=u(A,v,m,C,_[h+6],9,3225465664),C=u(C,A,v,m,_[h+11],14,643717713),m=u(m,C,A,v,_[h+0],20,3921069994),v=u(v,m,C,A,_[h+5],5,3593408605),A=u(A,v,m,C,_[h+10],9,38016083),C=u(C,A,v,m,_[h+15],14,3634488961),m=u(m,C,A,v,_[h+4],20,3889429448),v=u(v,m,C,A,_[h+9],5,568446438),A=u(A,v,m,C,_[h+14],9,3275163606),C=u(C,A,v,m,_[h+3],14,4107603335),m=u(m,C,A,v,_[h+8],20,1163531501),v=u(v,m,C,A,_[h+13],5,2850285829),A=u(A,v,m,C,_[h+2],9,4243563512),C=u(C,A,v,m,_[h+7],14,1735328473),m=u(m,C,A,v,_[h+12],20,2368359562),v=c(v,m,C,A,_[h+5],4,4294588738),A=c(A,v,m,C,_[h+8],11,2272392833),C=c(C,A,v,m,_[h+11],16,1839030562),m=c(m,C,A,v,_[h+14],23,4259657740),v=c(v,m,C,A,_[h+1],4,2763975236),A=c(A,v,m,C,_[h+4],11,1272893353),C=c(C,A,v,m,_[h+7],16,4139469664),m=c(m,C,A,v,_[h+10],23,3200236656),v=c(v,m,C,A,_[h+13],4,681279174),A=c(A,v,m,C,_[h+0],11,3936430074),C=c(C,A,v,m,_[h+3],16,3572445317),m=c(m,C,A,v,_[h+6],23,76029189),v=c(v,m,C,A,_[h+9],4,3654602809),A=c(A,v,m,C,_[h+12],11,3873151461),C=c(C,A,v,m,_[h+15],16,530742520),m=c(m,C,A,v,_[h+2],23,3299628645),v=l(v,m,C,A,_[h+0],6,4096336452),A=l(A,v,m,C,_[h+7],10,1126891415),C=l(C,A,v,m,_[h+14],15,2878612391),m=l(m,C,A,v,_[h+5],21,4237533241),v=l(v,m,C,A,_[h+12],6,1700485571),A=l(A,v,m,C,_[h+3],10,2399980690),C=l(C,A,v,m,_[h+10],15,4293915773),m=l(m,C,A,v,_[h+1],21,2240044497),v=l(v,m,C,A,_[h+8],6,1873313359),A=l(A,v,m,C,_[h+15],10,4264355552),C=l(C,A,v,m,_[h+6],15,2734768916),m=l(m,C,A,v,_[h+13],21,1309151649),v=l(v,m,C,A,_[h+4],6,4149444226),A=l(A,v,m,C,_[h+11],10,3174756917),C=l(C,A,v,m,_[h+2],15,718787259),m=l(m,C,A,v,_[h+9],21,3951481745),v=n(v,d),m=n(m,p),C=n(C,g),A=n(A,y);return(f(v)+f(m)+f(C)+f(A)).toLowerCase()};t.exports=n},function(t,e){var n=n||function(t,e){var n={},r=n.lib={},o=function(){},i=r.Base={extend:function(t){o.prototype=this;var e=new o;return t&&e.mixIn(t),e.hasOwnProperty("init")||(e.init=function(){e.$super.init.apply(this,arguments)}),e.init.prototype=e,e.$super=this,e},create:function(){var t=this.extend();return t.init.apply(t,arguments),t},init:function(){},mixIn:function(t){for(var e in t)t.hasOwnProperty(e)&&(this[e]=t[e]);t.hasOwnProperty("toString")&&(this.toString=t.toString)},clone:function(){return this.init.prototype.extend(this)}},s=r.WordArray=i.extend({init:function(t,e){t=this.words=t||[],this.sigBytes=void 0!=e?e:4*t.length},toString:function(t){return(t||u).stringify(this)},concat:function(t){var e=this.words,n=t.words,r=this.sigBytes;if(t=t.sigBytes,this.clamp(),r%4)for(var o=0;o<t;o++)e[r+o>>>2]|=(n[o>>>2]>>>24-o%4*8&255)<<24-(r+o)%4*8;else if(65535<n.length)for(o=0;o<t;o+=4)e[r+o>>>2]=n[o>>>2];else e.push.apply(e,n);return this.sigBytes+=t,this},clamp:function(){var e=this.words,n=this.sigBytes;e[n>>>2]&=4294967295<<32-n%4*8,e.length=t.ceil(n/4)},clone:function(){var t=i.clone.call(this);return t.words=this.words.slice(0),t},random:function(e){for(var n=[],r=0;r<e;r+=4)n.push(4294967296*t.random()|0);return new s.init(n,e)}}),a=n.enc={},u=a.Hex={stringify:function(t){var e=t.words;t=t.sigBytes;for(var n=[],r=0;r<t;r++){var o=e[r>>>2]>>>24-r%4*8&255;n.push((o>>>4).toString(16)),n.push((15&o).toString(16))}return n.join("")},parse:function(t){for(var e=t.length,n=[],r=0;r<e;r+=2)n[r>>>3]|=parseInt(t.substr(r,2),16)<<24-r%8*4;return new s.init(n,e/2)}},c=a.Latin1={stringify:function(t){var e=t.words;t=t.sigBytes;for(var n=[],r=0;r<t;r++)n.push(String.fromCharCode(e[r>>>2]>>>24-r%4*8&255));return n.join("")},parse:function(t){for(var e=t.length,n=[],r=0;r<e;r++)n[r>>>2]|=(255&t.charCodeAt(r))<<24-r%4*8;return new s.init(n,e)}},l=a.Utf8={stringify:function(t){try{return decodeURIComponent(escape(c.stringify(t)))}catch(t){throw Error("Malformed UTF-8 data")}},parse:function(t){return c.parse(unescape(encodeURIComponent(t)))}},f=r.BufferedBlockAlgorithm=i.extend({reset:function(){this._data=new s.init,this._nDataBytes=0},_append:function(t){"string"==typeof t&&(t=l.parse(t)),this._data.concat(t),this._nDataBytes+=t.sigBytes},_process:function(e){var n=this._data,r=n.words,o=n.sigBytes,i=this.blockSize,a=o/(4*i),a=e?t.ceil(a):t.max((0|a)-this._minBufferSize,0);if(e=a*i,o=t.min(4*e,o),e){for(var u=0;u<e;u+=i)this._doProcessBlock(r,u);u=r.splice(0,e),n.sigBytes-=o}return new s.init(u,o)},clone:function(){var t=i.clone.call(this);return t._data=this._data.clone(),t},_minBufferSize:0});r.Hasher=f.extend({cfg:i.extend(),init:function(t){this.cfg=this.cfg.extend(t),this.reset()},reset:function(){f.reset.call(this),this._doReset()},update:function(t){return this._append(t),this._process(),this},finalize:function(t){return t&&this._append(t),this._doFinalize()},blockSize:16,_createHelper:function(t){return function(e,n){return new t.init(n).finalize(e)}},_createHmacHelper:function(t){return function(e,n){return new h.HMAC.init(t,n).finalize(e)}}});var h=n.algo={};return n}(Math);!function(){var t=n,e=t.lib,r=e.WordArray,o=e.Hasher,i=[],e=t.algo.SHA1=o.extend({_doReset:function(){this._hash=new r.init([1732584193,4023233417,2562383102,271733878,3285377520])},_doProcessBlock:function(t,e){for(var n=this._hash.words,r=n[0],o=n[1],s=n[2],a=n[3],u=n[4],c=0;80>c;c++){if(16>c)i[c]=0|t[e+c];else{var l=i[c-3]^i[c-8]^i[c-14]^i[c-16];i[c]=l<<1|l>>>31}l=(r<<5|r>>>27)+u+i[c],l=20>c?l+(1518500249+(o&s|~o&a)):40>c?l+(1859775393+(o^s^a)):60>c?l+((o&s|o&a|s&a)-1894007588):l+((o^s^a)-899497514),u=a,a=s,s=o<<30|o>>>2,o=r,r=l}n[0]=n[0]+r|0,n[1]=n[1]+o|0,n[2]=n[2]+s|0,n[3]=n[3]+a|0,n[4]=n[4]+u|0},_doFinalize:function(){var t=this._data,e=t.words,n=8*this._nDataBytes,r=8*t.sigBytes;return e[r>>>5]|=128<<24-r%32,e[14+(r+64>>>9<<4)]=Math.floor(n/4294967296),e[15+(r+64>>>9<<4)]=n,t.sigBytes=4*e.length,this._process(),this._hash},clone:function(){var t=o.clone.call(this);return t._hash=this._hash.clone(),t}});t.SHA1=o._createHelper(e),t.HmacSHA1=o._createHmacHelper(e)}(),function(){var t=n,e=t.enc.Utf8;t.algo.HMAC=t.lib.Base.extend({init:function(t,n){t=this._hasher=new t.init,"string"==typeof n&&(n=e.parse(n));var r=t.blockSize,o=4*r;n.sigBytes>o&&(n=t.finalize(n)),n.clamp();for(var i=this._oKey=n.clone(),s=this._iKey=n.clone(),a=i.words,u=s.words,c=0;c<r;c++)a[c]^=1549556828,u[c]^=909522486;i.sigBytes=s.sigBytes=o,this.reset()},reset:function(){var t=this._hasher;t.reset(),t.update(this._iKey)},update:function(t){return this._hasher.update(t),this},finalize:function(t){var e=this._hasher;return t=e.finalize(t),e.reset(),e.finalize(this._oKey.clone().concat(t))}})}(),function(){var t=n,e=t.lib,r=e.WordArray,o=t.enc;o.Base64={stringify:function(t){var e=t.words,n=t.sigBytes,r=this._map;t.clamp();for(var o=[],i=0;i<n;i+=3)for(var s=e[i>>>2]>>>24-i%4*8&255,a=e[i+1>>>2]>>>24-(i+1)%4*8&255,u=e[i+2>>>2]>>>24-(i+2)%4*8&255,c=s<<16|a<<8|u,l=0;l<4&&i+.75*l<n;l++)o.push(r.charAt(c>>>6*(3-l)&63));var f=r.charAt(64);if(f)for(;o.length%4;)o.push(f);return o.join("")},parse:function(t){var e=t.length,n=this._map,o=n.charAt(64);if(o){var i=t.indexOf(o);-1!=i&&(e=i)}for(var s=[],a=0,u=0;u<e;u++)if(u%4){var c=n.indexOf(t.charAt(u-1))<<u%4*2,l=n.indexOf(t.charAt(u))>>>6-u%4*2;s[a>>>2]|=(c|l)<<24-a%4*8,a++}return r.create(s,a)},_map:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="}}(),t.exports=n},function(t,e){var n=function(t){"use strict";function e(t){var e=t.localName;return null==e&&(e=t.baseName),null!=e&&""!=e||(e=t.nodeName),e}function n(t){return t.prefix}function r(t){return"string"==typeof t?t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;"):t}function o(t,e,n,r){for(var o=0;o<t.length;o++){var i=t[o];if("string"==typeof i){if(i==r)break}else if(i instanceof RegExp){if(i.test(r))break}else if("function"==typeof i&&i(e,n,r))break}return o!=t.length}function i(e,n,r){switch(t.arrayAccessForm){case"property":e[n]instanceof Array?e[n+"_asArray"]=e[n]:e[n+"_asArray"]=[e[n]]}!(e[n]instanceof Array)&&t.arrayAccessFormPaths.length>0&&o(t.arrayAccessFormPaths,e,n,r)&&(e[n]=[e[n]])}function s(t){var e=t.split(/[-T:+Z]/g),n=new Date(e[0],e[1]-1,e[2]),r=e[5].split(".");if(n.setHours(e[3],e[4],r[0]),r.length>1&&n.setMilliseconds(r[1]),e[6]&&e[7]){var o=60*e[6]+Number(e[7]);o=0+("-"==(/\d\d-\d\d:\d\d$/.test(t)?"-":"+")?-1*o:o),n.setMinutes(n.getMinutes()-o-n.getTimezoneOffset())}else-1!==t.indexOf("Z",t.length-1)&&(n=new Date(Date.UTC(n.getFullYear(),n.getMonth(),n.getDate(),n.getHours(),n.getMinutes(),n.getSeconds(),n.getMilliseconds())));return n}function a(e,n,r){if(t.datetimeAccessFormPaths.length>0){var i=r.split(".#")[0];return o(t.datetimeAccessFormPaths,e,n,i)?s(e):e}return e}function u(e,n,r,i){return!(n==w.ELEMENT_NODE&&t.xmlElementsFilter.length>0)||o(t.xmlElementsFilter,e,r,i)}function c(r,o){if(r.nodeType==w.DOCUMENT_NODE){for(var s=new Object,l=r.childNodes,f=0;f<l.length;f++){var h=l.item(f);if(h.nodeType==w.ELEMENT_NODE){var d=e(h);s[d]=c(h,d)}}return s}if(r.nodeType==w.ELEMENT_NODE){var s=new Object;s.__cnt=0;for(var l=r.childNodes,f=0;f<l.length;f++){var h=l.item(f),d=e(h);if(h.nodeType!=w.COMMENT_NODE){var p=o+"."+d;u(s,h.nodeType,d,p)&&(s.__cnt++,null==s[d]?(s[d]=c(h,p),i(s,d,p)):(null!=s[d]&&(s[d]instanceof Array||(s[d]=[s[d]],i(s,d,p))),s[d][s[d].length]=c(h,p)))}}for(var g=0;g<r.attributes.length;g++){var y=r.attributes.item(g);s.__cnt++,s[t.attributePrefix+y.name]=y.value}var v=n(r);return null!=v&&""!=v&&(s.__cnt++,s.__prefix=v),null!=s["#text"]&&(s.__text=s["#text"],s.__text instanceof Array&&(s.__text=s.__text.join("\n")),t.stripWhitespaces&&(s.__text=s.__text.trim()),delete s["#text"],"property"==t.arrayAccessForm&&delete s["#text_asArray"],s.__text=a(s.__text,d,o+"."+d)),null!=s["#cdata-section"]&&(s.__cdata=s["#cdata-section"],delete s["#cdata-section"],"property"==t.arrayAccessForm&&delete s["#cdata-section_asArray"]),0==s.__cnt&&"text"==t.emptyNodeForm?s="":1==s.__cnt&&null!=s.__text?s=s.__text:1!=s.__cnt||null==s.__cdata||t.keepCData?s.__cnt>1&&null!=s.__text&&t.skipEmptyTextNodesForObj&&(t.stripWhitespaces&&""==s.__text||""==s.__text.trim())&&delete s.__text:s=s.__cdata,delete s.__cnt,!t.enableToStringFunc||null==s.__text&&null==s.__cdata||(s.toString=function(){return(null!=this.__text?this.__text:"")+(null!=this.__cdata?this.__cdata:"")}),s}if(r.nodeType==w.TEXT_NODE||r.nodeType==w.CDATA_SECTION_NODE)return r.nodeValue}function l(e,n,o,i){var s="<"+(null!=e&&null!=e.__prefix?e.__prefix+":":"")+n;if(null!=o)for(var a=0;a<o.length;a++){var u=o[a],c=e[u];t.escapeMode&&(c=r(c)),s+=" "+u.substr(t.attributePrefix.length)+"=",t.useDoubleQuotes?s+='"'+c+'"':s+="'"+c+"'"}return s+=i?"/>":">"}function f(t,e){return"</"+(null!=t.__prefix?t.__prefix+":":"")+e+">"}function h(t,e){return-1!==t.indexOf(e,t.length-e.length)}function d(e,n){return!!("property"==t.arrayAccessForm&&h(n.toString(),"_asArray")||0==n.toString().indexOf(t.attributePrefix)||0==n.toString().indexOf("__")||e[n]instanceof Function)}function p(t){var e=0;if(t instanceof Object)for(var n in t)d(t,n)||e++;return e}function g(e,n,r){return 0==t.jsonPropertiesFilter.length||""==r||o(t.jsonPropertiesFilter,e,n,r)}function y(e){var n=[];if(e instanceof Object)for(var r in e)-1==r.toString().indexOf("__")&&0==r.toString().indexOf(t.attributePrefix)&&n.push(r);return n}function v(e){var n="";return null!=e.__cdata&&(n+="<![CDATA["+e.__cdata+"]]>"),null!=e.__text&&(t.escapeMode?n+=r(e.__text):n+=e.__text),n}function m(e){var n="";return e instanceof Object?n+=v(e):null!=e&&(t.escapeMode?n+=r(e):n+=e),n}function C(t,e){return""===t?e:t+"."+e}function A(t,e,n,r){var o="";if(0==t.length)o+=l(t,e,n,!0);else for(var i=0;i<t.length;i++)o+=l(t[i],e,y(t[i]),!1),o+=_(t[i],C(r,e)),o+=f(t[i],e);return o}function _(t,e){var n="";if(p(t)>0)for(var r in t)if(!d(t,r)&&(""==e||g(t,r,C(e,r)))){var o=t[r],i=y(o);if(null==o||void 0==o)n+=l(o,r,i,!0);else if(o instanceof Object)if(o instanceof Array)n+=A(o,r,i,e);else if(o instanceof Date)n+=l(o,r,i,!1),n+=o.toISOString(),n+=f(o,r);else{var s=p(o);s>0||null!=o.__text||null!=o.__cdata?(n+=l(o,r,i,!1),n+=_(o,C(e,r)),n+=f(o,r)):n+=l(o,r,i,!0)}else n+=l(o,r,i,!1),n+=m(o),n+=f(o,r)}return n+=m(t)}t=t||{},function(){void 0===t.escapeMode&&(t.escapeMode=!0),t.attributePrefix=t.attributePrefix||"_",t.arrayAccessForm=t.arrayAccessForm||"none",t.emptyNodeForm=t.emptyNodeForm||"text",void 0===t.enableToStringFunc&&(t.enableToStringFunc=!0),t.arrayAccessFormPaths=t.arrayAccessFormPaths||[],void 0===t.skipEmptyTextNodesForObj&&(t.skipEmptyTextNodesForObj=!0),void 0===t.stripWhitespaces&&(t.stripWhitespaces=!0),t.datetimeAccessFormPaths=t.datetimeAccessFormPaths||[],void 0===t.useDoubleQuotes&&(t.useDoubleQuotes=!1),t.xmlElementsFilter=t.xmlElementsFilter||[],t.jsonPropertiesFilter=t.jsonPropertiesFilter||[],void 0===t.keepCData&&(t.keepCData=!1)}();var w={ELEMENT_NODE:1,TEXT_NODE:3,CDATA_SECTION_NODE:4,COMMENT_NODE:8,DOCUMENT_NODE:9};this.parseXmlString=function(t){if(void 0===t)return null;var e;if(DOMParser){var n=new DOMParser,r=null;try{r=n.parseFromString("INVALID","text/xml").getElementsByTagName("parsererror")[0].namespaceURI}catch(t){r=null}try{e=n.parseFromString(t,"text/xml"),null!=r&&e.getElementsByTagNameNS(r,"parsererror").length>0&&(e=null)}catch(t){e=null}}else 0==t.indexOf("<?")&&(t=t.substr(t.indexOf("?>")+2)),e=new ActiveXObject("Microsoft.XMLDOM"),e.async="false",e.loadXML(t);return e},this.asArray=function(t){return void 0===t||null==t?[]:t instanceof Array?t:[t]},this.toXmlDateTime=function(t){return t instanceof Date?t.toISOString():"number"==typeof t?new Date(t).toISOString():null},this.asDateTime=function(t){return"string"==typeof t?s(t):t},this.xml2json=function(t){return c(t)},this.xml_str2json=function(t){var e=this.parseXmlString(t);return null!=e?this.xml2json(e):null},this.json2xml_str=function(t){return _(t,"")},this.json2xml=function(t){var e=this.json2xml_str(t);return this.parseXmlString(e)},this.getVersion=function(){return"1.2.0"}},r=function(t){var e=new DOMParser,r=e.parseFromString(t,"text/xml"),o=new n,i=o.xml2json(r);return i.html&&i.getElementsByTagName("parsererror").length?null:i};t.exports=r},function(t,e){function n(t){return(""+t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/'/g,"&apos;").replace(/"/g,"&quot;").replace(o,"")}var r=new RegExp("^([^a-zA-Z_À-ÖØ-öø-ÿͰ-ͽͿ-῿‌-‍⁰-↏Ⰰ-⿿、-퟿豈-﷏ﷰ-�])|^((x|X)(m|M)(l|L))|([^a-zA-Z_À-ÖØ-öø-ÿͰ-ͽͿ-῿‌-‍⁰-↏Ⰰ-⿿、-퟿豈-﷏ﷰ-�-.0-9·̀-ͯ‿⁀])","g"),o=/[^\x09\x0A\x0D\x20-\xFF\x85\xA0-\uD7FF\uE000-\uFDCF\uFDE0-\uFFFD]/gm,i=function(t){var e=[];if(t instanceof Object)for(var n in t)t.hasOwnProperty(n)&&e.push(n);return e},s=function(t,e){var o=function(t,n,o,i,s){var a=void 0!==e.indent?e.indent:"\t",u=e.prettyPrint?"\n"+new Array(i).join(a):"";e.removeIllegalNameCharacters&&(t=t.replace(r,"_"));var c=[u,"<",t,o||""];return n&&n.length>0?(c.push(">"),c.push(n),s&&c.push(u),c.push("</"),c.push(t),c.push(">")):c.push("/>"),c.join("")};return function t(r,s,a){var u=typeof r;switch((Array.isArray?Array.isArray(r):r instanceof Array)?u="array":r instanceof Date&&(u="date"),u){case"array":var c=[];return r.map(function(e){c.push(t(e,1,a+1))}),e.prettyPrint&&c.push("\n"),c.join("");case"date":return r.toJSON?r.toJSON():r+"";case"object":var l=[];for(var f in r)if(r[f]instanceof Array)for(var h in r[f])l.push(o(f,t(r[f][h],0,a+1),null,a+1,i(r[f][h]).length));else l.push(o(f,t(r[f],0,a+1),null,a+1));return e.prettyPrint&&l.length>0&&l.push("\n"),l.join("");case"function":return r();default:return e.escape?n(r):""+r}}(t,0,0)},a=function(t){var e=['<?xml version="1.0" encoding="UTF-8"'];return t&&e.push(' standalone="yes"'),e.push("?>"),e.join("")},u=function(t,e){e||(e={xmlHeader:{standalone:!0},prettyPrint:!0,indent:"  "});var n=this.Buffer||function(){};if("string"==typeof t||t instanceof n)try{t=JSON.parse(t.toString())}catch(t){return!1}var r="",o="";return e&&("object"==typeof e?(e.xmlHeader&&(r=a(!!e.xmlHeader.standalone)),void 0!==e.docType&&(o="<!DOCTYPE "+e.docType+">")):r=a()),e=e||{},[r,e.prettyPrint&&o?"\n":"",o,s(t,e)].join("").replace(/\n{2,}/g,"\n").replace(/\s+$/g,"")};t.exports=u},function(t,e){var n=function(t){var e={},n=function(t){return!e[t]&&(e[t]=[]),e[t]};t.on=function(t,e){n(t).push(e)},t.off=function(t,e){for(var r=n(t),o=r.length-1;o>=0;o--)e===r[o]&&r.splice(o,1)},t.emit=function(t,e){for(var r=n(t).map(function(t){return t}),o=0;o<r.length;o++)r[o](e)}},r=function(){n(this)};t.exports.init=n,t.exports.EventProxy=r},function(t,e,n){var r=n(0),o=function(t){var e=[],n={},o=0,i=0,s={};r.each(["putObject","sliceUploadFile"],function(e){s[e]=t[e],t[e]=function(n,r){t._addTask(e,n,r)}});var a=function(t){var e={id:t.id,Bucket:t.Bucket,Region:t.Region,Key:t.Key,FilePath:t.FilePath,state:t.state,loaded:t.loaded,size:t.size,speed:t.speed,percent:t.percent,hashPercent:t.hashPercent};return t.FilePath&&(e.FilePath=t.FilePath),e},u=function(){t.emit("list-update",{list:r.map(e,a)})},c=function(){if(i<e.length&&o<t.options.FileParallelLimit){var n=e[i];"waiting"===n.state&&(o++,n.state="checking",!n.params.UploadData&&(n.params.UploadData={}),s[n.api].call(t,n.params,function(e,r){"checking"!==n.state&&"uploading"!==n.state||(n.state=e?"error":"success",o--,c(t),n.callback&&n.callback(e,r),"success"===n.state&&(delete n.params,delete n.callback))}),u()),i++,c(t)}},l=function(e,r){var i=n[e],s=i&&"waiting"===i.state,a=i&&("checking"===i.state||"uploading"===i.state);if(s||a||"canceled"===r&&"paused"===i.state){if("paused"===r&&i.params.Body&&"function"==typeof i.params.Body.pipe)return void console.error("stream not support pause");i.state=r,t.emit("inner-kill-task",{TaskId:e}),u(),a&&(o--,c(t)),"canceled"===r&&(delete i.params,delete i.callback)}};t._addTasks=function(e){r.each(e,function(e){e.params.IgnoreAddEvent=!0,t._addTask(e.api,e.params,e.callback)}),u()},t._addTask=function(o,i,s){var a=r.uuid();i.TaskReady&&i.TaskReady(a);var l;i.Body&&i.Body.size?l=i.Body.size:i.Body&&i.Body.length?l=i.Body.length:void 0!==i.ContentLength&&(l=i.ContentLength),void 0===i.ContentLength&&(i.ContentLength=l),i.TaskId=a;var f={params:i,callback:s,api:o,index:e.length,id:a,Bucket:i.Bucket,Region:i.Region,Key:i.Key,FilePath:i.FilePath||"",state:"waiting",loaded:0,size:l,speed:0,percent:0,hashPercent:0},h=i.onHashProgress;i.onHashProgress=function(e){t._isRunningTask(f.id)&&(f.hashPercent=e.percent,h&&h(e),u())};var d=i.onProgress;return i.onProgress=function(e){t._isRunningTask(f.id)&&("checking"===f.state&&(f.state="uploading"),f.loaded=e.loaded,f.speed=e.speed,f.percent=e.percent,d&&d(e),u())},e.push(f),n[a]=f,!i.IgnoreAddEvent&&u(),c(t),a},t._isRunningTask=function(t){var e=n[t];return!(!e||"checking"!==e.state&&"uploading"!==e.state)},t.getTaskList=function(){return r.map(e,a)},t.cancelTask=function(t){l(t,"canceled")},t.pauseTask=function(t){l(t,"paused")},t.restartTask=function(t){var e=n[t];!e||"paused"!==e.state&&"error"!==e.state||(e.state="waiting",u(),i=Math.min(i,e.index),c())}};t.exports.init=o},function(t,e,n){"use strict";(function(t){function r(t,e){"function"==typeof t&&(e=t,t={});var n=this.options.ServiceDomain,r=t.AppId||this.options.appId;n?(n=n.replace(/\{\{AppId\}\}/gi,r||"").replace(/\{\{.*?\}\}/gi,""),/^[a-zA-Z]+:\/\//.test(n)||(n="https://"+n),"/"===n.slice(-1)&&(n=n.slice(0,-1))):n="https://service.cos.myqcloud.com",D.call(this,{url:n+"/",method:"GET"},function(t,n){if(t)return e(t);var r=n&&n.ListAllMyBucketsResult&&n.ListAllMyBucketsResult.Buckets&&n.ListAllMyBucketsResult.Buckets.Bucket||[];r=L.isArray(r)?r:[r],e(null,{Buckets:r,statusCode:n.statusCode,headers:n.headers})})}function o(t,e){D.call(this,{Bucket:t.Bucket,Region:t.Region,method:"HEAD"},function(t,n){var r,o,i;if(t)if((i=t.statusCode)&&404===i)r=!1,o=!1;else{if(!i||403!==i)return e(t);r=!0,o=!1}else i=n.statusCode,r=!0,o=!0;var s={BucketExist:r,BucketAuth:o,statusCode:i};n&&n.headers&&(s.headers=n.headers),e(null,s)})}function i(t,e){var n={};n.prefix=t.Prefix,n.delimiter=t.Delimiter,n.marker=t.Marker,n["max-keys"]=t.MaxKeys,n["encoding-type"]=t.EncodingType,D.call(this,{method:"GET",Bucket:t.Bucket,Region:t.Region,qs:n},function(t,n){if(t)return e(t);var r=n.ListBucketResult.Contents||[],o=n.ListBucketResult.CommonPrefixes||[];r=L.isArray(r)?r:[r],o=L.isArray(o)?o:[o];var i=L.clone(n.ListBucketResult);L.extend(i,{Contents:r,CommonPrefixes:o,statusCode:n.statusCode,headers:n.headers}),e(null,i)})}function s(t,e){D.call(this,{method:"DELETE",Bucket:t.Bucket,Region:t.Region},function(t,n){return t&&204===t.statusCode?e(null,{statusCode:t.statusCode}):t?e(t):void e(null,{statusCode:n.statusCode,headers:n.headers})})}function a(t,e){D.call(this,{method:"GET",Bucket:t.Bucket,Region:t.Region,action:"/?acl"},function(t,n){if(t)return e(t);var r=n.AccessControlPolicy.Owner||{},o=n.AccessControlPolicy.AccessControlList.Grant||[];o=L.isArray(o)?o:[o];var i=P(n.AccessControlPolicy);n.headers&&n.headers["x-cos-acl"]&&(i.ACL=n.headers["x-cos-acl"]),i=L.extend(i,{Owner:r,Grants:o,statusCode:n.statusCode,headers:n.headers}),e(null,i)})}function u(t,e){var n={};n["x-cos-acl"]=t.ACL,n["x-cos-grant-read"]=t.GrantRead,n["x-cos-grant-write"]=t.GrantWrite,n["x-cos-grant-read-acp"]=t.GrantReadAcp,n["x-cos-grant-write-acp"]=t.GrantWriteAcp,n["x-cos-grant-full-control"]=t.GrantFullControl;var r="";if(t.AccessControlPolicy){var o=L.clone(t.AccessControlPolicy||{}),i=o.Grants||o.Grant;i=L.isArray(i)?i:[i],delete o.Grant,delete o.Grants,o.AccessControlList={Grant:i},r=L.json2xml({AccessControlPolicy:o}),n["Content-MD5"]=L.binaryBase64(L.md5(r)),n["Content-Type"]="application/xml"}D.call(this,{method:"PUT",Bucket:t.Bucket,Region:t.Region,action:"/?acl",headers:n,body:r},function(t,n){if(t)return e(t);e(null,{statusCode:n.statusCode,headers:n.headers})})}function c(t,e){D.call(this,{method:"GET",Bucket:t.Bucket,Region:t.Region,action:"/?cors"},function(t,n){if(t)if(404===t.statusCode&&t.error&&"NoSuchCORSConfiguration"===t.error.Code){var r={CORSRules:[],statusCode:t.statusCode};t.headers&&(r.headers=t.headers),e(null,r)}else e(t);else{var o=n.CORSConfiguration||{},i=o.CORSRules||o.CORSRule||[];i=L.clone(L.isArray(i)?i:[i]),L.each(i,function(t){L.each(["AllowedOrigin","AllowedHeader","AllowedMethod","ExposeHeader"],function(e,n){var r=e+"s",o=t[r]||t[e]||[];delete t[e],t[r]=L.isArray(o)?o:[o]})}),e(null,{CORSRules:i,statusCode:n.statusCode,headers:n.headers})}})}function l(t,e){var n=t.CORSConfiguration||{},r=n.CORSRules||t.CORSRules||[];r=L.clone(L.isArray(r)?r:[r]),L.each(r,function(t){L.each(["AllowedOrigin","AllowedHeader","AllowedMethod","ExposeHeader"],function(e,n){var r=e+"s",o=t[r]||t[e]||[];delete t[r],t[e]=L.isArray(o)?o:[o]})});var o=L.json2xml({CORSConfiguration:{CORSRule:r}}),i={};i["Content-MD5"]=L.binaryBase64(L.md5(o)),i["Content-Type"]="application/xml",D.call(this,{method:"PUT",Bucket:t.Bucket,Region:t.Region,body:o,action:"/?cors",headers:i},function(t,n){if(t)return e(t);e(null,{statusCode:n.statusCode,headers:n.headers})})}function f(t,e){D.call(this,{method:"DELETE",Bucket:t.Bucket,Region:t.Region,action:"/?cors"},function(t,n){return t&&204===t.statusCode?e(null,{statusCode:t.statusCode}):t?e(t):void e(null,{statusCode:n.statusCode||t.statusCode,headers:n.headers})})}function h(t,e){var n={},r=t.Policy,o=r;try{"string"==typeof r?r=JSON.parse(o):o=JSON.stringify(r)}catch(t){e({error:"Policy format error"})}n["Content-Type"]="application/json",n["Content-MD5"]=L.binaryBase64(L.md5(o)),D.call(this,{method:"PUT",Bucket:t.Bucket,Region:t.Region,action:"/?policy",body:o,headers:n,json:!0},function(t,n){return t&&204===t.statusCode?e(null,{statusCode:t.statusCode}):t?e(t):void e(null,{statusCode:n.statusCode,headers:n.headers})})}function d(t,e){D.call(this,{method:"GET",Bucket:t.Bucket,Region:t.Region,action:"/?location"},function(t,n){if(t)return e(t);e(null,n)})}function p(t,e){D.call(this,{method:"GET",Bucket:t.Bucket,Region:t.Region,action:"/?policy",rawBody:!0},function(t,n){if(t)return e(t.statusCode&&403===t.statusCode?{ErrorStatus:"Access Denied"}:t.statusCode&&405===t.statusCode?{ErrorStatus:"Method Not Allowed"}:t.statusCode&&404===t.statusCode?{ErrorStatus:"Policy Not Found"}:t);var r={};try{r=JSON.parse(n.body)}catch(t){}e(null,{Policy:r,statusCode:n.statusCode,headers:n.headers})})}function g(t,e){D.call(this,{method:"GET",Bucket:t.Bucket,Region:t.Region,action:"/?tagging"},function(t,n){if(t)if(404!==t.statusCode||!t.error||"Not Found"!==t.error&&"NoSuchTagSet"!==t.error.Code)e(t);else{var r={Tags:[],statusCode:t.statusCode};t.headers&&(r.headers=t.headers),e(null,r)}else{var o=[];try{o=n.Tagging.TagSet.Tag||[]}catch(t){}o=L.clone(L.isArray(o)?o:[o]),e(null,{Tags:o,statusCode:n.statusCode,headers:n.headers})}})}function y(t,e){var n=t.Tagging||{},r=n.TagSet||n.Tags||t.Tags||[];r=L.clone(L.isArray(r)?r:[r]);var o=L.json2xml({Tagging:{TagSet:{Tag:r}}}),i={};i["Content-Type"]="application/xml",i["Content-MD5"]=L.binaryBase64(L.md5(o)),D.call(this,{method:"PUT",Bucket:t.Bucket,Region:t.Region,body:o,action:"/?tagging",headers:i},function(t,n){return t&&204===t.statusCode?e(null,{statusCode:t.statusCode}):t?e(t):void e(null,{statusCode:n.statusCode,headers:n.headers})})}function v(t,e){D.call(this,{method:"DELETE",Bucket:t.Bucket,Region:t.Region,action:"/?tagging"},function(t,n){return t&&204===t.statusCode?e(null,{statusCode:t.statusCode}):t?e(t):void e(null,{statusCode:n.statusCode,headers:n.headers})})}function m(t,e){var n=t.LifecycleConfiguration||{},r=n.Rules||[];r=L.clone(r);var o=L.json2xml({LifecycleConfiguration:{Rule:r}}),i={};i["Content-Type"]="application/xml",i["Content-MD5"]=L.binaryBase64(L.md5(o)),D.call(this,{method:"PUT",Bucket:t.Bucket,Region:t.Region,body:o,action:"/?lifecycle",headers:i},function(t,n){return t&&204===t.statusCode?e(null,{statusCode:t.statusCode}):t?e(t):void e(null,{statusCode:n.statusCode,headers:n.headers})})}function C(t,e){D.call(this,{method:"GET",Bucket:t.Bucket,Region:t.Region,action:"/?lifecycle"},function(t,n){if(t)if(404===t.statusCode&&t.error&&"NoSuchLifecycleConfiguration"===t.error.Code){var r={Rules:[],statusCode:t.statusCode};t.headers&&(r.headers=t.headers),e(null,r)}else e(t);else{var o=[];try{o=n.LifecycleConfiguration.Rule||[]}catch(t){}o=L.clone(L.isArray(o)?o:[o]),e(null,{Rules:o,statusCode:n.statusCode,headers:n.headers})}})}function A(t,e){D.call(this,{method:"DELETE",Bucket:t.Bucket,Region:t.Region,action:"/?lifecycle"},function(t,n){return t&&204===t.statusCode?e(null,{statusCode:t.statusCode}):t?e(t):void e(null,{statusCode:n.statusCode,headers:n.headers})})}function _(t,e){var n={};n["If-Modified-Since"]=t.IfModifiedSince,D.call(this,{method:"HEAD",Bucket:t.Bucket,Region:t.Region,Key:t.Key,headers:n},function(t,r){if(t){var o=t.statusCode;return n["If-Modified-Since"]&&o&&304===o?e(null,{NotModified:!0,statusCode:o}):e(t)}e(null,r)})}function w(t,e){var n={},r={};n.Range=t.Range,n["If-Modified-Since"]=t.IfModifiedSince,n["If-Unmodified-Since"]=t.IfUnmodifiedSince,n["If-Match"]=t.IfMatch,n["If-None-Match"]=t.IfNoneMatch,r["response-content-type"]=t.ResponseContentType,r["response-content-language"]=t.ResponseContentLanguage,r["response-expires"]=t.ResponseExpires,r["response-cache-control"]=t.ResponseCacheControl,r["response-content-disposition"]=t.ResponseContentDisposition,r["response-content-encoding"]=t.ResponseContentEncoding;var o;o="string",D.call(this,{method:"GET",Bucket:t.Bucket,Region:t.Region,Key:t.Key,headers:n,qs:r,rawBody:!0},function(t,r){if(t){var i=t.statusCode;return n["If-Modified-Since"]&&i&&304===i?e(null,{NotModified:!0}):e(t)}var s={};"string"===o&&(s.Body=r.body),L.extend(s,{statusCode:r.statusCode,headers:r.headers}),e(null,s)})}function x(t,e){var n=this,r={};r["Cache-Control"]=t.CacheControl,r["Content-Disposition"]=t.ContentDisposition,r["Content-Encoding"]=t.ContentEncoding,r["Content-MD5"]=t.ContentMD5,r["Content-Length"]=t.ContentLength,r["Content-Type"]=t.ContentType,r.Expect=t.Expect,r.Expires=t.Expires,r["x-cos-acl"]=t.ACL,r["x-cos-grant-read"]=t.GrantRead,r["x-cos-grant-write"]=t.GrantWrite,r["x-cos-grant-full-control"]=t.GrantFullControl,r["x-cos-storage-class"]=t.StorageClass;var o=t.FilePath;for(var i in t)i.indexOf("x-cos-meta-")>-1&&(r[i]=t[i]);var s=L.throttleOnProgress.call(n,r["Content-Length"],t.onProgress);D.call(this,{method:"POST",Bucket:t.Bucket,Region:t.Region,Key:t.Key,headers:r,filePath:o,onProgress:s},function(r,o){if(s(null,!0),r)return e(r);if(o&&o.headers&&o.headers.etag){var i=O({domain:n.options.Domain,bucket:t.Bucket,region:t.Region,object:t.Key});return e(null,{Location:i,ETag:o.headers.etag,statusCode:o.statusCode,headers:o.headers})}e(null,o)})}function R(t,e){D.call(this,{method:"DELETE",Bucket:t.Bucket,Region:t.Region,Key:t.Key},function(t,n){if(t){var r=t.statusCode;return r&&204===r?e(null,{statusCode:r}):r&&404===r?e(null,{BucketNotFound:!0,statusCode:r}):e(t)}e(null,{statusCode:n.statusCode,headers:n.headers})})}function E(t,e){D.call(this,{method:"GET",Bucket:t.Bucket,Region:t.Region,Key:t.Key,action:"?acl"},function(t,n){if(t)return e(t);var r=n.AccessControlPolicy.Owner||{},o=n.AccessControlPolicy.AccessControlList.Grant||[];o=L.isArray(o)?o:[o];var i=P(n.AccessControlPolicy);n.headers&&n.headers["x-cos-acl"]&&(i.ACL=n.headers["x-cos-acl"]),i=L.extend(i,{Owner:r,Grants:o,statusCode:n.statusCode,headers:n.headers}),e(null,i)})}function B(t,e){var n={};n["x-cos-acl"]=t.ACL,n["x-cos-grant-read"]=t.GrantRead,n["x-cos-grant-write"]=t.GrantWrite,n["x-cos-grant-full-control"]=t.GrantFullControl;var r="";if(t.AccessControlPolicy){var o=L.clone(t.AccessControlPolicy||{}),i=o.Grants||o.Grant;i=L.isArray(i)?i:[i],delete o.Grant,delete o.Grants,o.AccessControlList={Grant:i},r=L.json2xml({AccessControlPolicy:o}),n["Content-MD5"]=L.binaryBase64(L.md5(r)),n["Content-Type"]="application/xml"}D.call(this,{method:"PUT",Bucket:t.Bucket,Region:t.Region,Key:t.Key,action:"?acl",headers:n,body:r},function(t,n){if(t)return e(t);e(null,{statusCode:n.statusCode,headers:n.headers})})}function T(t,e){var n={};n.Origin=t.Origin,n["Access-Control-Request-Method"]=t.AccessControlRequestMethod,n["Access-Control-Request-Headers"]=t.AccessControlRequestHeaders,D.call(this,{method:"OPTIONS",Bucket:t.Bucket,Region:t.Region,Key:t.Key,headers:n},function(t,n){if(t)return t.statusCode&&403==t.statusCode?e(null,{OptionsForbidden:!0,statusCode:t.statusCode}):e(t);var r=n.headers||{};e(null,{AccessControlAllowOrigin:r["access-control-allow-origin"],AccessControlAllowMethods:r["access-control-allow-methods"],AccessControlAllowHeaders:r["access-control-allow-headers"],AccessControlExposeHeaders:r["access-control-expose-headers"],AccessControlMaxAge:r["access-control-max-age"],statusCode:n.statusCode,headers:n.headers})})}function b(t,e){var n={};n["x-cos-copy-source"]=t.CopySource,n["x-cos-metadata-directive"]=t.MetadataDirective,n["x-cos-copy-source-If-Modified-Since"]=t.CopySourceIfModifiedSince,n["x-cos-copy-source-If-Unmodified-Since"]=t.CopySourceIfUnmodifiedSince,n["x-cos-copy-source-If-Match"]=t.CopySourceIfMatch,n["x-cos-copy-source-If-None-Match"]=t.CopySourceIfNoneMatch,n["x-cos-storage-class"]=t.StorageClass,n["x-cos-acl"]=t.ACL,n["x-cos-grant-read"]=t.GrantRead,n["x-cos-grant-write"]=t.GrantWrite,n["x-cos-grant-full-control"]=t.GrantFullControl,n["Cache-Control"]=t.CacheControl,n["Content-Disposition"]=t.ContentDisposition,n["Content-Encoding"]=t.ContentEncoding,n["Content-Length"]=t.ContentLength,n["Content-Type"]=t.ContentType,n.Expect=t.Expect,n.Expires=t.Expires;for(var r in t)r.indexOf("x-cos-meta-")>-1&&(n[r]=t[r]);D.call(this,{method:"PUT",Bucket:t.Bucket,Region:t.Region,Key:t.Key,headers:n},function(t,n){if(t)return e(t);var r=L.clone(n.CopyObjectResult);L.extend(r,{statusCode:n.statusCode,headers:n.headers}),e(null,r)})}function k(t){return L.getAuth({Method:t.Method,Key:t.Key,Expires:t.Expires,SecretId:t.SecretId||this.options.SecretId||"",SecretKey:t.SecretKey||this.options.SecretKey||""})}function S(t,e){var n=this,r=O({domain:n.options.Domain,bucket:t.Bucket,region:t.Region,object:t.Key});if(void 0!==t.Sign&&!t.Sign)return e(null,{Url:r}),r;var o=I.call(this,{Method:t.Method||"get",Key:t.Key},function(t){if(e){var n={Url:r+"?sign="+encodeURIComponent(t.Authorization)};t.XCosSecurityToken&&(n.XCosSecurityToken=t.XCosSecurityToken),t.ClientIP&&(n.ClientIP=t.ClientIP),t.ClientUA&&(n.ClientUA=t.ClientUA),t.Token&&(n.Token=t.Token),setTimeout(function(){e(null,n)})}});return o?r+"?sign="+encodeURIComponent(o):r}function P(t){var e={GrantFullControl:[],GrantWrite:[],GrantRead:[],GrantReadAcp:[],GrantWriteAcp:[],ACL:""},n={FULL_CONTROL:"GrantFullControl",WRITE:"GrantWrite",READ:"GrantRead",READ_ACP:"GrantReadAcp",WRITE_ACP:"GrantWriteAcp"},r=t.AccessControlList.Grant;r&&(r=L.isArray(r)?r:[r]);var o={READ:0,WRITE:0,FULL_CONTROL:0};return r.length&&L.each(r,function(r){"qcs::cam::anyone:anyone"===r.Grantee.ID||"http://cam.qcloud.com/groups/global/AllUsers"===r.Grantee.URI?o[r.Permission]=1:r.Grantee.ID!==t.Owner.ID&&e[n[r.Permission]].push('id="'+r.Grantee.ID+'"')}),o.FULL_CONTROL||o.WRITE&&o.READ?e.ACL="public-read-write":o.READ?e.ACL="public-read":e.ACL="private",L.each(n,function(t){e[t]=e[t].join(",")}),e}function O(t){var e=t.bucket,n=e.substr(0,e.lastIndexOf("-")),r=e.substr(e.lastIndexOf("-")+1),o=t.domain,i=t.region,s=t.object,a=t.action;o||(o=["cn-south","cn-south-2","cn-north","cn-east","cn-southwest","sg"].indexOf(i)>-1?"{{Bucket}}-{{AppId}}.{{Region}}.myqcloud.com":"{{Bucket}}-{{AppId}}.cos.{{Region}}.myqcloud.com"),o=o.replace(/\{\{AppId\}\}/gi,r).replace(/\{\{Bucket\}\}/gi,n).replace(/\{\{Region\}\}/gi,i).replace(/\{\{.*?\}\}/gi,""),/^[a-zA-Z]+:\/\//.test(o)||(o="https://"+o),"/"===o.slice(-1)&&(o=o.slice(0,-1));var u=o;return s&&(u+="/"+encodeURIComponent(s).replace(/%2F/g,"/")),a&&(u+=a),t.isLocation&&(u=u.replace(/^https?:\/\//,"")),u}function I(t,e){var n=this;if(n.options.getAuthorization)n.options.getAuthorization.call(n,{Method:t.Method,Key:t.Key},function(t){"string"==typeof t&&(t={Authorization:t}),e&&e(t)});else{if(!n.options.getSTS){var r=L.getAuth({SecretId:t.SecretId||n.options.SecretId,SecretKey:t.SecretKey||n.options.SecretKey,Method:t.Method,Key:t.Key});return e&&e({Authorization:r}),r}var o=t.Bucket||"";n._StsMap=n._StsMap||{};var i=n._StsMap[o]||{},s=function(){var n=L.getAuth({SecretId:i.SecretId,SecretKey:i.SecretKey,Method:t.Method,Key:t.Key}),r={Authorization:n,XCosSecurityToken:i.XCosSecurityToken||"",Token:i.Token||"",ClientIP:i.ClientIP||"",ClientUA:i.ClientUA||""};e&&e(r)};i.ExpiredTime&&i.ExpiredTime-(Date.now()/1e3>60)?s():n.options.getSTS.call(n,{Bucket:o},function(t){i=n._StsMap[o]=t||{},s()})}return""}function D(t,e){var n=this,r=t.action||"post"!==t.method.toLowerCase()?t.Key:"";I.call(n,{Method:t.method,Key:r},function(r){t.AuthData=r,M.call(n,t,e)})}function M(t,e){var n=this,r=t.TaskId;if(!r||n._isRunningTask(r)){var o=t.Bucket,i=t.Region,s=t.Key,a=t.action,u=t.method||"GET",c=t.headers||{},l=t.url,f=t.body,h=t.filePath,d=t.json,p=t.rawBody,g=t.qs,y={url:l||O({domain:n.options.Domain,bucket:o,region:i,object:s,action:a}),method:u,headers:c||{},filePath:h,qs:g,body:f,json:d};y.headers.Authorization=t.AuthData.Authorization,t.AuthData.Token&&(y.headers.token=t.AuthData.Token),t.AuthData.ClientIP&&(y.headers.clientIP=t.AuthData.ClientIP),t.AuthData.ClientUA&&(y.headers.clientUA=t.AuthData.ClientUA),t.AuthData.XCosSecurityToken&&(y.headers["x-cos-security-token"]=t.AuthData.XCosSecurityToken),y.headers&&(y.headers=L.clearKey(y.headers)),y.qs&&(y.qs=L.clearKey(y.qs)),y=L.clearKey(y),t.onProgress&&"function"==typeof t.onProgress&&(y.onProgress=function(e){if(!r||n._isRunningTask(r)){var o=e?e.loaded:0;t.onProgress({loaded:o,total:e.total})}});var v=U(y,function(t,o,i){var s=function(t,i){r&&n.off("inner-kill-task",m),r&&!n._isRunningTask(r)||(t?(t=t||{},o&&o.statusCode&&(t.statusCode=o.statusCode),o&&o.headers&&(t.headers=o.headers),e(t,null)):(i=i||{},o&&o.statusCode&&(i.statusCode=o.statusCode),o&&o.headers&&(i.headers=o.headers),e(null,i)))};if(t)return void s({error:t});var a;try{a=L.xml2json(i)||{}}catch(t){a=i||{}}var u=o.statusCode;return 200!==u&&204!==u&&206!==u?void s({error:a.Error||a}):(p&&(a={},a.body=i),a.Error?void s({error:a.Error}):void s(null,a))}),m=function(t){t.TaskId===r&&(v&&v.abort&&v.abort(),n.off("inner-kill-task",m))};r&&n.on("inner-kill-task",m)}}var L=n(0),U=n(15),j={getService:r,getBucket:i,headBucket:o,deleteBucket:s,getBucketAcl:a,putBucketAcl:u,getBucketCors:c,putBucketCors:l,deleteBucketCors:f,getBucketLocation:d,putBucketTagging:y,getBucketTagging:g,deleteBucketTagging:v,getBucketPolicy:p,putBucketPolicy:h,getBucketLifecycle:C,putBucketLifecycle:m,deleteBucketLifecycle:A,getObject:w,headObject:_,postObject:x,deleteObject:R,getObjectAcl:E,putObjectAcl:B,optionsObject:T,putObjectCopy:b,getObjectUrl:S,getAuth:k};L.each(j,function(t,n){e[n]=L.apiWrapper(n,t)})}).call(e,n(1).Buffer)},function(t,e){var n=function(t,e){var n,r=t.filePath,o=t.headers,i=t.url,s=t.method,a=t.onProgress,u=function(t,n){e(t,{statusCode:n.statusCode,headers:n.header},n.data)};if(r){var c=i.match(/^(https?:\/\/[^\/]+\/)(.*)$/),l=c[2]||"";i=c[1],n=wx.uploadFile({url:i,method:s,name:"file",filePath:r,formData:{key:l,success_action_status:200,Signature:o.Authorization},success:function(t){u(null,t)},fail:function(t){u(t.errMsg,t)}}),n.onProgressUpdate(function(t){a({loaded:t.totalBytesSent,total:t.totalBytesExpectedToSend,progress:t.progress/100})})}else wx.request({url:i,method:s,header:o,dataType:"text",data:t.body,success:function(t){u(null,t)},fail:function(t){u(t.errMsg,t)}});return n};t.exports=n}])});
+/* eslint-disable no-proto */
+
+
+
+var base64 = __webpack_require__(5)
+var ieee754 = __webpack_require__(6)
+var isArray = __webpack_require__(7)
+
+exports.Buffer = Buffer
+exports.SlowBuffer = SlowBuffer
+exports.INSPECT_MAX_BYTES = 50
+
+/**
+ * If `Buffer.TYPED_ARRAY_SUPPORT`:
+ *   === true    Use Uint8Array implementation (fastest)
+ *   === false   Use Object implementation (most compatible, even IE6)
+ *
+ * Browsers that support typed arrays are IE 10+, Firefox 4+, Chrome 7+, Safari 5.1+,
+ * Opera 11.6+, iOS 4.2+.
+ *
+ * Due to various browser bugs, sometimes the Object implementation will be used even
+ * when the browser supports typed arrays.
+ *
+ * Note:
+ *
+ *   - Firefox 4-29 lacks support for adding new properties to `Uint8Array` instances,
+ *     See: https://bugzilla.mozilla.org/show_bug.cgi?id=695438.
+ *
+ *   - Chrome 9-10 is missing the `TypedArray.prototype.subarray` function.
+ *
+ *   - IE10 has a broken `TypedArray.prototype.subarray` function which returns arrays of
+ *     incorrect length in some situations.
+
+ * We detect these buggy browsers and set `Buffer.TYPED_ARRAY_SUPPORT` to `false` so they
+ * get the Object implementation, which is slower but behaves correctly.
+ */
+Buffer.TYPED_ARRAY_SUPPORT = global.TYPED_ARRAY_SUPPORT !== undefined
+  ? global.TYPED_ARRAY_SUPPORT
+  : typedArraySupport()
+
+/*
+ * Export kMaxLength after typed array support is determined.
+ */
+exports.kMaxLength = kMaxLength()
+
+function typedArraySupport () {
+  try {
+    var arr = new Uint8Array(1)
+    arr.__proto__ = {__proto__: Uint8Array.prototype, foo: function () { return 42 }}
+    return arr.foo() === 42 && // typed array instances can be augmented
+        typeof arr.subarray === 'function' && // chrome 9-10 lack `subarray`
+        arr.subarray(1, 1).byteLength === 0 // ie10 has broken `subarray`
+  } catch (e) {
+    return false
+  }
+}
+
+function kMaxLength () {
+  return Buffer.TYPED_ARRAY_SUPPORT
+    ? 0x7fffffff
+    : 0x3fffffff
+}
+
+function createBuffer (that, length) {
+  if (kMaxLength() < length) {
+    throw new RangeError('Invalid typed array length')
+  }
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    // Return an augmented `Uint8Array` instance, for best performance
+    that = new Uint8Array(length)
+    that.__proto__ = Buffer.prototype
+  } else {
+    // Fallback: Return an object instance of the Buffer class
+    if (that === null) {
+      that = new Buffer(length)
+    }
+    that.length = length
+  }
+
+  return that
+}
+
+/**
+ * The Buffer constructor returns instances of `Uint8Array` that have their
+ * prototype changed to `Buffer.prototype`. Furthermore, `Buffer` is a subclass of
+ * `Uint8Array`, so the returned instances will have all the node `Buffer` methods
+ * and the `Uint8Array` methods. Square bracket notation works as expected -- it
+ * returns a single octet.
+ *
+ * The `Uint8Array` prototype remains unmodified.
+ */
+
+function Buffer (arg, encodingOrOffset, length) {
+  if (!Buffer.TYPED_ARRAY_SUPPORT && !(this instanceof Buffer)) {
+    return new Buffer(arg, encodingOrOffset, length)
+  }
+
+  // Common case.
+  if (typeof arg === 'number') {
+    if (typeof encodingOrOffset === 'string') {
+      throw new Error(
+        'If encoding is specified then the first argument must be a string'
+      )
+    }
+    return allocUnsafe(this, arg)
+  }
+  return from(this, arg, encodingOrOffset, length)
+}
+
+Buffer.poolSize = 8192 // not used by this implementation
+
+// TODO: Legacy, not needed anymore. Remove in next major version.
+Buffer._augment = function (arr) {
+  arr.__proto__ = Buffer.prototype
+  return arr
+}
+
+function from (that, value, encodingOrOffset, length) {
+  if (typeof value === 'number') {
+    throw new TypeError('"value" argument must not be a number')
+  }
+
+  if (typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer) {
+    return fromArrayBuffer(that, value, encodingOrOffset, length)
+  }
+
+  if (typeof value === 'string') {
+    return fromString(that, value, encodingOrOffset)
+  }
+
+  return fromObject(that, value)
+}
+
+/**
+ * Functionally equivalent to Buffer(arg, encoding) but throws a TypeError
+ * if value is a number.
+ * Buffer.from(str[, encoding])
+ * Buffer.from(array)
+ * Buffer.from(buffer)
+ * Buffer.from(arrayBuffer[, byteOffset[, length]])
+ **/
+Buffer.from = function (value, encodingOrOffset, length) {
+  return from(null, value, encodingOrOffset, length)
+}
+
+if (Buffer.TYPED_ARRAY_SUPPORT) {
+  Buffer.prototype.__proto__ = Uint8Array.prototype
+  Buffer.__proto__ = Uint8Array
+  if (typeof Symbol !== 'undefined' && Symbol.species &&
+      Buffer[Symbol.species] === Buffer) {
+    // Fix subarray() in ES2016. See: https://github.com/feross/buffer/pull/97
+    Object.defineProperty(Buffer, Symbol.species, {
+      value: null,
+      configurable: true
+    })
+  }
+}
+
+function assertSize (size) {
+  if (typeof size !== 'number') {
+    throw new TypeError('"size" argument must be a number')
+  } else if (size < 0) {
+    throw new RangeError('"size" argument must not be negative')
+  }
+}
+
+function alloc (that, size, fill, encoding) {
+  assertSize(size)
+  if (size <= 0) {
+    return createBuffer(that, size)
+  }
+  if (fill !== undefined) {
+    // Only pay attention to encoding if it's a string. This
+    // prevents accidentally sending in a number that would
+    // be interpretted as a start offset.
+    return typeof encoding === 'string'
+      ? createBuffer(that, size).fill(fill, encoding)
+      : createBuffer(that, size).fill(fill)
+  }
+  return createBuffer(that, size)
+}
+
+/**
+ * Creates a new filled Buffer instance.
+ * alloc(size[, fill[, encoding]])
+ **/
+Buffer.alloc = function (size, fill, encoding) {
+  return alloc(null, size, fill, encoding)
+}
+
+function allocUnsafe (that, size) {
+  assertSize(size)
+  that = createBuffer(that, size < 0 ? 0 : checked(size) | 0)
+  if (!Buffer.TYPED_ARRAY_SUPPORT) {
+    for (var i = 0; i < size; ++i) {
+      that[i] = 0
+    }
+  }
+  return that
+}
+
+/**
+ * Equivalent to Buffer(num), by default creates a non-zero-filled Buffer instance.
+ * */
+Buffer.allocUnsafe = function (size) {
+  return allocUnsafe(null, size)
+}
+/**
+ * Equivalent to SlowBuffer(num), by default creates a non-zero-filled Buffer instance.
+ */
+Buffer.allocUnsafeSlow = function (size) {
+  return allocUnsafe(null, size)
+}
+
+function fromString (that, string, encoding) {
+  if (typeof encoding !== 'string' || encoding === '') {
+    encoding = 'utf8'
+  }
+
+  if (!Buffer.isEncoding(encoding)) {
+    throw new TypeError('"encoding" must be a valid string encoding')
+  }
+
+  var length = byteLength(string, encoding) | 0
+  that = createBuffer(that, length)
+
+  var actual = that.write(string, encoding)
+
+  if (actual !== length) {
+    // Writing a hex string, for example, that contains invalid characters will
+    // cause everything after the first invalid character to be ignored. (e.g.
+    // 'abxxcd' will be treated as 'ab')
+    that = that.slice(0, actual)
+  }
+
+  return that
+}
+
+function fromArrayLike (that, array) {
+  var length = array.length < 0 ? 0 : checked(array.length) | 0
+  that = createBuffer(that, length)
+  for (var i = 0; i < length; i += 1) {
+    that[i] = array[i] & 255
+  }
+  return that
+}
+
+function fromArrayBuffer (that, array, byteOffset, length) {
+  array.byteLength // this throws if `array` is not a valid ArrayBuffer
+
+  if (byteOffset < 0 || array.byteLength < byteOffset) {
+    throw new RangeError('\'offset\' is out of bounds')
+  }
+
+  if (array.byteLength < byteOffset + (length || 0)) {
+    throw new RangeError('\'length\' is out of bounds')
+  }
+
+  if (byteOffset === undefined && length === undefined) {
+    array = new Uint8Array(array)
+  } else if (length === undefined) {
+    array = new Uint8Array(array, byteOffset)
+  } else {
+    array = new Uint8Array(array, byteOffset, length)
+  }
+
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    // Return an augmented `Uint8Array` instance, for best performance
+    that = array
+    that.__proto__ = Buffer.prototype
+  } else {
+    // Fallback: Return an object instance of the Buffer class
+    that = fromArrayLike(that, array)
+  }
+  return that
+}
+
+function fromObject (that, obj) {
+  if (Buffer.isBuffer(obj)) {
+    var len = checked(obj.length) | 0
+    that = createBuffer(that, len)
+
+    if (that.length === 0) {
+      return that
+    }
+
+    obj.copy(that, 0, 0, len)
+    return that
+  }
+
+  if (obj) {
+    if ((typeof ArrayBuffer !== 'undefined' &&
+        obj.buffer instanceof ArrayBuffer) || 'length' in obj) {
+      if (typeof obj.length !== 'number' || isnan(obj.length)) {
+        return createBuffer(that, 0)
+      }
+      return fromArrayLike(that, obj)
+    }
+
+    if (obj.type === 'Buffer' && isArray(obj.data)) {
+      return fromArrayLike(that, obj.data)
+    }
+  }
+
+  throw new TypeError('First argument must be a string, Buffer, ArrayBuffer, Array, or array-like object.')
+}
+
+function checked (length) {
+  // Note: cannot use `length < kMaxLength()` here because that fails when
+  // length is NaN (which is otherwise coerced to zero.)
+  if (length >= kMaxLength()) {
+    throw new RangeError('Attempt to allocate Buffer larger than maximum ' +
+                         'size: 0x' + kMaxLength().toString(16) + ' bytes')
+  }
+  return length | 0
+}
+
+function SlowBuffer (length) {
+  if (+length != length) { // eslint-disable-line eqeqeq
+    length = 0
+  }
+  return Buffer.alloc(+length)
+}
+
+Buffer.isBuffer = function isBuffer (b) {
+  return !!(b != null && b._isBuffer)
+}
+
+Buffer.compare = function compare (a, b) {
+  if (!Buffer.isBuffer(a) || !Buffer.isBuffer(b)) {
+    throw new TypeError('Arguments must be Buffers')
+  }
+
+  if (a === b) return 0
+
+  var x = a.length
+  var y = b.length
+
+  for (var i = 0, len = Math.min(x, y); i < len; ++i) {
+    if (a[i] !== b[i]) {
+      x = a[i]
+      y = b[i]
+      break
+    }
+  }
+
+  if (x < y) return -1
+  if (y < x) return 1
+  return 0
+}
+
+Buffer.isEncoding = function isEncoding (encoding) {
+  switch (String(encoding).toLowerCase()) {
+    case 'hex':
+    case 'utf8':
+    case 'utf-8':
+    case 'ascii':
+    case 'latin1':
+    case 'binary':
+    case 'base64':
+    case 'ucs2':
+    case 'ucs-2':
+    case 'utf16le':
+    case 'utf-16le':
+      return true
+    default:
+      return false
+  }
+}
+
+Buffer.concat = function concat (list, length) {
+  if (!isArray(list)) {
+    throw new TypeError('"list" argument must be an Array of Buffers')
+  }
+
+  if (list.length === 0) {
+    return Buffer.alloc(0)
+  }
+
+  var i
+  if (length === undefined) {
+    length = 0
+    for (i = 0; i < list.length; ++i) {
+      length += list[i].length
+    }
+  }
+
+  var buffer = Buffer.allocUnsafe(length)
+  var pos = 0
+  for (i = 0; i < list.length; ++i) {
+    var buf = list[i]
+    if (!Buffer.isBuffer(buf)) {
+      throw new TypeError('"list" argument must be an Array of Buffers')
+    }
+    buf.copy(buffer, pos)
+    pos += buf.length
+  }
+  return buffer
+}
+
+function byteLength (string, encoding) {
+  if (Buffer.isBuffer(string)) {
+    return string.length
+  }
+  if (typeof ArrayBuffer !== 'undefined' && typeof ArrayBuffer.isView === 'function' &&
+      (ArrayBuffer.isView(string) || string instanceof ArrayBuffer)) {
+    return string.byteLength
+  }
+  if (typeof string !== 'string') {
+    string = '' + string
+  }
+
+  var len = string.length
+  if (len === 0) return 0
+
+  // Use a for loop to avoid recursion
+  var loweredCase = false
+  for (;;) {
+    switch (encoding) {
+      case 'ascii':
+      case 'latin1':
+      case 'binary':
+        return len
+      case 'utf8':
+      case 'utf-8':
+      case undefined:
+        return utf8ToBytes(string).length
+      case 'ucs2':
+      case 'ucs-2':
+      case 'utf16le':
+      case 'utf-16le':
+        return len * 2
+      case 'hex':
+        return len >>> 1
+      case 'base64':
+        return base64ToBytes(string).length
+      default:
+        if (loweredCase) return utf8ToBytes(string).length // assume utf8
+        encoding = ('' + encoding).toLowerCase()
+        loweredCase = true
+    }
+  }
+}
+Buffer.byteLength = byteLength
+
+function slowToString (encoding, start, end) {
+  var loweredCase = false
+
+  // No need to verify that "this.length <= MAX_UINT32" since it's a read-only
+  // property of a typed array.
+
+  // This behaves neither like String nor Uint8Array in that we set start/end
+  // to their upper/lower bounds if the value passed is out of range.
+  // undefined is handled specially as per ECMA-262 6th Edition,
+  // Section 13.3.3.7 Runtime Semantics: KeyedBindingInitialization.
+  if (start === undefined || start < 0) {
+    start = 0
+  }
+  // Return early if start > this.length. Done here to prevent potential uint32
+  // coercion fail below.
+  if (start > this.length) {
+    return ''
+  }
+
+  if (end === undefined || end > this.length) {
+    end = this.length
+  }
+
+  if (end <= 0) {
+    return ''
+  }
+
+  // Force coersion to uint32. This will also coerce falsey/NaN values to 0.
+  end >>>= 0
+  start >>>= 0
+
+  if (end <= start) {
+    return ''
+  }
+
+  if (!encoding) encoding = 'utf8'
+
+  while (true) {
+    switch (encoding) {
+      case 'hex':
+        return hexSlice(this, start, end)
+
+      case 'utf8':
+      case 'utf-8':
+        return utf8Slice(this, start, end)
+
+      case 'ascii':
+        return asciiSlice(this, start, end)
+
+      case 'latin1':
+      case 'binary':
+        return latin1Slice(this, start, end)
+
+      case 'base64':
+        return base64Slice(this, start, end)
+
+      case 'ucs2':
+      case 'ucs-2':
+      case 'utf16le':
+      case 'utf-16le':
+        return utf16leSlice(this, start, end)
+
+      default:
+        if (loweredCase) throw new TypeError('Unknown encoding: ' + encoding)
+        encoding = (encoding + '').toLowerCase()
+        loweredCase = true
+    }
+  }
+}
+
+// The property is used by `Buffer.isBuffer` and `is-buffer` (in Safari 5-7) to detect
+// Buffer instances.
+Buffer.prototype._isBuffer = true
+
+function swap (b, n, m) {
+  var i = b[n]
+  b[n] = b[m]
+  b[m] = i
+}
+
+Buffer.prototype.swap16 = function swap16 () {
+  var len = this.length
+  if (len % 2 !== 0) {
+    throw new RangeError('Buffer size must be a multiple of 16-bits')
+  }
+  for (var i = 0; i < len; i += 2) {
+    swap(this, i, i + 1)
+  }
+  return this
+}
+
+Buffer.prototype.swap32 = function swap32 () {
+  var len = this.length
+  if (len % 4 !== 0) {
+    throw new RangeError('Buffer size must be a multiple of 32-bits')
+  }
+  for (var i = 0; i < len; i += 4) {
+    swap(this, i, i + 3)
+    swap(this, i + 1, i + 2)
+  }
+  return this
+}
+
+Buffer.prototype.swap64 = function swap64 () {
+  var len = this.length
+  if (len % 8 !== 0) {
+    throw new RangeError('Buffer size must be a multiple of 64-bits')
+  }
+  for (var i = 0; i < len; i += 8) {
+    swap(this, i, i + 7)
+    swap(this, i + 1, i + 6)
+    swap(this, i + 2, i + 5)
+    swap(this, i + 3, i + 4)
+  }
+  return this
+}
+
+Buffer.prototype.toString = function toString () {
+  var length = this.length | 0
+  if (length === 0) return ''
+  if (arguments.length === 0) return utf8Slice(this, 0, length)
+  return slowToString.apply(this, arguments)
+}
+
+Buffer.prototype.equals = function equals (b) {
+  if (!Buffer.isBuffer(b)) throw new TypeError('Argument must be a Buffer')
+  if (this === b) return true
+  return Buffer.compare(this, b) === 0
+}
+
+Buffer.prototype.inspect = function inspect () {
+  var str = ''
+  var max = exports.INSPECT_MAX_BYTES
+  if (this.length > 0) {
+    str = this.toString('hex', 0, max).match(/.{2}/g).join(' ')
+    if (this.length > max) str += ' ... '
+  }
+  return '<Buffer ' + str + '>'
+}
+
+Buffer.prototype.compare = function compare (target, start, end, thisStart, thisEnd) {
+  if (!Buffer.isBuffer(target)) {
+    throw new TypeError('Argument must be a Buffer')
+  }
+
+  if (start === undefined) {
+    start = 0
+  }
+  if (end === undefined) {
+    end = target ? target.length : 0
+  }
+  if (thisStart === undefined) {
+    thisStart = 0
+  }
+  if (thisEnd === undefined) {
+    thisEnd = this.length
+  }
+
+  if (start < 0 || end > target.length || thisStart < 0 || thisEnd > this.length) {
+    throw new RangeError('out of range index')
+  }
+
+  if (thisStart >= thisEnd && start >= end) {
+    return 0
+  }
+  if (thisStart >= thisEnd) {
+    return -1
+  }
+  if (start >= end) {
+    return 1
+  }
+
+  start >>>= 0
+  end >>>= 0
+  thisStart >>>= 0
+  thisEnd >>>= 0
+
+  if (this === target) return 0
+
+  var x = thisEnd - thisStart
+  var y = end - start
+  var len = Math.min(x, y)
+
+  var thisCopy = this.slice(thisStart, thisEnd)
+  var targetCopy = target.slice(start, end)
+
+  for (var i = 0; i < len; ++i) {
+    if (thisCopy[i] !== targetCopy[i]) {
+      x = thisCopy[i]
+      y = targetCopy[i]
+      break
+    }
+  }
+
+  if (x < y) return -1
+  if (y < x) return 1
+  return 0
+}
+
+// Finds either the first index of `val` in `buffer` at offset >= `byteOffset`,
+// OR the last index of `val` in `buffer` at offset <= `byteOffset`.
+//
+// Arguments:
+// - buffer - a Buffer to search
+// - val - a string, Buffer, or number
+// - byteOffset - an index into `buffer`; will be clamped to an int32
+// - encoding - an optional encoding, relevant is val is a string
+// - dir - true for indexOf, false for lastIndexOf
+function bidirectionalIndexOf (buffer, val, byteOffset, encoding, dir) {
+  // Empty buffer means no match
+  if (buffer.length === 0) return -1
+
+  // Normalize byteOffset
+  if (typeof byteOffset === 'string') {
+    encoding = byteOffset
+    byteOffset = 0
+  } else if (byteOffset > 0x7fffffff) {
+    byteOffset = 0x7fffffff
+  } else if (byteOffset < -0x80000000) {
+    byteOffset = -0x80000000
+  }
+  byteOffset = +byteOffset  // Coerce to Number.
+  if (isNaN(byteOffset)) {
+    // byteOffset: it it's undefined, null, NaN, "foo", etc, search whole buffer
+    byteOffset = dir ? 0 : (buffer.length - 1)
+  }
+
+  // Normalize byteOffset: negative offsets start from the end of the buffer
+  if (byteOffset < 0) byteOffset = buffer.length + byteOffset
+  if (byteOffset >= buffer.length) {
+    if (dir) return -1
+    else byteOffset = buffer.length - 1
+  } else if (byteOffset < 0) {
+    if (dir) byteOffset = 0
+    else return -1
+  }
+
+  // Normalize val
+  if (typeof val === 'string') {
+    val = Buffer.from(val, encoding)
+  }
+
+  // Finally, search either indexOf (if dir is true) or lastIndexOf
+  if (Buffer.isBuffer(val)) {
+    // Special case: looking for empty string/buffer always fails
+    if (val.length === 0) {
+      return -1
+    }
+    return arrayIndexOf(buffer, val, byteOffset, encoding, dir)
+  } else if (typeof val === 'number') {
+    val = val & 0xFF // Search for a byte value [0-255]
+    if (Buffer.TYPED_ARRAY_SUPPORT &&
+        typeof Uint8Array.prototype.indexOf === 'function') {
+      if (dir) {
+        return Uint8Array.prototype.indexOf.call(buffer, val, byteOffset)
+      } else {
+        return Uint8Array.prototype.lastIndexOf.call(buffer, val, byteOffset)
+      }
+    }
+    return arrayIndexOf(buffer, [ val ], byteOffset, encoding, dir)
+  }
+
+  throw new TypeError('val must be string, number or Buffer')
+}
+
+function arrayIndexOf (arr, val, byteOffset, encoding, dir) {
+  var indexSize = 1
+  var arrLength = arr.length
+  var valLength = val.length
+
+  if (encoding !== undefined) {
+    encoding = String(encoding).toLowerCase()
+    if (encoding === 'ucs2' || encoding === 'ucs-2' ||
+        encoding === 'utf16le' || encoding === 'utf-16le') {
+      if (arr.length < 2 || val.length < 2) {
+        return -1
+      }
+      indexSize = 2
+      arrLength /= 2
+      valLength /= 2
+      byteOffset /= 2
+    }
+  }
+
+  function read (buf, i) {
+    if (indexSize === 1) {
+      return buf[i]
+    } else {
+      return buf.readUInt16BE(i * indexSize)
+    }
+  }
+
+  var i
+  if (dir) {
+    var foundIndex = -1
+    for (i = byteOffset; i < arrLength; i++) {
+      if (read(arr, i) === read(val, foundIndex === -1 ? 0 : i - foundIndex)) {
+        if (foundIndex === -1) foundIndex = i
+        if (i - foundIndex + 1 === valLength) return foundIndex * indexSize
+      } else {
+        if (foundIndex !== -1) i -= i - foundIndex
+        foundIndex = -1
+      }
+    }
+  } else {
+    if (byteOffset + valLength > arrLength) byteOffset = arrLength - valLength
+    for (i = byteOffset; i >= 0; i--) {
+      var found = true
+      for (var j = 0; j < valLength; j++) {
+        if (read(arr, i + j) !== read(val, j)) {
+          found = false
+          break
+        }
+      }
+      if (found) return i
+    }
+  }
+
+  return -1
+}
+
+Buffer.prototype.includes = function includes (val, byteOffset, encoding) {
+  return this.indexOf(val, byteOffset, encoding) !== -1
+}
+
+Buffer.prototype.indexOf = function indexOf (val, byteOffset, encoding) {
+  return bidirectionalIndexOf(this, val, byteOffset, encoding, true)
+}
+
+Buffer.prototype.lastIndexOf = function lastIndexOf (val, byteOffset, encoding) {
+  return bidirectionalIndexOf(this, val, byteOffset, encoding, false)
+}
+
+function hexWrite (buf, string, offset, length) {
+  offset = Number(offset) || 0
+  var remaining = buf.length - offset
+  if (!length) {
+    length = remaining
+  } else {
+    length = Number(length)
+    if (length > remaining) {
+      length = remaining
+    }
+  }
+
+  // must be an even number of digits
+  var strLen = string.length
+  if (strLen % 2 !== 0) throw new TypeError('Invalid hex string')
+
+  if (length > strLen / 2) {
+    length = strLen / 2
+  }
+  for (var i = 0; i < length; ++i) {
+    var parsed = parseInt(string.substr(i * 2, 2), 16)
+    if (isNaN(parsed)) return i
+    buf[offset + i] = parsed
+  }
+  return i
+}
+
+function utf8Write (buf, string, offset, length) {
+  return blitBuffer(utf8ToBytes(string, buf.length - offset), buf, offset, length)
+}
+
+function asciiWrite (buf, string, offset, length) {
+  return blitBuffer(asciiToBytes(string), buf, offset, length)
+}
+
+function latin1Write (buf, string, offset, length) {
+  return asciiWrite(buf, string, offset, length)
+}
+
+function base64Write (buf, string, offset, length) {
+  return blitBuffer(base64ToBytes(string), buf, offset, length)
+}
+
+function ucs2Write (buf, string, offset, length) {
+  return blitBuffer(utf16leToBytes(string, buf.length - offset), buf, offset, length)
+}
+
+Buffer.prototype.write = function write (string, offset, length, encoding) {
+  // Buffer#write(string)
+  if (offset === undefined) {
+    encoding = 'utf8'
+    length = this.length
+    offset = 0
+  // Buffer#write(string, encoding)
+  } else if (length === undefined && typeof offset === 'string') {
+    encoding = offset
+    length = this.length
+    offset = 0
+  // Buffer#write(string, offset[, length][, encoding])
+  } else if (isFinite(offset)) {
+    offset = offset | 0
+    if (isFinite(length)) {
+      length = length | 0
+      if (encoding === undefined) encoding = 'utf8'
+    } else {
+      encoding = length
+      length = undefined
+    }
+  // legacy write(string, encoding, offset, length) - remove in v0.13
+  } else {
+    throw new Error(
+      'Buffer.write(string, encoding, offset[, length]) is no longer supported'
+    )
+  }
+
+  var remaining = this.length - offset
+  if (length === undefined || length > remaining) length = remaining
+
+  if ((string.length > 0 && (length < 0 || offset < 0)) || offset > this.length) {
+    throw new RangeError('Attempt to write outside buffer bounds')
+  }
+
+  if (!encoding) encoding = 'utf8'
+
+  var loweredCase = false
+  for (;;) {
+    switch (encoding) {
+      case 'hex':
+        return hexWrite(this, string, offset, length)
+
+      case 'utf8':
+      case 'utf-8':
+        return utf8Write(this, string, offset, length)
+
+      case 'ascii':
+        return asciiWrite(this, string, offset, length)
+
+      case 'latin1':
+      case 'binary':
+        return latin1Write(this, string, offset, length)
+
+      case 'base64':
+        // Warning: maxLength not taken into account in base64Write
+        return base64Write(this, string, offset, length)
+
+      case 'ucs2':
+      case 'ucs-2':
+      case 'utf16le':
+      case 'utf-16le':
+        return ucs2Write(this, string, offset, length)
+
+      default:
+        if (loweredCase) throw new TypeError('Unknown encoding: ' + encoding)
+        encoding = ('' + encoding).toLowerCase()
+        loweredCase = true
+    }
+  }
+}
+
+Buffer.prototype.toJSON = function toJSON () {
+  return {
+    type: 'Buffer',
+    data: Array.prototype.slice.call(this._arr || this, 0)
+  }
+}
+
+function base64Slice (buf, start, end) {
+  if (start === 0 && end === buf.length) {
+    return base64.fromByteArray(buf)
+  } else {
+    return base64.fromByteArray(buf.slice(start, end))
+  }
+}
+
+function utf8Slice (buf, start, end) {
+  end = Math.min(buf.length, end)
+  var res = []
+
+  var i = start
+  while (i < end) {
+    var firstByte = buf[i]
+    var codePoint = null
+    var bytesPerSequence = (firstByte > 0xEF) ? 4
+      : (firstByte > 0xDF) ? 3
+      : (firstByte > 0xBF) ? 2
+      : 1
+
+    if (i + bytesPerSequence <= end) {
+      var secondByte, thirdByte, fourthByte, tempCodePoint
+
+      switch (bytesPerSequence) {
+        case 1:
+          if (firstByte < 0x80) {
+            codePoint = firstByte
+          }
+          break
+        case 2:
+          secondByte = buf[i + 1]
+          if ((secondByte & 0xC0) === 0x80) {
+            tempCodePoint = (firstByte & 0x1F) << 0x6 | (secondByte & 0x3F)
+            if (tempCodePoint > 0x7F) {
+              codePoint = tempCodePoint
+            }
+          }
+          break
+        case 3:
+          secondByte = buf[i + 1]
+          thirdByte = buf[i + 2]
+          if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80) {
+            tempCodePoint = (firstByte & 0xF) << 0xC | (secondByte & 0x3F) << 0x6 | (thirdByte & 0x3F)
+            if (tempCodePoint > 0x7FF && (tempCodePoint < 0xD800 || tempCodePoint > 0xDFFF)) {
+              codePoint = tempCodePoint
+            }
+          }
+          break
+        case 4:
+          secondByte = buf[i + 1]
+          thirdByte = buf[i + 2]
+          fourthByte = buf[i + 3]
+          if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80 && (fourthByte & 0xC0) === 0x80) {
+            tempCodePoint = (firstByte & 0xF) << 0x12 | (secondByte & 0x3F) << 0xC | (thirdByte & 0x3F) << 0x6 | (fourthByte & 0x3F)
+            if (tempCodePoint > 0xFFFF && tempCodePoint < 0x110000) {
+              codePoint = tempCodePoint
+            }
+          }
+      }
+    }
+
+    if (codePoint === null) {
+      // we did not generate a valid codePoint so insert a
+      // replacement char (U+FFFD) and advance only 1 byte
+      codePoint = 0xFFFD
+      bytesPerSequence = 1
+    } else if (codePoint > 0xFFFF) {
+      // encode to utf16 (surrogate pair dance)
+      codePoint -= 0x10000
+      res.push(codePoint >>> 10 & 0x3FF | 0xD800)
+      codePoint = 0xDC00 | codePoint & 0x3FF
+    }
+
+    res.push(codePoint)
+    i += bytesPerSequence
+  }
+
+  return decodeCodePointsArray(res)
+}
+
+// Based on http://stackoverflow.com/a/22747272/680742, the browser with
+// the lowest limit is Chrome, with 0x10000 args.
+// We go 1 magnitude less, for safety
+var MAX_ARGUMENTS_LENGTH = 0x1000
+
+function decodeCodePointsArray (codePoints) {
+  var len = codePoints.length
+  if (len <= MAX_ARGUMENTS_LENGTH) {
+    return String.fromCharCode.apply(String, codePoints) // avoid extra slice()
+  }
+
+  // Decode in chunks to avoid "call stack size exceeded".
+  var res = ''
+  var i = 0
+  while (i < len) {
+    res += String.fromCharCode.apply(
+      String,
+      codePoints.slice(i, i += MAX_ARGUMENTS_LENGTH)
+    )
+  }
+  return res
+}
+
+function asciiSlice (buf, start, end) {
+  var ret = ''
+  end = Math.min(buf.length, end)
+
+  for (var i = start; i < end; ++i) {
+    ret += String.fromCharCode(buf[i] & 0x7F)
+  }
+  return ret
+}
+
+function latin1Slice (buf, start, end) {
+  var ret = ''
+  end = Math.min(buf.length, end)
+
+  for (var i = start; i < end; ++i) {
+    ret += String.fromCharCode(buf[i])
+  }
+  return ret
+}
+
+function hexSlice (buf, start, end) {
+  var len = buf.length
+
+  if (!start || start < 0) start = 0
+  if (!end || end < 0 || end > len) end = len
+
+  var out = ''
+  for (var i = start; i < end; ++i) {
+    out += toHex(buf[i])
+  }
+  return out
+}
+
+function utf16leSlice (buf, start, end) {
+  var bytes = buf.slice(start, end)
+  var res = ''
+  for (var i = 0; i < bytes.length; i += 2) {
+    res += String.fromCharCode(bytes[i] + bytes[i + 1] * 256)
+  }
+  return res
+}
+
+Buffer.prototype.slice = function slice (start, end) {
+  var len = this.length
+  start = ~~start
+  end = end === undefined ? len : ~~end
+
+  if (start < 0) {
+    start += len
+    if (start < 0) start = 0
+  } else if (start > len) {
+    start = len
+  }
+
+  if (end < 0) {
+    end += len
+    if (end < 0) end = 0
+  } else if (end > len) {
+    end = len
+  }
+
+  if (end < start) end = start
+
+  var newBuf
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    newBuf = this.subarray(start, end)
+    newBuf.__proto__ = Buffer.prototype
+  } else {
+    var sliceLen = end - start
+    newBuf = new Buffer(sliceLen, undefined)
+    for (var i = 0; i < sliceLen; ++i) {
+      newBuf[i] = this[i + start]
+    }
+  }
+
+  return newBuf
+}
+
+/*
+ * Need to make sure that buffer isn't trying to write out of bounds.
+ */
+function checkOffset (offset, ext, length) {
+  if ((offset % 1) !== 0 || offset < 0) throw new RangeError('offset is not uint')
+  if (offset + ext > length) throw new RangeError('Trying to access beyond buffer length')
+}
+
+Buffer.prototype.readUIntLE = function readUIntLE (offset, byteLength, noAssert) {
+  offset = offset | 0
+  byteLength = byteLength | 0
+  if (!noAssert) checkOffset(offset, byteLength, this.length)
+
+  var val = this[offset]
+  var mul = 1
+  var i = 0
+  while (++i < byteLength && (mul *= 0x100)) {
+    val += this[offset + i] * mul
+  }
+
+  return val
+}
+
+Buffer.prototype.readUIntBE = function readUIntBE (offset, byteLength, noAssert) {
+  offset = offset | 0
+  byteLength = byteLength | 0
+  if (!noAssert) {
+    checkOffset(offset, byteLength, this.length)
+  }
+
+  var val = this[offset + --byteLength]
+  var mul = 1
+  while (byteLength > 0 && (mul *= 0x100)) {
+    val += this[offset + --byteLength] * mul
+  }
+
+  return val
+}
+
+Buffer.prototype.readUInt8 = function readUInt8 (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 1, this.length)
+  return this[offset]
+}
+
+Buffer.prototype.readUInt16LE = function readUInt16LE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 2, this.length)
+  return this[offset] | (this[offset + 1] << 8)
+}
+
+Buffer.prototype.readUInt16BE = function readUInt16BE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 2, this.length)
+  return (this[offset] << 8) | this[offset + 1]
+}
+
+Buffer.prototype.readUInt32LE = function readUInt32LE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 4, this.length)
+
+  return ((this[offset]) |
+      (this[offset + 1] << 8) |
+      (this[offset + 2] << 16)) +
+      (this[offset + 3] * 0x1000000)
+}
+
+Buffer.prototype.readUInt32BE = function readUInt32BE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 4, this.length)
+
+  return (this[offset] * 0x1000000) +
+    ((this[offset + 1] << 16) |
+    (this[offset + 2] << 8) |
+    this[offset + 3])
+}
+
+Buffer.prototype.readIntLE = function readIntLE (offset, byteLength, noAssert) {
+  offset = offset | 0
+  byteLength = byteLength | 0
+  if (!noAssert) checkOffset(offset, byteLength, this.length)
+
+  var val = this[offset]
+  var mul = 1
+  var i = 0
+  while (++i < byteLength && (mul *= 0x100)) {
+    val += this[offset + i] * mul
+  }
+  mul *= 0x80
+
+  if (val >= mul) val -= Math.pow(2, 8 * byteLength)
+
+  return val
+}
+
+Buffer.prototype.readIntBE = function readIntBE (offset, byteLength, noAssert) {
+  offset = offset | 0
+  byteLength = byteLength | 0
+  if (!noAssert) checkOffset(offset, byteLength, this.length)
+
+  var i = byteLength
+  var mul = 1
+  var val = this[offset + --i]
+  while (i > 0 && (mul *= 0x100)) {
+    val += this[offset + --i] * mul
+  }
+  mul *= 0x80
+
+  if (val >= mul) val -= Math.pow(2, 8 * byteLength)
+
+  return val
+}
+
+Buffer.prototype.readInt8 = function readInt8 (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 1, this.length)
+  if (!(this[offset] & 0x80)) return (this[offset])
+  return ((0xff - this[offset] + 1) * -1)
+}
+
+Buffer.prototype.readInt16LE = function readInt16LE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 2, this.length)
+  var val = this[offset] | (this[offset + 1] << 8)
+  return (val & 0x8000) ? val | 0xFFFF0000 : val
+}
+
+Buffer.prototype.readInt16BE = function readInt16BE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 2, this.length)
+  var val = this[offset + 1] | (this[offset] << 8)
+  return (val & 0x8000) ? val | 0xFFFF0000 : val
+}
+
+Buffer.prototype.readInt32LE = function readInt32LE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 4, this.length)
+
+  return (this[offset]) |
+    (this[offset + 1] << 8) |
+    (this[offset + 2] << 16) |
+    (this[offset + 3] << 24)
+}
+
+Buffer.prototype.readInt32BE = function readInt32BE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 4, this.length)
+
+  return (this[offset] << 24) |
+    (this[offset + 1] << 16) |
+    (this[offset + 2] << 8) |
+    (this[offset + 3])
+}
+
+Buffer.prototype.readFloatLE = function readFloatLE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 4, this.length)
+  return ieee754.read(this, offset, true, 23, 4)
+}
+
+Buffer.prototype.readFloatBE = function readFloatBE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 4, this.length)
+  return ieee754.read(this, offset, false, 23, 4)
+}
+
+Buffer.prototype.readDoubleLE = function readDoubleLE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 8, this.length)
+  return ieee754.read(this, offset, true, 52, 8)
+}
+
+Buffer.prototype.readDoubleBE = function readDoubleBE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 8, this.length)
+  return ieee754.read(this, offset, false, 52, 8)
+}
+
+function checkInt (buf, value, offset, ext, max, min) {
+  if (!Buffer.isBuffer(buf)) throw new TypeError('"buffer" argument must be a Buffer instance')
+  if (value > max || value < min) throw new RangeError('"value" argument is out of bounds')
+  if (offset + ext > buf.length) throw new RangeError('Index out of range')
+}
+
+Buffer.prototype.writeUIntLE = function writeUIntLE (value, offset, byteLength, noAssert) {
+  value = +value
+  offset = offset | 0
+  byteLength = byteLength | 0
+  if (!noAssert) {
+    var maxBytes = Math.pow(2, 8 * byteLength) - 1
+    checkInt(this, value, offset, byteLength, maxBytes, 0)
+  }
+
+  var mul = 1
+  var i = 0
+  this[offset] = value & 0xFF
+  while (++i < byteLength && (mul *= 0x100)) {
+    this[offset + i] = (value / mul) & 0xFF
+  }
+
+  return offset + byteLength
+}
+
+Buffer.prototype.writeUIntBE = function writeUIntBE (value, offset, byteLength, noAssert) {
+  value = +value
+  offset = offset | 0
+  byteLength = byteLength | 0
+  if (!noAssert) {
+    var maxBytes = Math.pow(2, 8 * byteLength) - 1
+    checkInt(this, value, offset, byteLength, maxBytes, 0)
+  }
+
+  var i = byteLength - 1
+  var mul = 1
+  this[offset + i] = value & 0xFF
+  while (--i >= 0 && (mul *= 0x100)) {
+    this[offset + i] = (value / mul) & 0xFF
+  }
+
+  return offset + byteLength
+}
+
+Buffer.prototype.writeUInt8 = function writeUInt8 (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 1, 0xff, 0)
+  if (!Buffer.TYPED_ARRAY_SUPPORT) value = Math.floor(value)
+  this[offset] = (value & 0xff)
+  return offset + 1
+}
+
+function objectWriteUInt16 (buf, value, offset, littleEndian) {
+  if (value < 0) value = 0xffff + value + 1
+  for (var i = 0, j = Math.min(buf.length - offset, 2); i < j; ++i) {
+    buf[offset + i] = (value & (0xff << (8 * (littleEndian ? i : 1 - i)))) >>>
+      (littleEndian ? i : 1 - i) * 8
+  }
+}
+
+Buffer.prototype.writeUInt16LE = function writeUInt16LE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 2, 0xffff, 0)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value & 0xff)
+    this[offset + 1] = (value >>> 8)
+  } else {
+    objectWriteUInt16(this, value, offset, true)
+  }
+  return offset + 2
+}
+
+Buffer.prototype.writeUInt16BE = function writeUInt16BE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 2, 0xffff, 0)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value >>> 8)
+    this[offset + 1] = (value & 0xff)
+  } else {
+    objectWriteUInt16(this, value, offset, false)
+  }
+  return offset + 2
+}
+
+function objectWriteUInt32 (buf, value, offset, littleEndian) {
+  if (value < 0) value = 0xffffffff + value + 1
+  for (var i = 0, j = Math.min(buf.length - offset, 4); i < j; ++i) {
+    buf[offset + i] = (value >>> (littleEndian ? i : 3 - i) * 8) & 0xff
+  }
+}
+
+Buffer.prototype.writeUInt32LE = function writeUInt32LE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 4, 0xffffffff, 0)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset + 3] = (value >>> 24)
+    this[offset + 2] = (value >>> 16)
+    this[offset + 1] = (value >>> 8)
+    this[offset] = (value & 0xff)
+  } else {
+    objectWriteUInt32(this, value, offset, true)
+  }
+  return offset + 4
+}
+
+Buffer.prototype.writeUInt32BE = function writeUInt32BE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 4, 0xffffffff, 0)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value >>> 24)
+    this[offset + 1] = (value >>> 16)
+    this[offset + 2] = (value >>> 8)
+    this[offset + 3] = (value & 0xff)
+  } else {
+    objectWriteUInt32(this, value, offset, false)
+  }
+  return offset + 4
+}
+
+Buffer.prototype.writeIntLE = function writeIntLE (value, offset, byteLength, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) {
+    var limit = Math.pow(2, 8 * byteLength - 1)
+
+    checkInt(this, value, offset, byteLength, limit - 1, -limit)
+  }
+
+  var i = 0
+  var mul = 1
+  var sub = 0
+  this[offset] = value & 0xFF
+  while (++i < byteLength && (mul *= 0x100)) {
+    if (value < 0 && sub === 0 && this[offset + i - 1] !== 0) {
+      sub = 1
+    }
+    this[offset + i] = ((value / mul) >> 0) - sub & 0xFF
+  }
+
+  return offset + byteLength
+}
+
+Buffer.prototype.writeIntBE = function writeIntBE (value, offset, byteLength, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) {
+    var limit = Math.pow(2, 8 * byteLength - 1)
+
+    checkInt(this, value, offset, byteLength, limit - 1, -limit)
+  }
+
+  var i = byteLength - 1
+  var mul = 1
+  var sub = 0
+  this[offset + i] = value & 0xFF
+  while (--i >= 0 && (mul *= 0x100)) {
+    if (value < 0 && sub === 0 && this[offset + i + 1] !== 0) {
+      sub = 1
+    }
+    this[offset + i] = ((value / mul) >> 0) - sub & 0xFF
+  }
+
+  return offset + byteLength
+}
+
+Buffer.prototype.writeInt8 = function writeInt8 (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 1, 0x7f, -0x80)
+  if (!Buffer.TYPED_ARRAY_SUPPORT) value = Math.floor(value)
+  if (value < 0) value = 0xff + value + 1
+  this[offset] = (value & 0xff)
+  return offset + 1
+}
+
+Buffer.prototype.writeInt16LE = function writeInt16LE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 2, 0x7fff, -0x8000)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value & 0xff)
+    this[offset + 1] = (value >>> 8)
+  } else {
+    objectWriteUInt16(this, value, offset, true)
+  }
+  return offset + 2
+}
+
+Buffer.prototype.writeInt16BE = function writeInt16BE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 2, 0x7fff, -0x8000)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value >>> 8)
+    this[offset + 1] = (value & 0xff)
+  } else {
+    objectWriteUInt16(this, value, offset, false)
+  }
+  return offset + 2
+}
+
+Buffer.prototype.writeInt32LE = function writeInt32LE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 4, 0x7fffffff, -0x80000000)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value & 0xff)
+    this[offset + 1] = (value >>> 8)
+    this[offset + 2] = (value >>> 16)
+    this[offset + 3] = (value >>> 24)
+  } else {
+    objectWriteUInt32(this, value, offset, true)
+  }
+  return offset + 4
+}
+
+Buffer.prototype.writeInt32BE = function writeInt32BE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 4, 0x7fffffff, -0x80000000)
+  if (value < 0) value = 0xffffffff + value + 1
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value >>> 24)
+    this[offset + 1] = (value >>> 16)
+    this[offset + 2] = (value >>> 8)
+    this[offset + 3] = (value & 0xff)
+  } else {
+    objectWriteUInt32(this, value, offset, false)
+  }
+  return offset + 4
+}
+
+function checkIEEE754 (buf, value, offset, ext, max, min) {
+  if (offset + ext > buf.length) throw new RangeError('Index out of range')
+  if (offset < 0) throw new RangeError('Index out of range')
+}
+
+function writeFloat (buf, value, offset, littleEndian, noAssert) {
+  if (!noAssert) {
+    checkIEEE754(buf, value, offset, 4, 3.4028234663852886e+38, -3.4028234663852886e+38)
+  }
+  ieee754.write(buf, value, offset, littleEndian, 23, 4)
+  return offset + 4
+}
+
+Buffer.prototype.writeFloatLE = function writeFloatLE (value, offset, noAssert) {
+  return writeFloat(this, value, offset, true, noAssert)
+}
+
+Buffer.prototype.writeFloatBE = function writeFloatBE (value, offset, noAssert) {
+  return writeFloat(this, value, offset, false, noAssert)
+}
+
+function writeDouble (buf, value, offset, littleEndian, noAssert) {
+  if (!noAssert) {
+    checkIEEE754(buf, value, offset, 8, 1.7976931348623157E+308, -1.7976931348623157E+308)
+  }
+  ieee754.write(buf, value, offset, littleEndian, 52, 8)
+  return offset + 8
+}
+
+Buffer.prototype.writeDoubleLE = function writeDoubleLE (value, offset, noAssert) {
+  return writeDouble(this, value, offset, true, noAssert)
+}
+
+Buffer.prototype.writeDoubleBE = function writeDoubleBE (value, offset, noAssert) {
+  return writeDouble(this, value, offset, false, noAssert)
+}
+
+// copy(targetBuffer, targetStart=0, sourceStart=0, sourceEnd=buffer.length)
+Buffer.prototype.copy = function copy (target, targetStart, start, end) {
+  if (!start) start = 0
+  if (!end && end !== 0) end = this.length
+  if (targetStart >= target.length) targetStart = target.length
+  if (!targetStart) targetStart = 0
+  if (end > 0 && end < start) end = start
+
+  // Copy 0 bytes; we're done
+  if (end === start) return 0
+  if (target.length === 0 || this.length === 0) return 0
+
+  // Fatal error conditions
+  if (targetStart < 0) {
+    throw new RangeError('targetStart out of bounds')
+  }
+  if (start < 0 || start >= this.length) throw new RangeError('sourceStart out of bounds')
+  if (end < 0) throw new RangeError('sourceEnd out of bounds')
+
+  // Are we oob?
+  if (end > this.length) end = this.length
+  if (target.length - targetStart < end - start) {
+    end = target.length - targetStart + start
+  }
+
+  var len = end - start
+  var i
+
+  if (this === target && start < targetStart && targetStart < end) {
+    // descending copy from end
+    for (i = len - 1; i >= 0; --i) {
+      target[i + targetStart] = this[i + start]
+    }
+  } else if (len < 1000 || !Buffer.TYPED_ARRAY_SUPPORT) {
+    // ascending copy from start
+    for (i = 0; i < len; ++i) {
+      target[i + targetStart] = this[i + start]
+    }
+  } else {
+    Uint8Array.prototype.set.call(
+      target,
+      this.subarray(start, start + len),
+      targetStart
+    )
+  }
+
+  return len
+}
+
+// Usage:
+//    buffer.fill(number[, offset[, end]])
+//    buffer.fill(buffer[, offset[, end]])
+//    buffer.fill(string[, offset[, end]][, encoding])
+Buffer.prototype.fill = function fill (val, start, end, encoding) {
+  // Handle string cases:
+  if (typeof val === 'string') {
+    if (typeof start === 'string') {
+      encoding = start
+      start = 0
+      end = this.length
+    } else if (typeof end === 'string') {
+      encoding = end
+      end = this.length
+    }
+    if (val.length === 1) {
+      var code = val.charCodeAt(0)
+      if (code < 256) {
+        val = code
+      }
+    }
+    if (encoding !== undefined && typeof encoding !== 'string') {
+      throw new TypeError('encoding must be a string')
+    }
+    if (typeof encoding === 'string' && !Buffer.isEncoding(encoding)) {
+      throw new TypeError('Unknown encoding: ' + encoding)
+    }
+  } else if (typeof val === 'number') {
+    val = val & 255
+  }
+
+  // Invalid ranges are not set to a default, so can range check early.
+  if (start < 0 || this.length < start || this.length < end) {
+    throw new RangeError('Out of range index')
+  }
+
+  if (end <= start) {
+    return this
+  }
+
+  start = start >>> 0
+  end = end === undefined ? this.length : end >>> 0
+
+  if (!val) val = 0
+
+  var i
+  if (typeof val === 'number') {
+    for (i = start; i < end; ++i) {
+      this[i] = val
+    }
+  } else {
+    var bytes = Buffer.isBuffer(val)
+      ? val
+      : utf8ToBytes(new Buffer(val, encoding).toString())
+    var len = bytes.length
+    for (i = 0; i < end - start; ++i) {
+      this[i + start] = bytes[i % len]
+    }
+  }
+
+  return this
+}
+
+// HELPER FUNCTIONS
+// ================
+
+var INVALID_BASE64_RE = /[^+\/0-9A-Za-z-_]/g
+
+function base64clean (str) {
+  // Node strips out invalid characters like \n and \t from the string, base64-js does not
+  str = stringtrim(str).replace(INVALID_BASE64_RE, '')
+  // Node converts strings with length < 2 to ''
+  if (str.length < 2) return ''
+  // Node allows for non-padded base64 strings (missing trailing ===), base64-js does not
+  while (str.length % 4 !== 0) {
+    str = str + '='
+  }
+  return str
+}
+
+function stringtrim (str) {
+  if (str.trim) return str.trim()
+  return str.replace(/^\s+|\s+$/g, '')
+}
+
+function toHex (n) {
+  if (n < 16) return '0' + n.toString(16)
+  return n.toString(16)
+}
+
+function utf8ToBytes (string, units) {
+  units = units || Infinity
+  var codePoint
+  var length = string.length
+  var leadSurrogate = null
+  var bytes = []
+
+  for (var i = 0; i < length; ++i) {
+    codePoint = string.charCodeAt(i)
+
+    // is surrogate component
+    if (codePoint > 0xD7FF && codePoint < 0xE000) {
+      // last char was a lead
+      if (!leadSurrogate) {
+        // no lead yet
+        if (codePoint > 0xDBFF) {
+          // unexpected trail
+          if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+          continue
+        } else if (i + 1 === length) {
+          // unpaired lead
+          if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+          continue
+        }
+
+        // valid lead
+        leadSurrogate = codePoint
+
+        continue
+      }
+
+      // 2 leads in a row
+      if (codePoint < 0xDC00) {
+        if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+        leadSurrogate = codePoint
+        continue
+      }
+
+      // valid surrogate pair
+      codePoint = (leadSurrogate - 0xD800 << 10 | codePoint - 0xDC00) + 0x10000
+    } else if (leadSurrogate) {
+      // valid bmp char, but last char was a lead
+      if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+    }
+
+    leadSurrogate = null
+
+    // encode utf8
+    if (codePoint < 0x80) {
+      if ((units -= 1) < 0) break
+      bytes.push(codePoint)
+    } else if (codePoint < 0x800) {
+      if ((units -= 2) < 0) break
+      bytes.push(
+        codePoint >> 0x6 | 0xC0,
+        codePoint & 0x3F | 0x80
+      )
+    } else if (codePoint < 0x10000) {
+      if ((units -= 3) < 0) break
+      bytes.push(
+        codePoint >> 0xC | 0xE0,
+        codePoint >> 0x6 & 0x3F | 0x80,
+        codePoint & 0x3F | 0x80
+      )
+    } else if (codePoint < 0x110000) {
+      if ((units -= 4) < 0) break
+      bytes.push(
+        codePoint >> 0x12 | 0xF0,
+        codePoint >> 0xC & 0x3F | 0x80,
+        codePoint >> 0x6 & 0x3F | 0x80,
+        codePoint & 0x3F | 0x80
+      )
+    } else {
+      throw new Error('Invalid code point')
+    }
+  }
+
+  return bytes
+}
+
+function asciiToBytes (str) {
+  var byteArray = []
+  for (var i = 0; i < str.length; ++i) {
+    // Node's code seems to be doing this and not & 0x7F..
+    byteArray.push(str.charCodeAt(i) & 0xFF)
+  }
+  return byteArray
+}
+
+function utf16leToBytes (str, units) {
+  var c, hi, lo
+  var byteArray = []
+  for (var i = 0; i < str.length; ++i) {
+    if ((units -= 2) < 0) break
+
+    c = str.charCodeAt(i)
+    hi = c >> 8
+    lo = c % 256
+    byteArray.push(lo)
+    byteArray.push(hi)
+  }
+
+  return byteArray
+}
+
+function base64ToBytes (str) {
+  return base64.toByteArray(base64clean(str))
+}
+
+function blitBuffer (src, dst, offset, length) {
+  for (var i = 0; i < length; ++i) {
+    if ((i + offset >= dst.length) || (i >= src.length)) break
+    dst[i + offset] = src[i]
+  }
+  return i
+}
+
+function isnan (val) {
+  return val !== val // eslint-disable-line no-self-compare
+}
+
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(4)))
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var COS = __webpack_require__(3);
+module.exports = COS;
+
+/***/ }),
+/* 3 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var util = __webpack_require__(0);
+var event = __webpack_require__(12);
+var task = __webpack_require__(13);
+var base = __webpack_require__(14);
+
+var defaultOptions = {
+    SecretId: '',
+    SecretKey: '',
+    FileParallelLimit: 3,
+    ChunkParallelLimit: 3,
+    ChunkSize: 1024 * 1024,
+    ProgressInterval: 1000,
+    Domain: '',
+    ServiceDomain: '',
+};
+
+// 对外暴露的类
+var COS = function (options) {
+    this.options = util.extend(util.clone(defaultOptions), options || {});
+    event.init(this);
+    task.init(this);
+};
+
+util.extend(COS.prototype, base);
+
+COS.getAuthorization = util.getAuth;
+COS.version = '0.3.5';
+
+module.exports = COS;
+
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports) {
+
+var g;
+
+// This works in non-strict mode
+g = (function() {
+	return this;
+})();
+
+try {
+	// This works if eval is allowed (see CSP)
+	g = g || Function("return this")() || (1,eval)("this");
+} catch(e) {
+	// This works if the window reference is available
+	if(typeof window === "object")
+		g = window;
+}
+
+// g can still be undefined, but nothing to do about it...
+// We return undefined, instead of nothing here, so it's
+// easier to handle this case. if(!global) { ...}
+
+module.exports = g;
+
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+exports.byteLength = byteLength
+exports.toByteArray = toByteArray
+exports.fromByteArray = fromByteArray
+
+var lookup = []
+var revLookup = []
+var Arr = typeof Uint8Array !== 'undefined' ? Uint8Array : Array
+
+var code = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+for (var i = 0, len = code.length; i < len; ++i) {
+  lookup[i] = code[i]
+  revLookup[code.charCodeAt(i)] = i
+}
+
+revLookup['-'.charCodeAt(0)] = 62
+revLookup['_'.charCodeAt(0)] = 63
+
+function placeHoldersCount (b64) {
+  var len = b64.length
+  if (len % 4 > 0) {
+    throw new Error('Invalid string. Length must be a multiple of 4')
+  }
+
+  // the number of equal signs (place holders)
+  // if there are two placeholders, than the two characters before it
+  // represent one byte
+  // if there is only one, then the three characters before it represent 2 bytes
+  // this is just a cheap hack to not do indexOf twice
+  return b64[len - 2] === '=' ? 2 : b64[len - 1] === '=' ? 1 : 0
+}
+
+function byteLength (b64) {
+  // base64 is 4/3 + up to two characters of the original data
+  return (b64.length * 3 / 4) - placeHoldersCount(b64)
+}
+
+function toByteArray (b64) {
+  var i, l, tmp, placeHolders, arr
+  var len = b64.length
+  placeHolders = placeHoldersCount(b64)
+
+  arr = new Arr((len * 3 / 4) - placeHolders)
+
+  // if there are placeholders, only get up to the last complete 4 chars
+  l = placeHolders > 0 ? len - 4 : len
+
+  var L = 0
+
+  for (i = 0; i < l; i += 4) {
+    tmp = (revLookup[b64.charCodeAt(i)] << 18) | (revLookup[b64.charCodeAt(i + 1)] << 12) | (revLookup[b64.charCodeAt(i + 2)] << 6) | revLookup[b64.charCodeAt(i + 3)]
+    arr[L++] = (tmp >> 16) & 0xFF
+    arr[L++] = (tmp >> 8) & 0xFF
+    arr[L++] = tmp & 0xFF
+  }
+
+  if (placeHolders === 2) {
+    tmp = (revLookup[b64.charCodeAt(i)] << 2) | (revLookup[b64.charCodeAt(i + 1)] >> 4)
+    arr[L++] = tmp & 0xFF
+  } else if (placeHolders === 1) {
+    tmp = (revLookup[b64.charCodeAt(i)] << 10) | (revLookup[b64.charCodeAt(i + 1)] << 4) | (revLookup[b64.charCodeAt(i + 2)] >> 2)
+    arr[L++] = (tmp >> 8) & 0xFF
+    arr[L++] = tmp & 0xFF
+  }
+
+  return arr
+}
+
+function tripletToBase64 (num) {
+  return lookup[num >> 18 & 0x3F] + lookup[num >> 12 & 0x3F] + lookup[num >> 6 & 0x3F] + lookup[num & 0x3F]
+}
+
+function encodeChunk (uint8, start, end) {
+  var tmp
+  var output = []
+  for (var i = start; i < end; i += 3) {
+    tmp = (uint8[i] << 16) + (uint8[i + 1] << 8) + (uint8[i + 2])
+    output.push(tripletToBase64(tmp))
+  }
+  return output.join('')
+}
+
+function fromByteArray (uint8) {
+  var tmp
+  var len = uint8.length
+  var extraBytes = len % 3 // if we have 1 byte left, pad 2 bytes
+  var output = ''
+  var parts = []
+  var maxChunkLength = 16383 // must be multiple of 3
+
+  // go through the array every three bytes, we'll deal with trailing stuff later
+  for (var i = 0, len2 = len - extraBytes; i < len2; i += maxChunkLength) {
+    parts.push(encodeChunk(uint8, i, (i + maxChunkLength) > len2 ? len2 : (i + maxChunkLength)))
+  }
+
+  // pad the end with zeros, but make sure to not forget the extra bytes
+  if (extraBytes === 1) {
+    tmp = uint8[len - 1]
+    output += lookup[tmp >> 2]
+    output += lookup[(tmp << 4) & 0x3F]
+    output += '=='
+  } else if (extraBytes === 2) {
+    tmp = (uint8[len - 2] << 8) + (uint8[len - 1])
+    output += lookup[tmp >> 10]
+    output += lookup[(tmp >> 4) & 0x3F]
+    output += lookup[(tmp << 2) & 0x3F]
+    output += '='
+  }
+
+  parts.push(output)
+
+  return parts.join('')
+}
+
+
+/***/ }),
+/* 6 */
+/***/ (function(module, exports) {
+
+exports.read = function (buffer, offset, isLE, mLen, nBytes) {
+  var e, m
+  var eLen = nBytes * 8 - mLen - 1
+  var eMax = (1 << eLen) - 1
+  var eBias = eMax >> 1
+  var nBits = -7
+  var i = isLE ? (nBytes - 1) : 0
+  var d = isLE ? -1 : 1
+  var s = buffer[offset + i]
+
+  i += d
+
+  e = s & ((1 << (-nBits)) - 1)
+  s >>= (-nBits)
+  nBits += eLen
+  for (; nBits > 0; e = e * 256 + buffer[offset + i], i += d, nBits -= 8) {}
+
+  m = e & ((1 << (-nBits)) - 1)
+  e >>= (-nBits)
+  nBits += mLen
+  for (; nBits > 0; m = m * 256 + buffer[offset + i], i += d, nBits -= 8) {}
+
+  if (e === 0) {
+    e = 1 - eBias
+  } else if (e === eMax) {
+    return m ? NaN : ((s ? -1 : 1) * Infinity)
+  } else {
+    m = m + Math.pow(2, mLen)
+    e = e - eBias
+  }
+  return (s ? -1 : 1) * m * Math.pow(2, e - mLen)
+}
+
+exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
+  var e, m, c
+  var eLen = nBytes * 8 - mLen - 1
+  var eMax = (1 << eLen) - 1
+  var eBias = eMax >> 1
+  var rt = (mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0)
+  var i = isLE ? 0 : (nBytes - 1)
+  var d = isLE ? 1 : -1
+  var s = value < 0 || (value === 0 && 1 / value < 0) ? 1 : 0
+
+  value = Math.abs(value)
+
+  if (isNaN(value) || value === Infinity) {
+    m = isNaN(value) ? 1 : 0
+    e = eMax
+  } else {
+    e = Math.floor(Math.log(value) / Math.LN2)
+    if (value * (c = Math.pow(2, -e)) < 1) {
+      e--
+      c *= 2
+    }
+    if (e + eBias >= 1) {
+      value += rt / c
+    } else {
+      value += rt * Math.pow(2, 1 - eBias)
+    }
+    if (value * c >= 2) {
+      e++
+      c /= 2
+    }
+
+    if (e + eBias >= eMax) {
+      m = 0
+      e = eMax
+    } else if (e + eBias >= 1) {
+      m = (value * c - 1) * Math.pow(2, mLen)
+      e = e + eBias
+    } else {
+      m = value * Math.pow(2, eBias - 1) * Math.pow(2, mLen)
+      e = 0
+    }
+  }
+
+  for (; mLen >= 8; buffer[offset + i] = m & 0xff, i += d, m /= 256, mLen -= 8) {}
+
+  e = (e << mLen) | m
+  eLen += mLen
+  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8) {}
+
+  buffer[offset + i - d] |= s * 128
+}
+
+
+/***/ }),
+/* 7 */
+/***/ (function(module, exports) {
+
+var toString = {}.toString;
+
+module.exports = Array.isArray || function (arr) {
+  return toString.call(arr) == '[object Array]';
+};
+
+
+/***/ }),
+/* 8 */
+/***/ (function(module, exports) {
+
+/**
+ *
+ *  MD5 (Message-Digest Algorithm)
+ *  http://www.webtoolkit.info/
+ *
+ **/
+
+var md5 = function (string) {
+
+    function RotateLeft(lValue, iShiftBits) {
+        return (lValue<<iShiftBits) | (lValue>>>(32-iShiftBits));
+    }
+
+    function AddUnsigned(lX,lY) {
+        var lX4,lY4,lX8,lY8,lResult;
+        lX8 = (lX & 0x80000000);
+        lY8 = (lY & 0x80000000);
+        lX4 = (lX & 0x40000000);
+        lY4 = (lY & 0x40000000);
+        lResult = (lX & 0x3FFFFFFF)+(lY & 0x3FFFFFFF);
+        if (lX4 & lY4) {
+            return (lResult ^ 0x80000000 ^ lX8 ^ lY8);
+        }
+        if (lX4 | lY4) {
+            if (lResult & 0x40000000) {
+                return (lResult ^ 0xC0000000 ^ lX8 ^ lY8);
+            } else {
+                return (lResult ^ 0x40000000 ^ lX8 ^ lY8);
+            }
+        } else {
+            return (lResult ^ lX8 ^ lY8);
+        }
+    }
+
+    function F(x,y,z) { return (x & y) | ((~x) & z); }
+    function G(x,y,z) { return (x & z) | (y & (~z)); }
+    function H(x,y,z) { return (x ^ y ^ z); }
+    function I(x,y,z) { return (y ^ (x | (~z))); }
+
+    function FF(a,b,c,d,x,s,ac) {
+        a = AddUnsigned(a, AddUnsigned(AddUnsigned(F(b, c, d), x), ac));
+        return AddUnsigned(RotateLeft(a, s), b);
+    };
+
+    function GG(a,b,c,d,x,s,ac) {
+        a = AddUnsigned(a, AddUnsigned(AddUnsigned(G(b, c, d), x), ac));
+        return AddUnsigned(RotateLeft(a, s), b);
+    };
+
+    function HH(a,b,c,d,x,s,ac) {
+        a = AddUnsigned(a, AddUnsigned(AddUnsigned(H(b, c, d), x), ac));
+        return AddUnsigned(RotateLeft(a, s), b);
+    };
+
+    function II(a,b,c,d,x,s,ac) {
+        a = AddUnsigned(a, AddUnsigned(AddUnsigned(I(b, c, d), x), ac));
+        return AddUnsigned(RotateLeft(a, s), b);
+    };
+
+    function ConvertToWordArray(string) {
+        var lWordCount;
+        var lMessageLength = string.length;
+        var lNumberOfWords_temp1=lMessageLength + 8;
+        var lNumberOfWords_temp2=(lNumberOfWords_temp1-(lNumberOfWords_temp1 % 64))/64;
+        var lNumberOfWords = (lNumberOfWords_temp2+1)*16;
+        var lWordArray=Array(lNumberOfWords-1);
+        var lBytePosition = 0;
+        var lByteCount = 0;
+        while ( lByteCount < lMessageLength ) {
+            lWordCount = (lByteCount-(lByteCount % 4))/4;
+            lBytePosition = (lByteCount % 4)*8;
+            lWordArray[lWordCount] = (lWordArray[lWordCount] | (string.charCodeAt(lByteCount)<<lBytePosition));
+            lByteCount++;
+        }
+        lWordCount = (lByteCount-(lByteCount % 4))/4;
+        lBytePosition = (lByteCount % 4)*8;
+        lWordArray[lWordCount] = lWordArray[lWordCount] | (0x80<<lBytePosition);
+        lWordArray[lNumberOfWords-2] = lMessageLength<<3;
+        lWordArray[lNumberOfWords-1] = lMessageLength>>>29;
+        return lWordArray;
+    };
+
+    function WordToHex(lValue) {
+        var WordToHexValue="",WordToHexValue_temp="",lByte,lCount;
+        for (lCount = 0;lCount<=3;lCount++) {
+            lByte = (lValue>>>(lCount*8)) & 255;
+            WordToHexValue_temp = "0" + lByte.toString(16);
+            WordToHexValue = WordToHexValue + WordToHexValue_temp.substr(WordToHexValue_temp.length-2,2);
+        }
+        return WordToHexValue;
+    };
+
+    function Utf8Encode(string) {
+        string = string.replace(/\r\n/g,"\n");
+        var utftext = "";
+
+        for (var n = 0; n < string.length; n++) {
+
+            var c = string.charCodeAt(n);
+
+            if (c < 128) {
+                utftext += String.fromCharCode(c);
+            }
+            else if((c > 127) && (c < 2048)) {
+                utftext += String.fromCharCode((c >> 6) | 192);
+                utftext += String.fromCharCode((c & 63) | 128);
+            }
+            else {
+                utftext += String.fromCharCode((c >> 12) | 224);
+                utftext += String.fromCharCode(((c >> 6) & 63) | 128);
+                utftext += String.fromCharCode((c & 63) | 128);
+            }
+
+        }
+
+        return utftext;
+    };
+
+    var x=Array();
+    var k,AA,BB,CC,DD,a,b,c,d;
+    var S11=7, S12=12, S13=17, S14=22;
+    var S21=5, S22=9 , S23=14, S24=20;
+    var S31=4, S32=11, S33=16, S34=23;
+    var S41=6, S42=10, S43=15, S44=21;
+
+    string = Utf8Encode(string);
+
+    x = ConvertToWordArray(string);
+
+    a = 0x67452301; b = 0xEFCDAB89; c = 0x98BADCFE; d = 0x10325476;
+
+    for (k=0;k<x.length;k+=16) {
+        AA=a; BB=b; CC=c; DD=d;
+        a=FF(a,b,c,d,x[k+0], S11,0xD76AA478);
+        d=FF(d,a,b,c,x[k+1], S12,0xE8C7B756);
+        c=FF(c,d,a,b,x[k+2], S13,0x242070DB);
+        b=FF(b,c,d,a,x[k+3], S14,0xC1BDCEEE);
+        a=FF(a,b,c,d,x[k+4], S11,0xF57C0FAF);
+        d=FF(d,a,b,c,x[k+5], S12,0x4787C62A);
+        c=FF(c,d,a,b,x[k+6], S13,0xA8304613);
+        b=FF(b,c,d,a,x[k+7], S14,0xFD469501);
+        a=FF(a,b,c,d,x[k+8], S11,0x698098D8);
+        d=FF(d,a,b,c,x[k+9], S12,0x8B44F7AF);
+        c=FF(c,d,a,b,x[k+10],S13,0xFFFF5BB1);
+        b=FF(b,c,d,a,x[k+11],S14,0x895CD7BE);
+        a=FF(a,b,c,d,x[k+12],S11,0x6B901122);
+        d=FF(d,a,b,c,x[k+13],S12,0xFD987193);
+        c=FF(c,d,a,b,x[k+14],S13,0xA679438E);
+        b=FF(b,c,d,a,x[k+15],S14,0x49B40821);
+        a=GG(a,b,c,d,x[k+1], S21,0xF61E2562);
+        d=GG(d,a,b,c,x[k+6], S22,0xC040B340);
+        c=GG(c,d,a,b,x[k+11],S23,0x265E5A51);
+        b=GG(b,c,d,a,x[k+0], S24,0xE9B6C7AA);
+        a=GG(a,b,c,d,x[k+5], S21,0xD62F105D);
+        d=GG(d,a,b,c,x[k+10],S22,0x2441453);
+        c=GG(c,d,a,b,x[k+15],S23,0xD8A1E681);
+        b=GG(b,c,d,a,x[k+4], S24,0xE7D3FBC8);
+        a=GG(a,b,c,d,x[k+9], S21,0x21E1CDE6);
+        d=GG(d,a,b,c,x[k+14],S22,0xC33707D6);
+        c=GG(c,d,a,b,x[k+3], S23,0xF4D50D87);
+        b=GG(b,c,d,a,x[k+8], S24,0x455A14ED);
+        a=GG(a,b,c,d,x[k+13],S21,0xA9E3E905);
+        d=GG(d,a,b,c,x[k+2], S22,0xFCEFA3F8);
+        c=GG(c,d,a,b,x[k+7], S23,0x676F02D9);
+        b=GG(b,c,d,a,x[k+12],S24,0x8D2A4C8A);
+        a=HH(a,b,c,d,x[k+5], S31,0xFFFA3942);
+        d=HH(d,a,b,c,x[k+8], S32,0x8771F681);
+        c=HH(c,d,a,b,x[k+11],S33,0x6D9D6122);
+        b=HH(b,c,d,a,x[k+14],S34,0xFDE5380C);
+        a=HH(a,b,c,d,x[k+1], S31,0xA4BEEA44);
+        d=HH(d,a,b,c,x[k+4], S32,0x4BDECFA9);
+        c=HH(c,d,a,b,x[k+7], S33,0xF6BB4B60);
+        b=HH(b,c,d,a,x[k+10],S34,0xBEBFBC70);
+        a=HH(a,b,c,d,x[k+13],S31,0x289B7EC6);
+        d=HH(d,a,b,c,x[k+0], S32,0xEAA127FA);
+        c=HH(c,d,a,b,x[k+3], S33,0xD4EF3085);
+        b=HH(b,c,d,a,x[k+6], S34,0x4881D05);
+        a=HH(a,b,c,d,x[k+9], S31,0xD9D4D039);
+        d=HH(d,a,b,c,x[k+12],S32,0xE6DB99E5);
+        c=HH(c,d,a,b,x[k+15],S33,0x1FA27CF8);
+        b=HH(b,c,d,a,x[k+2], S34,0xC4AC5665);
+        a=II(a,b,c,d,x[k+0], S41,0xF4292244);
+        d=II(d,a,b,c,x[k+7], S42,0x432AFF97);
+        c=II(c,d,a,b,x[k+14],S43,0xAB9423A7);
+        b=II(b,c,d,a,x[k+5], S44,0xFC93A039);
+        a=II(a,b,c,d,x[k+12],S41,0x655B59C3);
+        d=II(d,a,b,c,x[k+3], S42,0x8F0CCC92);
+        c=II(c,d,a,b,x[k+10],S43,0xFFEFF47D);
+        b=II(b,c,d,a,x[k+1], S44,0x85845DD1);
+        a=II(a,b,c,d,x[k+8], S41,0x6FA87E4F);
+        d=II(d,a,b,c,x[k+15],S42,0xFE2CE6E0);
+        c=II(c,d,a,b,x[k+6], S43,0xA3014314);
+        b=II(b,c,d,a,x[k+13],S44,0x4E0811A1);
+        a=II(a,b,c,d,x[k+4], S41,0xF7537E82);
+        d=II(d,a,b,c,x[k+11],S42,0xBD3AF235);
+        c=II(c,d,a,b,x[k+2], S43,0x2AD7D2BB);
+        b=II(b,c,d,a,x[k+9], S44,0xEB86D391);
+        a=AddUnsigned(a,AA);
+        b=AddUnsigned(b,BB);
+        c=AddUnsigned(c,CC);
+        d=AddUnsigned(d,DD);
+    }
+
+    var temp = WordToHex(a)+WordToHex(b)+WordToHex(c)+WordToHex(d);
+
+    return temp.toLowerCase();
+}
+
+module.exports = md5;
+
+/***/ }),
+/* 9 */
+/***/ (function(module, exports) {
+
+/*
+ CryptoJS v3.1.2
+ code.google.com/p/crypto-js
+ (c) 2009-2013 by Jeff Mott. All rights reserved.
+ code.google.com/p/crypto-js/wiki/License
+ */
+var CryptoJS=CryptoJS||function(g,l){var e={},d=e.lib={},m=function(){},k=d.Base={extend:function(a){m.prototype=this;var c=new m;a&&c.mixIn(a);c.hasOwnProperty("init")||(c.init=function(){c.$super.init.apply(this,arguments)});c.init.prototype=c;c.$super=this;return c},create:function(){var a=this.extend();a.init.apply(a,arguments);return a},init:function(){},mixIn:function(a){for(var c in a)a.hasOwnProperty(c)&&(this[c]=a[c]);a.hasOwnProperty("toString")&&(this.toString=a.toString)},clone:function(){return this.init.prototype.extend(this)}},
+        p=d.WordArray=k.extend({init:function(a,c){a=this.words=a||[];this.sigBytes=c!=l?c:4*a.length},toString:function(a){return(a||n).stringify(this)},concat:function(a){var c=this.words,q=a.words,f=this.sigBytes;a=a.sigBytes;this.clamp();if(f%4)for(var b=0;b<a;b++)c[f+b>>>2]|=(q[b>>>2]>>>24-8*(b%4)&255)<<24-8*((f+b)%4);else if(65535<q.length)for(b=0;b<a;b+=4)c[f+b>>>2]=q[b>>>2];else c.push.apply(c,q);this.sigBytes+=a;return this},clamp:function(){var a=this.words,c=this.sigBytes;a[c>>>2]&=4294967295<<
+            32-8*(c%4);a.length=g.ceil(c/4)},clone:function(){var a=k.clone.call(this);a.words=this.words.slice(0);return a},random:function(a){for(var c=[],b=0;b<a;b+=4)c.push(4294967296*g.random()|0);return new p.init(c,a)}}),b=e.enc={},n=b.Hex={stringify:function(a){var c=a.words;a=a.sigBytes;for(var b=[],f=0;f<a;f++){var d=c[f>>>2]>>>24-8*(f%4)&255;b.push((d>>>4).toString(16));b.push((d&15).toString(16))}return b.join("")},parse:function(a){for(var c=a.length,b=[],f=0;f<c;f+=2)b[f>>>3]|=parseInt(a.substr(f,
+                2),16)<<24-4*(f%8);return new p.init(b,c/2)}},j=b.Latin1={stringify:function(a){var c=a.words;a=a.sigBytes;for(var b=[],f=0;f<a;f++)b.push(String.fromCharCode(c[f>>>2]>>>24-8*(f%4)&255));return b.join("")},parse:function(a){for(var c=a.length,b=[],f=0;f<c;f++)b[f>>>2]|=(a.charCodeAt(f)&255)<<24-8*(f%4);return new p.init(b,c)}},h=b.Utf8={stringify:function(a){try{return decodeURIComponent(escape(j.stringify(a)))}catch(c){throw Error("Malformed UTF-8 data");}},parse:function(a){return j.parse(unescape(encodeURIComponent(a)))}},
+        r=d.BufferedBlockAlgorithm=k.extend({reset:function(){this._data=new p.init;this._nDataBytes=0},_append:function(a){"string"==typeof a&&(a=h.parse(a));this._data.concat(a);this._nDataBytes+=a.sigBytes},_process:function(a){var c=this._data,b=c.words,f=c.sigBytes,d=this.blockSize,e=f/(4*d),e=a?g.ceil(e):g.max((e|0)-this._minBufferSize,0);a=e*d;f=g.min(4*a,f);if(a){for(var k=0;k<a;k+=d)this._doProcessBlock(b,k);k=b.splice(0,a);c.sigBytes-=f}return new p.init(k,f)},clone:function(){var a=k.clone.call(this);
+            a._data=this._data.clone();return a},_minBufferSize:0});d.Hasher=r.extend({cfg:k.extend(),init:function(a){this.cfg=this.cfg.extend(a);this.reset()},reset:function(){r.reset.call(this);this._doReset()},update:function(a){this._append(a);this._process();return this},finalize:function(a){a&&this._append(a);return this._doFinalize()},blockSize:16,_createHelper:function(a){return function(b,d){return(new a.init(d)).finalize(b)}},_createHmacHelper:function(a){return function(b,d){return(new s.HMAC.init(a,
+        d)).finalize(b)}}});var s=e.algo={};return e}(Math);
+(function(){var g=CryptoJS,l=g.lib,e=l.WordArray,d=l.Hasher,m=[],l=g.algo.SHA1=d.extend({_doReset:function(){this._hash=new e.init([1732584193,4023233417,2562383102,271733878,3285377520])},_doProcessBlock:function(d,e){for(var b=this._hash.words,n=b[0],j=b[1],h=b[2],g=b[3],l=b[4],a=0;80>a;a++){if(16>a)m[a]=d[e+a]|0;else{var c=m[a-3]^m[a-8]^m[a-14]^m[a-16];m[a]=c<<1|c>>>31}c=(n<<5|n>>>27)+l+m[a];c=20>a?c+((j&h|~j&g)+1518500249):40>a?c+((j^h^g)+1859775393):60>a?c+((j&h|j&g|h&g)-1894007588):c+((j^h^
+g)-899497514);l=g;g=h;h=j<<30|j>>>2;j=n;n=c}b[0]=b[0]+n|0;b[1]=b[1]+j|0;b[2]=b[2]+h|0;b[3]=b[3]+g|0;b[4]=b[4]+l|0},_doFinalize:function(){var d=this._data,e=d.words,b=8*this._nDataBytes,g=8*d.sigBytes;e[g>>>5]|=128<<24-g%32;e[(g+64>>>9<<4)+14]=Math.floor(b/4294967296);e[(g+64>>>9<<4)+15]=b;d.sigBytes=4*e.length;this._process();return this._hash},clone:function(){var e=d.clone.call(this);e._hash=this._hash.clone();return e}});g.SHA1=d._createHelper(l);g.HmacSHA1=d._createHmacHelper(l)})();
+(function(){var g=CryptoJS,l=g.enc.Utf8;g.algo.HMAC=g.lib.Base.extend({init:function(e,d){e=this._hasher=new e.init;"string"==typeof d&&(d=l.parse(d));var g=e.blockSize,k=4*g;d.sigBytes>k&&(d=e.finalize(d));d.clamp();for(var p=this._oKey=d.clone(),b=this._iKey=d.clone(),n=p.words,j=b.words,h=0;h<g;h++)n[h]^=1549556828,j[h]^=909522486;p.sigBytes=b.sigBytes=k;this.reset()},reset:function(){var e=this._hasher;e.reset();e.update(this._iKey)},update:function(e){this._hasher.update(e);return this},finalize:function(e){var d=
+    this._hasher;e=d.finalize(e);d.reset();return d.finalize(this._oKey.clone().concat(e))}})})();
+
+
+(function () {
+    // Shortcuts
+    var C = CryptoJS;
+    var C_lib = C.lib;
+    var WordArray = C_lib.WordArray;
+    var C_enc = C.enc;
+
+    /**
+     * Base64 encoding strategy.
+     */
+    var Base64 = C_enc.Base64 = {
+        /**
+         * Converts a word array to a Base64 string.
+         *
+         * @param {WordArray} wordArray The word array.
+         *
+         * @return {string} The Base64 string.
+         *
+         * @static
+         *
+         * @example
+         *
+         *     var base64String = CryptoJS.enc.Base64.stringify(wordArray);
+         */
+        stringify: function (wordArray) {
+            // Shortcuts
+            var words = wordArray.words;
+            var sigBytes = wordArray.sigBytes;
+            var map = this._map;
+
+            // Clamp excess bits
+            wordArray.clamp();
+
+            // Convert
+            var base64Chars = [];
+            for (var i = 0; i < sigBytes; i += 3) {
+                var byte1 = (words[i >>> 2]       >>> (24 - (i % 4) * 8))       & 0xff;
+                var byte2 = (words[(i + 1) >>> 2] >>> (24 - ((i + 1) % 4) * 8)) & 0xff;
+                var byte3 = (words[(i + 2) >>> 2] >>> (24 - ((i + 2) % 4) * 8)) & 0xff;
+
+                var triplet = (byte1 << 16) | (byte2 << 8) | byte3;
+
+                for (var j = 0; (j < 4) && (i + j * 0.75 < sigBytes); j++) {
+                    base64Chars.push(map.charAt((triplet >>> (6 * (3 - j))) & 0x3f));
+                }
+            }
+
+            // Add padding
+            var paddingChar = map.charAt(64);
+            if (paddingChar) {
+                while (base64Chars.length % 4) {
+                    base64Chars.push(paddingChar);
+                }
+            }
+
+            return base64Chars.join('');
+        },
+
+        /**
+         * Converts a Base64 string to a word array.
+         *
+         * @param {string} base64Str The Base64 string.
+         *
+         * @return {WordArray} The word array.
+         *
+         * @static
+         *
+         * @example
+         *
+         *     var wordArray = CryptoJS.enc.Base64.parse(base64String);
+         */
+        parse: function (base64Str) {
+            // Shortcuts
+            var base64StrLength = base64Str.length;
+            var map = this._map;
+
+            // Ignore padding
+            var paddingChar = map.charAt(64);
+            if (paddingChar) {
+                var paddingIndex = base64Str.indexOf(paddingChar);
+                if (paddingIndex != -1) {
+                    base64StrLength = paddingIndex;
+                }
+            }
+
+            // Convert
+            var words = [];
+            var nBytes = 0;
+            for (var i = 0; i < base64StrLength; i++) {
+                if (i % 4) {
+                    var bits1 = map.indexOf(base64Str.charAt(i - 1)) << ((i % 4) * 2);
+                    var bits2 = map.indexOf(base64Str.charAt(i)) >>> (6 - (i % 4) * 2);
+                    words[nBytes >>> 2] |= (bits1 | bits2) << (24 - (nBytes % 4) * 8);
+                    nBytes++;
+                }
+            }
+
+            return WordArray.create(words, nBytes);
+        },
+
+        _map: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/='
+    };
+}());
+
+module.exports = CryptoJS;
+
+
+/***/ }),
+/* 10 */
+/***/ (function(module, exports) {
+
+/*
+ Copyright 2011-2013 Abdulla Abdurakhmanov
+ Original sources are available at https://code.google.com/p/x2js/
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+ http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ */
+
+var x2js = function (config) {
+    'use strict';
+
+    var VERSION = "1.2.0";
+
+    config = config || {};
+    initConfigDefaults();
+    initRequiredPolyfills();
+
+    function initConfigDefaults() {
+        if(config.escapeMode === undefined) {
+            config.escapeMode = true;
+        }
+
+        config.attributePrefix = config.attributePrefix || "_";
+        config.arrayAccessForm = config.arrayAccessForm || "none";
+        config.emptyNodeForm = config.emptyNodeForm || "text";
+
+        if(config.enableToStringFunc === undefined) {
+            config.enableToStringFunc = true;
+        }
+        config.arrayAccessFormPaths = config.arrayAccessFormPaths || [];
+        if(config.skipEmptyTextNodesForObj === undefined) {
+            config.skipEmptyTextNodesForObj = true;
+        }
+        if(config.stripWhitespaces === undefined) {
+            config.stripWhitespaces = true;
+        }
+        config.datetimeAccessFormPaths = config.datetimeAccessFormPaths || [];
+
+        if(config.useDoubleQuotes === undefined) {
+            config.useDoubleQuotes = false;
+        }
+
+        config.xmlElementsFilter = config.xmlElementsFilter || [];
+        config.jsonPropertiesFilter = config.jsonPropertiesFilter || [];
+
+        if(config.keepCData === undefined) {
+            config.keepCData = false;
+        }
+    }
+
+    var DOMNodeTypes = {
+        ELEMENT_NODE 	   : 1,
+        TEXT_NODE    	   : 3,
+        CDATA_SECTION_NODE : 4,
+        COMMENT_NODE	   : 8,
+        DOCUMENT_NODE 	   : 9
+    };
+
+    function initRequiredPolyfills() {
+    }
+
+    function getNodeLocalName( node ) {
+        var nodeLocalName = node.localName;
+        if(nodeLocalName == null) // Yeah, this is IE!!
+            nodeLocalName = node.baseName;
+        if(nodeLocalName == null || nodeLocalName=="") // =="" is IE too
+            nodeLocalName = node.nodeName;
+        return nodeLocalName;
+    }
+
+    function getNodePrefix(node) {
+        return node.prefix;
+    }
+
+    function escapeXmlChars(str) {
+        if(typeof(str) == "string")
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+        else
+            return str;
+    }
+
+    function unescapeXmlChars(str) {
+        return str.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&');
+    }
+
+    function checkInStdFiltersArrayForm(stdFiltersArrayForm, obj, name, path) {
+        var idx = 0;
+        for(; idx < stdFiltersArrayForm.length; idx++) {
+            var filterPath = stdFiltersArrayForm[idx];
+            if( typeof filterPath === "string" ) {
+                if(filterPath == path)
+                    break;
+            }
+            else
+            if( filterPath instanceof RegExp) {
+                if(filterPath.test(path))
+                    break;
+            }
+            else
+            if( typeof filterPath === "function") {
+                if(filterPath(obj, name, path))
+                    break;
+            }
+        }
+        return idx!=stdFiltersArrayForm.length;
+    }
+
+    function toArrayAccessForm(obj, childName, path) {
+        switch(config.arrayAccessForm) {
+            case "property":
+                if(!(obj[childName] instanceof Array))
+                    obj[childName+"_asArray"] = [obj[childName]];
+                else
+                    obj[childName+"_asArray"] = obj[childName];
+                break;
+            /*case "none":
+             break;*/
+        }
+
+        if(!(obj[childName] instanceof Array) && config.arrayAccessFormPaths.length > 0) {
+            if(checkInStdFiltersArrayForm(config.arrayAccessFormPaths, obj, childName, path)) {
+                obj[childName] = [obj[childName]];
+            }
+        }
+    }
+
+    function fromXmlDateTime(prop) {
+        // Implementation based up on http://stackoverflow.com/questions/8178598/xml-datetime-to-javascript-date-object
+        // Improved to support full spec and optional parts
+        var bits = prop.split(/[-T:+Z]/g);
+
+        var d = new Date(bits[0], bits[1]-1, bits[2]);
+        var secondBits = bits[5].split("\.");
+        d.setHours(bits[3], bits[4], secondBits[0]);
+        if(secondBits.length>1)
+            d.setMilliseconds(secondBits[1]);
+
+        // Get supplied time zone offset in minutes
+        if(bits[6] && bits[7]) {
+            var offsetMinutes = bits[6] * 60 + Number(bits[7]);
+            var sign = /\d\d-\d\d:\d\d$/.test(prop)? '-' : '+';
+
+            // Apply the sign
+            offsetMinutes = 0 + (sign == '-'? -1 * offsetMinutes : offsetMinutes);
+
+            // Apply offset and local timezone
+            d.setMinutes(d.getMinutes() - offsetMinutes - d.getTimezoneOffset())
+        }
+        else
+        if(prop.indexOf("Z", prop.length - 1) !== -1) {
+            d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds()));
+        }
+
+        // d is now a local time equivalent to the supplied time
+        return d;
+    }
+
+    function checkFromXmlDateTimePaths(value, childName, fullPath) {
+        if(config.datetimeAccessFormPaths.length > 0) {
+            var path = fullPath.split("\.#")[0];
+            if(checkInStdFiltersArrayForm(config.datetimeAccessFormPaths, value, childName, path)) {
+                return fromXmlDateTime(value);
+            }
+            else
+                return value;
+        }
+        else
+            return value;
+    }
+
+    function checkXmlElementsFilter(obj, childType, childName, childPath) {
+        if( childType == DOMNodeTypes.ELEMENT_NODE && config.xmlElementsFilter.length > 0) {
+            return checkInStdFiltersArrayForm(config.xmlElementsFilter, obj, childName, childPath);
+        }
+        else
+            return true;
+    }
+
+    function parseDOMChildren( node, path ) {
+        if(node.nodeType == DOMNodeTypes.DOCUMENT_NODE) {
+            var result = new Object;
+            var nodeChildren = node.childNodes;
+            // Alternative for firstElementChild which is not supported in some environments
+            for(var cidx=0; cidx <nodeChildren.length; cidx++) {
+                var child = nodeChildren.item(cidx);
+                if(child.nodeType == DOMNodeTypes.ELEMENT_NODE) {
+                    var childName = getNodeLocalName(child);
+                    result[childName] = parseDOMChildren(child, childName);
+                }
+            }
+            return result;
+        }
+        else
+        if(node.nodeType == DOMNodeTypes.ELEMENT_NODE) {
+            var result = new Object;
+            result.__cnt=0;
+
+            var nodeChildren = node.childNodes;
+
+            // Children nodes
+            for(var cidx=0; cidx <nodeChildren.length; cidx++) {
+                var child = nodeChildren.item(cidx); // nodeChildren[cidx];
+                var childName = getNodeLocalName(child);
+
+                if(child.nodeType!= DOMNodeTypes.COMMENT_NODE) {
+                    var childPath = path+"."+childName;
+                    if (checkXmlElementsFilter(result,child.nodeType,childName,childPath)) {
+                        result.__cnt++;
+                        if(result[childName] == null) {
+                            result[childName] = parseDOMChildren(child, childPath);
+                            toArrayAccessForm(result, childName, childPath);
+                        }
+                        else {
+                            if(result[childName] != null) {
+                                if( !(result[childName] instanceof Array)) {
+                                    result[childName] = [result[childName]];
+                                    toArrayAccessForm(result, childName, childPath);
+                                }
+                            }
+                            (result[childName])[result[childName].length] = parseDOMChildren(child, childPath);
+                        }
+                    }
+                }
+            }
+
+            // Attributes
+            for(var aidx=0; aidx <node.attributes.length; aidx++) {
+                var attr = node.attributes.item(aidx); // [aidx];
+                result.__cnt++;
+                result[config.attributePrefix+attr.name]=attr.value;
+            }
+
+            // Node namespace prefix
+            var nodePrefix = getNodePrefix(node);
+            if(nodePrefix!=null && nodePrefix!="") {
+                result.__cnt++;
+                result.__prefix=nodePrefix;
+            }
+
+            if(result["#text"]!=null) {
+                result.__text = result["#text"];
+                if(result.__text instanceof Array) {
+                    result.__text = result.__text.join("\n");
+                }
+                //if(config.escapeMode)
+                //	result.__text = unescapeXmlChars(result.__text);
+                if(config.stripWhitespaces)
+                    result.__text = result.__text.trim();
+                delete result["#text"];
+                if(config.arrayAccessForm=="property")
+                    delete result["#text_asArray"];
+                result.__text = checkFromXmlDateTimePaths(result.__text, childName, path+"."+childName);
+            }
+            if(result["#cdata-section"]!=null) {
+                result.__cdata = result["#cdata-section"];
+                delete result["#cdata-section"];
+                if(config.arrayAccessForm=="property")
+                    delete result["#cdata-section_asArray"];
+            }
+
+            if( result.__cnt == 0 && config.emptyNodeForm=="text" ) {
+                result = '';
+            }
+            else
+            if( result.__cnt == 1 && result.__text!=null  ) {
+                result = result.__text;
+            }
+            else
+            if( result.__cnt == 1 && result.__cdata!=null && !config.keepCData  ) {
+                result = result.__cdata;
+            }
+            else
+            if ( result.__cnt > 1 && result.__text!=null && config.skipEmptyTextNodesForObj) {
+                if( (config.stripWhitespaces && result.__text=="") || (result.__text.trim()=="")) {
+                    delete result.__text;
+                }
+            }
+            delete result.__cnt;
+
+            if( config.enableToStringFunc && (result.__text!=null || result.__cdata!=null )) {
+                result.toString = function() {
+                    return (this.__text!=null? this.__text:'')+( this.__cdata!=null ? this.__cdata:'');
+                };
+            }
+
+            return result;
+        }
+        else
+        if(node.nodeType == DOMNodeTypes.TEXT_NODE || node.nodeType == DOMNodeTypes.CDATA_SECTION_NODE) {
+            return node.nodeValue;
+        }
+    }
+
+    function startTag(jsonObj, element, attrList, closed) {
+        var resultStr = "<"+ ( (jsonObj!=null && jsonObj.__prefix!=null)? (jsonObj.__prefix+":"):"") + element;
+        if(attrList!=null) {
+            for(var aidx = 0; aidx < attrList.length; aidx++) {
+                var attrName = attrList[aidx];
+                var attrVal = jsonObj[attrName];
+                if(config.escapeMode)
+                    attrVal=escapeXmlChars(attrVal);
+                resultStr+=" "+attrName.substr(config.attributePrefix.length)+"=";
+                if(config.useDoubleQuotes)
+                    resultStr+='"'+attrVal+'"';
+                else
+                    resultStr+="'"+attrVal+"'";
+            }
+        }
+        if(!closed)
+            resultStr+=">";
+        else
+            resultStr+="/>";
+        return resultStr;
+    }
+
+    function endTag(jsonObj,elementName) {
+        return "</"+ (jsonObj.__prefix!=null? (jsonObj.__prefix+":"):"")+elementName+">";
+    }
+
+    function endsWith(str, suffix) {
+        return str.indexOf(suffix, str.length - suffix.length) !== -1;
+    }
+
+    function jsonXmlSpecialElem ( jsonObj, jsonObjField ) {
+        if((config.arrayAccessForm=="property" && endsWith(jsonObjField.toString(),("_asArray")))
+            || jsonObjField.toString().indexOf(config.attributePrefix)==0
+            || jsonObjField.toString().indexOf("__")==0
+            || (jsonObj[jsonObjField] instanceof Function) )
+            return true;
+        else
+            return false;
+    }
+
+    function jsonXmlElemCount ( jsonObj ) {
+        var elementsCnt = 0;
+        if(jsonObj instanceof Object ) {
+            for( var it in jsonObj  ) {
+                if(jsonXmlSpecialElem ( jsonObj, it) )
+                    continue;
+                elementsCnt++;
+            }
+        }
+        return elementsCnt;
+    }
+
+    function checkJsonObjPropertiesFilter(jsonObj, propertyName, jsonObjPath) {
+        return config.jsonPropertiesFilter.length == 0
+            || jsonObjPath==""
+            || checkInStdFiltersArrayForm(config.jsonPropertiesFilter, jsonObj, propertyName, jsonObjPath);
+    }
+
+    function parseJSONAttributes ( jsonObj ) {
+        var attrList = [];
+        if(jsonObj instanceof Object ) {
+            for( var ait in jsonObj  ) {
+                if(ait.toString().indexOf("__")== -1 && ait.toString().indexOf(config.attributePrefix)==0) {
+                    attrList.push(ait);
+                }
+            }
+        }
+        return attrList;
+    }
+
+    function parseJSONTextAttrs ( jsonTxtObj ) {
+        var result ="";
+
+        if(jsonTxtObj.__cdata!=null) {
+            result+="<![CDATA["+jsonTxtObj.__cdata+"]]>";
+        }
+
+        if(jsonTxtObj.__text!=null) {
+            if(config.escapeMode)
+                result+=escapeXmlChars(jsonTxtObj.__text);
+            else
+                result+=jsonTxtObj.__text;
+        }
+        return result;
+    }
+
+    function parseJSONTextObject ( jsonTxtObj ) {
+        var result ="";
+
+        if( jsonTxtObj instanceof Object ) {
+            result+=parseJSONTextAttrs ( jsonTxtObj );
+        }
+        else
+        if(jsonTxtObj!=null) {
+            if(config.escapeMode)
+                result+=escapeXmlChars(jsonTxtObj);
+            else
+                result+=jsonTxtObj;
+        }
+
+        return result;
+    }
+
+    function getJsonPropertyPath(jsonObjPath, jsonPropName) {
+        if (jsonObjPath==="") {
+            return jsonPropName;
+        }
+        else
+            return jsonObjPath+"."+jsonPropName;
+    }
+
+    function parseJSONArray ( jsonArrRoot, jsonArrObj, attrList, jsonObjPath ) {
+        var result = "";
+        if(jsonArrRoot.length == 0) {
+            result+=startTag(jsonArrRoot, jsonArrObj, attrList, true);
+        }
+        else {
+            for(var arIdx = 0; arIdx < jsonArrRoot.length; arIdx++) {
+                result+=startTag(jsonArrRoot[arIdx], jsonArrObj, parseJSONAttributes(jsonArrRoot[arIdx]), false);
+                result+=parseJSONObject(jsonArrRoot[arIdx], getJsonPropertyPath(jsonObjPath,jsonArrObj));
+                result+=endTag(jsonArrRoot[arIdx],jsonArrObj);
+            }
+        }
+        return result;
+    }
+
+    function parseJSONObject ( jsonObj, jsonObjPath ) {
+        var result = "";
+
+        var elementsCnt = jsonXmlElemCount ( jsonObj );
+
+        if(elementsCnt > 0) {
+            for( var it in jsonObj ) {
+
+                if(jsonXmlSpecialElem ( jsonObj, it) || (jsonObjPath!="" && !checkJsonObjPropertiesFilter(jsonObj, it, getJsonPropertyPath(jsonObjPath,it))) )
+                    continue;
+
+                var subObj = jsonObj[it];
+
+                var attrList = parseJSONAttributes( subObj )
+
+                if(subObj == null || subObj == undefined) {
+                    result+=startTag(subObj, it, attrList, true);
+                }
+                else
+                if(subObj instanceof Object) {
+
+                    if(subObj instanceof Array) {
+                        result+=parseJSONArray( subObj, it, attrList, jsonObjPath );
+                    }
+                    else if(subObj instanceof Date) {
+                        result+=startTag(subObj, it, attrList, false);
+                        result+=subObj.toISOString();
+                        result+=endTag(subObj,it);
+                    }
+                    else {
+                        var subObjElementsCnt = jsonXmlElemCount ( subObj );
+                        if(subObjElementsCnt > 0 || subObj.__text!=null || subObj.__cdata!=null) {
+                            result+=startTag(subObj, it, attrList, false);
+                            result+=parseJSONObject(subObj, getJsonPropertyPath(jsonObjPath,it));
+                            result+=endTag(subObj,it);
+                        }
+                        else {
+                            result+=startTag(subObj, it, attrList, true);
+                        }
+                    }
+                }
+                else {
+                    result+=startTag(subObj, it, attrList, false);
+                    result+=parseJSONTextObject(subObj);
+                    result+=endTag(subObj,it);
+                }
+            }
+        }
+        result+=parseJSONTextObject(jsonObj);
+
+        return result;
+    }
+
+    this.parseXmlString = function(xmlDocStr) {
+        // var isIEParser = window.ActiveXObject || "ActiveXObject" in window;
+        var isIEParser = false;
+        if (xmlDocStr === undefined) {
+            return null;
+        }
+        var xmlDoc;
+        if (DOMParser) {
+            var parser=new DOMParser();
+            var parsererrorNS = null;
+            // IE9+ now is here
+            if(!isIEParser) {
+                try {
+                    parsererrorNS = parser.parseFromString("INVALID", "text/xml").getElementsByTagName("parsererror")[0].namespaceURI;
+                }
+                catch(err) {
+                    parsererrorNS = null;
+                }
+            }
+            try {
+                xmlDoc = parser.parseFromString( xmlDocStr, "text/xml" );
+                if( parsererrorNS!= null && xmlDoc.getElementsByTagNameNS(parsererrorNS, "parsererror").length > 0) {
+                    //throw new Error('Error parsing XML: '+xmlDocStr);
+                    xmlDoc = null;
+                }
+            }
+            catch(err) {
+                xmlDoc = null;
+            }
+        }
+        else {
+            // IE :(
+            if(xmlDocStr.indexOf("<?")==0) {
+                xmlDocStr = xmlDocStr.substr( xmlDocStr.indexOf("?>") + 2 );
+            }
+            xmlDoc=new ActiveXObject("Microsoft.XMLDOM");
+            xmlDoc.async="false";
+            xmlDoc.loadXML(xmlDocStr);
+        }
+        return xmlDoc;
+    };
+
+    this.asArray = function(prop) {
+        if (prop === undefined || prop == null)
+            return [];
+        else
+        if(prop instanceof Array)
+            return prop;
+        else
+            return [prop];
+    };
+
+    this.toXmlDateTime = function(dt) {
+        if(dt instanceof Date)
+            return dt.toISOString();
+        else
+        if(typeof(dt) === 'number' )
+            return new Date(dt).toISOString();
+        else
+            return null;
+    };
+
+    this.asDateTime = function(prop) {
+        if(typeof(prop) == "string") {
+            return fromXmlDateTime(prop);
+        }
+        else
+            return prop;
+    };
+
+    this.xml2json = function (xmlDoc) {
+        return parseDOMChildren ( xmlDoc );
+    };
+
+    this.xml_str2json = function (xmlDocStr) {
+        var xmlDoc = this.parseXmlString(xmlDocStr);
+        if(xmlDoc!=null)
+            return this.xml2json(xmlDoc);
+        else
+            return null;
+    };
+
+    this.json2xml_str = function (jsonObj) {
+        return parseJSONObject ( jsonObj, "" );
+    };
+
+    this.json2xml = function (jsonObj) {
+        var xmlDocStr = this.json2xml_str (jsonObj);
+        return this.parseXmlString(xmlDocStr);
+    };
+
+    this.getVersion = function () {
+        return VERSION;
+    };
+};
+
+var xml2json = function (str) {
+    var parser = new DOMParser();
+    var xmlDoc = parser.parseFromString(str, "text/xml");
+    var x2jsObj = new x2js();
+    var data = x2jsObj.xml2json(xmlDoc);
+    if (data.html && data.getElementsByTagName('parsererror').length) {
+        return null;
+    } else {
+        return data;
+    }
+};
+
+var json2xml = function (data) {
+    var x2jsObj = new x2js();
+    return x2jsObj.json2xml(data);
+};
+
+module.exports = xml2json;
+
+/***/ }),
+/* 11 */
+/***/ (function(module, exports) {
+
+//copyright Ryan Day 2010 <http://ryanday.org>, Joscha Feth 2013 <http://www.feth.com> [MIT Licensed]
+
+var element_start_char =
+    "a-zA-Z_\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u00FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FFF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD";
+var element_non_start_char = "\-.0-9\u00B7\u0300-\u036F\u203F\u2040";
+var element_replace = new RegExp("^([^" + element_start_char + "])|^((x|X)(m|M)(l|L))|([^" + element_start_char + element_non_start_char + "])", "g");
+var not_safe_in_xml = /[^\x09\x0A\x0D\x20-\xFF\x85\xA0-\uD7FF\uE000-\uFDCF\uFDE0-\uFFFD]/gm;
+
+var objKeys = function (obj) {
+    var l = [];
+    if (obj instanceof Object) {
+        for (var k in obj) {
+            if (obj.hasOwnProperty(k)) {
+                l.push(k);
+            }
+        }
+    }
+    return l;
+};
+var process_to_xml = function (node_data, options) {
+
+    var makeNode = function (name, content, attributes, level, hasSubNodes) {
+        var indent_value = options.indent !== undefined ? options.indent : "\t";
+        var indent = options.prettyPrint ? '\n' + new Array(level).join(indent_value) : '';
+        if (options.removeIllegalNameCharacters) {
+            name = name.replace(element_replace, '_');
+        }
+
+        var node = [indent, '<', name, (attributes || '')];
+        if (content && content.length > 0) {
+            node.push('>')
+            node.push(content);
+            hasSubNodes && node.push(indent);
+            node.push('</');
+            node.push(name);
+            node.push('>');
+        } else {
+            node.push('/>');
+        }
+        return node.join('');
+    };
+
+    return (function fn(node_data, node_descriptor, level) {
+        var type = typeof node_data;
+        if ((Array.isArray) ? Array.isArray(node_data) : node_data instanceof Array) {
+            type = 'array';
+        } else if (node_data instanceof Date) {
+            type = 'date';
+        }
+
+        switch (type) {
+            //if value is an array create child nodes from values
+            case 'array':
+                var ret = [];
+                node_data.map(function (v) {
+                    ret.push(fn(v, 1, level + 1));
+                    //entries that are values of an array are the only ones that can be special node descriptors
+                });
+                options.prettyPrint && ret.push('\n');
+                return ret.join('');
+                break;
+
+            case 'date':
+                // cast dates to ISO 8601 date (soap likes it)
+                return node_data.toJSON ? node_data.toJSON() : node_data + '';
+                break;
+
+            case 'object':
+                var nodes = [];
+                for (var name in node_data) {
+                    if (node_data[name] instanceof Array) {
+                        for (var j in node_data[name]) {
+                            nodes.push(makeNode(name, fn(node_data[name][j], 0, level + 1), null, level + 1, objKeys(node_data[name][j]).length));
+                        }
+                    } else {
+                        nodes.push(makeNode(name, fn(node_data[name], 0, level + 1), null, level + 1));
+                    }
+                }
+                options.prettyPrint && nodes.length > 0 && nodes.push('\n');
+                return nodes.join('');
+                break;
+
+            case 'function':
+                return node_data();
+                break;
+
+            default:
+                return options.escape ? esc(node_data) : '' + node_data;
+        }
+
+    }(node_data, 0, 0))
+};
+
+
+var xml_header = function (standalone) {
+    var ret = ['<?xml version="1.0" encoding="UTF-8"'];
+
+    if (standalone) {
+        ret.push(' standalone="yes"');
+    }
+    ret.push('?>');
+
+    return ret.join('');
+};
+
+function esc(str) {
+    return ('' + str).replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/'/g, '&apos;')
+        .replace(/"/g, '&quot;')
+        .replace(not_safe_in_xml, '');
+}
+
+var json2xml = function (obj, options) {
+
+    if (!options) {
+        options = {
+            xmlHeader: {
+                standalone: true
+            },
+            prettyPrint: true,
+            indent: "  "
+        };
+    }
+
+    var Buffer = this.Buffer || function Buffer() {
+    };
+
+    if (typeof obj == 'string' || obj instanceof Buffer) {
+        try {
+            obj = JSON.parse(obj.toString());
+        } catch (e) {
+            return false;
+        }
+    }
+
+    var xmlheader = '';
+    var docType = '';
+    if (options) {
+        if (typeof options == 'object') {
+            // our config is an object
+
+            if (options.xmlHeader) {
+                // the user wants an xml header
+                xmlheader = xml_header(!!options.xmlHeader.standalone);
+            }
+
+            if (typeof options.docType != 'undefined') {
+                docType = '<!DOCTYPE ' + options.docType + '>'
+            }
+        } else {
+            // our config is a boolean value, so just add xml header
+            xmlheader = xml_header();
+        }
+    }
+    options = options || {}
+
+    var ret = [
+        xmlheader,
+        (options.prettyPrint && docType ? '\n' : ''),
+        docType,
+        process_to_xml(obj, options)
+    ];
+    return ret.join('').replace(/\n{2,}/g, '\n').replace(/\s+$/g, '');
+};
+
+module.exports = json2xml;
+
+/***/ }),
+/* 12 */
+/***/ (function(module, exports) {
+
+var initEvent = function (cos) {
+    var listeners = {};
+    var getList = function (action) {
+        !listeners[action] && (listeners[action] = []);
+        return listeners[action];
+    };
+    cos.on = function (action, callback) {
+        getList(action).push(callback);
+    };
+    cos.off = function (action, callback) {
+        var list = getList(action);
+        for (var i = list.length - 1; i >= 0; i--) {
+            callback === list[i] && list.splice(i, 1);
+        }
+    };
+    cos.emit = function (action, data) {
+        var list = getList(action).map(function (cb) {
+            return cb;
+        });
+        for (var i = 0; i < list.length; i++) {
+            list[i](data);
+        }
+    };
+};
+
+var EventProxy = function () {
+    initEvent(this);
+};
+
+module.exports.init = initEvent;
+module.exports.EventProxy = EventProxy;
+
+/***/ }),
+/* 13 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var util = __webpack_require__(0);
+
+var initTask = function (cos) {
+
+    var queue = [];
+    var tasks = {};
+    var uploadingFileCount = 0;
+    var nextUploadIndex = 0;
+
+    var originApiMap = {};
+
+    // 把上传方法替换成添加任务的方法
+    util.each([
+        'postObject',
+    ], function (api) {
+        originApiMap[api] = cos[api];
+        cos[api] = function (params, callback) {
+            cos._addTask(api, params, callback);
+        };
+    });
+
+    // 接口返回简略的任务信息
+    var formatTask = function (task) {
+        var t = {
+            id: task.id,
+            Bucket: task.Bucket,
+            Region: task.Region,
+            Key: task.Key,
+            FilePath: task.FilePath,
+            state: task.state,
+            loaded: task.loaded,
+            size: task.size,
+            speed: task.speed,
+            percent: task.percent,
+            hashPercent: task.hashPercent,
+        };
+        if (task.FilePath) t.FilePath = task.FilePath;
+        return t;
+    };
+
+    var emitListUpdate = function () {
+        cos.emit('list-update', {list: util.map(queue, formatTask)});
+    };
+
+    var startNextTask = function () {
+        if (nextUploadIndex < queue.length &&
+            uploadingFileCount < cos.options.FileParallelLimit) {
+            var task = queue[nextUploadIndex];
+            if (task.state === 'waiting') {
+                uploadingFileCount++;
+                task.state = 'checking';
+                !task.params.UploadData && (task.params.UploadData = {});
+                originApiMap[task.api].call(cos, task.params, function (err, data) {
+                    if (task.state === 'checking' || task.state === 'uploading') {
+                        task.state = err ? 'error' : 'success';
+                        uploadingFileCount--;
+                        startNextTask(cos);
+                        task.callback && task.callback(err, data);
+                        if (task.state === 'success') {
+                            delete task.params;
+                            delete task.callback;
+                        }
+                    }
+                });
+                emitListUpdate();
+            }
+            nextUploadIndex++;
+            startNextTask(cos);
+        }
+    };
+
+    var killTask = function (id, switchToState) {
+        var task = tasks[id];
+        if (!task) return;
+        var waiting = task && task.state === 'waiting';
+        var running = task && (task.state === 'checking' || task.state === 'uploading');
+        if (waiting || running || (switchToState === 'canceled' && task.state === 'paused')) {
+            if (switchToState === 'paused' && task.params.Body && typeof task.params.Body.pipe === 'function') {
+                console.error('stream not support pause');
+                return;
+            }
+            task.state = switchToState;
+            cos.emit('inner-kill-task', {TaskId: id});
+            emitListUpdate();
+            if (running) {
+                uploadingFileCount--;
+                startNextTask(cos);
+            }
+            if (switchToState === 'canceled') {
+                delete task.params;
+                delete task.callback;
+            }
+        }
+    };
+
+    cos._addTasks = function (taskList) {
+        util.each(taskList, function (task) {
+            task.params.IgnoreAddEvent = true;
+            cos._addTask(task.api, task.params, task.callback);
+        });
+        emitListUpdate();
+    };
+
+    cos._addTask = function (api, params, callback) {
+
+        // 生成 id
+        var id = util.uuid();
+        params.TaskReady && params.TaskReady(id);
+
+        var size;
+        if (params.Body && params.Body.size) {
+            size = params.Body.size;
+        } else if (params.Body && params.Body.length) {
+            size = params.Body.length;
+        } else if (params.ContentLength !== undefined) {
+            size = params.ContentLength;
+        }
+        if (params.ContentLength === undefined) params.ContentLength = size;
+        params.TaskId = id;
+
+        var task = {
+            // env
+            params: params,
+            callback: callback,
+            api: api,
+            index: queue.length,
+            // task
+            id: id,
+            Bucket: params.Bucket,
+            Region: params.Region,
+            Key: params.Key,
+            FilePath: params.FilePath || '',
+            state: 'waiting',
+            loaded: 0,
+            size: size,
+            speed: 0,
+            percent: 0,
+            hashPercent: 0,
+        };
+        var onHashProgress = params.onHashProgress;
+        params.onHashProgress = function (info) {
+            if (!cos._isRunningTask(task.id)) return;
+            task.hashPercent = info.percent;
+            onHashProgress && onHashProgress(info);
+            emitListUpdate();
+        };
+        var onProgress = params.onProgress;
+        params.onProgress = function (info) {
+            if (!cos._isRunningTask(task.id)) return;
+            task.state === 'checking' && (task.state = 'uploading');
+            task.loaded = info.loaded;
+            task.speed = info.speed;
+            task.percent = info.percent;
+            onProgress && onProgress(info);
+            emitListUpdate();
+        };
+        queue.push(task);
+        tasks[id] = task;
+        !params.IgnoreAddEvent && emitListUpdate();
+        startNextTask(cos);
+        return id;
+    };
+    cos._isRunningTask = function (id) {
+        var task = tasks[id];
+        return !!(task && (task.state === 'checking' || task.state === 'uploading'));
+    };
+    cos.getTaskList = function () {
+        return util.map(queue, formatTask);
+    };
+    cos.cancelTask = function (id) {
+        killTask(id, 'canceled')
+    };
+    cos.pauseTask = function (id) {
+        killTask(id, 'paused')
+    };
+    cos.restartTask = function (id) {
+        var task = tasks[id];
+        if (task && (task.state === 'paused' || task.state === 'error')) {
+            task.state = 'waiting';
+            emitListUpdate();
+            nextUploadIndex = Math.min(nextUploadIndex, task.index);
+            startNextTask();
+        }
+    };
+
+};
+
+module.exports.init = initTask;
+
+/***/ }),
+/* 14 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(Buffer) {
+var util = __webpack_require__(0);
+var REQUEST = __webpack_require__(15);
+
+// Bucket 相关
+
+/**
+ * 获取用户的 bucket 列表
+ * @param  {Object}  params         回调函数，必须，下面为参数列表
+ * 无特殊参数
+ * @param  {Function}  callback     回调函数，必须
+ */
+function getService(params, callback) {
+    if (typeof params === 'function') {
+        callback = params;
+        params = {};
+    }
+    var protocol = 'https:';
+    var domain = this.options.ServiceDomain;
+    var appId = params.AppId || this.options.appId;
+    if (domain) {
+        domain = domain.replace(/\{\{AppId\}\}/ig, appId || '').replace(/\{\{.*?\}\}/ig, '');
+        if (!/^[a-zA-Z]+:\/\//.test(domain)) {
+            domain = protocol + '//' + domain;
+        }
+        if (domain.slice(-1) === '/') {
+            domain = domain.slice(0, -1);
+        }
+    } else {
+        domain = protocol + '//service.cos.myqcloud.com';
+    }
+
+    submitRequest.call(this, {
+        url: domain + '/',
+        method: 'GET',
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        var buckets = (data && data.ListAllMyBucketsResult && data.ListAllMyBucketsResult.Buckets
+            && data.ListAllMyBucketsResult.Buckets.Bucket) || [];
+        buckets = util.isArray(buckets) ? buckets : [buckets];
+        callback(null, {
+            Buckets: buckets,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * 查看是否存在该Bucket，是否有权限访问
+ * @param  {Object}  params                     参数对象，必须
+ *     @param  {String}  params.Bucket          Bucket名称，必须
+ *     @param  {String}  params.Region          地域名称，必须
+ * @param  {Function}  callback                 回调函数，必须
+ * @return  {Object}  err                       请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data                      返回的数据
+ *     @return  {Boolean}  data.BucketExist     Bucket是否存在
+ *     @return  {Boolean}  data.BucketAuth      是否有 Bucket 的访问权限
+ */
+function headBucket(params, callback) {
+    submitRequest.call(this, {
+        Bucket: params.Bucket,
+        Region: params.Region,
+        method: 'HEAD',
+    }, function (err, data) {
+        var exist, auth, statusCode;
+        if (err) {
+            statusCode = err.statusCode;
+            if (statusCode && statusCode === 404) {
+                exist = false;
+                auth = false;
+            } else if (statusCode && statusCode === 403) {
+                exist = true;
+                auth = false;
+            } else {
+                return callback(err);
+            }
+        } else {
+            statusCode = data.statusCode;
+            exist = true;
+            auth = true;
+        }
+        var result = {
+            BucketExist: exist,
+            BucketAuth: auth,
+            statusCode: statusCode
+        };
+        if (data && data.headers) {
+            result.headers = data.headers;
+        }
+        callback(null, result);
+    });
+}
+
+/**
+ * 获取 Bucket 下的 object 列表
+ * @param  {Object}  params                         参数对象，必须
+ *     @param  {String}  params.Bucket              Bucket名称，必须
+ *     @param  {String}  params.Region              地域名称，必须
+ *     @param  {String}  params.Prefix              前缀匹配，用来规定返回的文件前缀地址，非必须
+ *     @param  {String}  params.Delimiter           定界符为一个符号，如果有Prefix，则将Prefix到delimiter之间的相同路径归为一类，非必须
+ *     @param  {String}  params.Marker              默认以UTF-8二进制顺序列出条目，所有列出条目从marker开始，非必须
+ *     @param  {String}  params.MaxKeys             单次返回最大的条目数量，默认1000，非必须
+ *     @param  {String}  params.EncodingType        规定返回值的编码方式，非必须
+ * @param  {Function}  callback                     回调函数，必须
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data                          返回的数据
+ *     @return  {Object}  data.ListBucketResult     返回的 object 列表信息
+ */
+function getBucket(params, callback) {
+    var reqParams = {};
+    reqParams['prefix'] = params['Prefix'];
+    reqParams['delimiter'] = params['Delimiter'];
+    reqParams['marker'] = params['Marker'];
+    reqParams['max-keys'] = params['MaxKeys'];
+    reqParams['encoding-type'] = params['EncodingType'];
+
+    submitRequest.call(this, {
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        qs: reqParams,
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        var contents = data.ListBucketResult.Contents || [];
+        var CommonPrefixes = data.ListBucketResult.CommonPrefixes || [];
+
+        contents = util.isArray(contents) ? contents : [contents];
+        CommonPrefixes = util.isArray(CommonPrefixes) ? CommonPrefixes : [CommonPrefixes];
+
+        var result = util.clone(data.ListBucketResult);
+        util.extend(result, {
+            Contents: contents,
+            CommonPrefixes: CommonPrefixes,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+
+        callback(null, result);
+    });
+}
+
+/**
+ * 删除 Bucket
+ * @param  {Object}  params                 参数对象，必须
+ *     @param  {String}  params.Bucket      Bucket名称，必须
+ *     @param  {String}  params.Region      地域名称，必须
+ * @param  {Function}  callback             回调函数，必须
+ * @return  {Object}  err                   请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data                  返回的数据
+ *     @return  {String}  data.Location     操作地址
+ */
+function deleteBucket(params, callback) {
+    submitRequest.call(this, {
+        method: 'DELETE',
+        Bucket: params.Bucket,
+        Region: params.Region,
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * 获取 Bucket 的 权限列表
+ * @param  {Object}  params                         参数对象，必须
+ *     @param  {String}  params.Bucket              Bucket名称，必须
+ *     @param  {String}  params.Region              地域名称，必须
+ * @param  {Function}  callback                     回调函数，必须
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data                          返回的数据
+ *     @return  {Object}  data.AccessControlPolicy  访问权限信息
+ */
+function getBucketAcl(params, callback) {
+    submitRequest.call(this, {
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        action: '/?acl',
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        var Owner = data.AccessControlPolicy.Owner || {};
+        var Grant = data.AccessControlPolicy.AccessControlList.Grant || [];
+        Grant = util.isArray(Grant) ? Grant : [Grant];
+        var result = decodeAcl(data.AccessControlPolicy);
+        if (data.headers && data.headers['x-cos-acl']) {
+            result.ACL = data.headers['x-cos-acl'];
+        }
+        result = util.extend(result, {
+            Owner: Owner,
+            Grants: Grant,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+        callback(null, result);
+    });
+}
+
+/**
+ * 设置 Bucket 的 权限列表
+ * @param  {Object}  params                         参数对象，必须
+ *     @param  {String}  params.Bucket              Bucket名称，必须
+ *     @param  {String}  params.Region              地域名称，必须
+ *     @param  {String}  params.ACL                 用户自定义文件权限，可以设置：private，public-read；默认值：private，非必须
+ *     @param  {String}  params.GrantRead           赋予被授权者读的权限，格式x-cos-grant-read: uin=" ",uin=" "，非必须
+ *     @param  {String}  params.GrantWrite          赋予被授权者写的权限，格式x-cos-grant-write: uin=" ",uin=" "，非必须
+ *     @param  {String}  params.GrantFullControl    赋予被授权者读写权限，格式x-cos-grant-full-control: uin=" ",uin=" "，非必须
+ * @param  {Function}  callback                     回调函数，必须
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data                          返回的数据
+ */
+function putBucketAcl(params, callback) {
+    var headers = {};
+
+    headers['x-cos-acl'] = params['ACL'];
+    headers['x-cos-grant-read'] = params['GrantRead'];
+    headers['x-cos-grant-write'] = params['GrantWrite'];
+    headers['x-cos-grant-read-acp'] = params['GrantReadAcp'];
+    headers['x-cos-grant-write-acp'] = params['GrantWriteAcp'];
+    headers['x-cos-grant-full-control'] = params['GrantFullControl'];
+
+    var xml = '';
+    if (params['AccessControlPolicy']) {
+        var AccessControlPolicy = util.clone(params['AccessControlPolicy'] || {});
+        var Grants = AccessControlPolicy.Grants || AccessControlPolicy.Grant;
+        Grants = util.isArray(Grants) ? Grants : [Grants];
+        delete AccessControlPolicy.Grant;
+        delete AccessControlPolicy.Grants;
+        AccessControlPolicy.AccessControlList = {Grant: Grants};
+        xml = util.json2xml({AccessControlPolicy: AccessControlPolicy});
+        headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+        headers['Content-Type'] = 'application/xml';
+    }
+
+    submitRequest.call(this, {
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        action: '/?acl',
+        headers: headers,
+        body: xml,
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * 获取 Bucket 的 跨域设置
+ * @param  {Object}  params                         参数对象，必须
+ *     @param  {String}  params.Bucket              Bucket名称，必须
+ *     @param  {String}  params.Region              地域名称，必须
+ * @param  {Function}  callback                     回调函数，必须
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data                          返回的数据
+ *     @return  {Object}  data.CORSRules            Bucket的跨域设置
+ */
+function getBucketCors(params, callback) {
+    submitRequest.call(this, {
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        action: '/?cors',
+    }, function (err, data) {
+        if (err) {
+            if (err.statusCode === 404 && err.error && err.error.Code === 'NoSuchCORSConfiguration') {
+                var result = {
+                    CORSRules: [],
+                    statusCode: err.statusCode,
+                };
+                err.headers && (result.headers = err.headers);
+                callback(null, result);
+            } else {
+                callback(err);
+            }
+            return;
+        }
+        var CORSConfiguration = data.CORSConfiguration || {};
+        var CORSRules = CORSConfiguration.CORSRules || CORSConfiguration.CORSRule || [];
+        CORSRules = util.clone(util.isArray(CORSRules) ? CORSRules : [CORSRules]);
+
+        util.each(CORSRules, function (rule) {
+            util.each(['AllowedOrigin', 'AllowedHeader', 'AllowedMethod', 'ExposeHeader'], function (key, j) {
+                var sKey = key + 's';
+                var val = rule[sKey] || rule[key] || [];
+                delete rule[key];
+                rule[sKey] = util.isArray(val) ? val : [val];
+            });
+        });
+
+        callback(null, {
+            CORSRules: CORSRules,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * 设置 Bucket 的 跨域设置
+ * @param  {Object}  params                             参数对象，必须
+ *     @param  {String}  params.Bucket                  Bucket名称，必须
+ *     @param  {String}  params.Region                  地域名称，必须
+ *     @param  {Object}  params.CORSConfiguration       相关的跨域设置，必须
+ * @param  {Array}  params.CORSConfiguration.CORSRules  对应的跨域规则
+ * @param  {Function}  callback                         回调函数，必须
+ * @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data                              返回的数据
+ */
+function putBucketCors(params, callback) {
+
+    var CORSConfiguration = params['CORSConfiguration'] || {};
+    var CORSRules = CORSConfiguration['CORSRules'] || params['CORSRules'] || [];
+    CORSRules = util.clone(util.isArray(CORSRules) ? CORSRules : [CORSRules]);
+    util.each(CORSRules, function (rule) {
+        util.each(['AllowedOrigin', 'AllowedHeader', 'AllowedMethod', 'ExposeHeader'], function (key, k) {
+            var sKey = key + 's';
+            var val = rule[sKey] || rule[key] || [];
+            delete rule[sKey];
+            rule[key] = util.isArray(val) ? val : [val];
+        });
+    });
+
+    var xml = util.json2xml({CORSConfiguration: {CORSRule: CORSRules}});
+    var headers = {};
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+    headers['Content-Type'] = 'application/xml';
+
+    submitRequest.call(this, {
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        body: xml,
+        action: '/?cors',
+        headers: headers,
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * 删除 Bucket 的 跨域设置
+ * @param  {Object}  params                 参数对象，必须
+ *     @param  {String}  params.Bucket      Bucket名称，必须
+ *     @param  {String}  params.Region      地域名称，必须
+ * @param  {Function}  callback             回调函数，必须
+ * @return  {Object}  err                   请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data                  返回的数据
+ */
+function deleteBucketCors(params, callback) {
+    submitRequest.call(this, {
+        method: 'DELETE',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        action: '/?cors',
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode || err.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+function putBucketPolicy(params, callback) {
+    var headers = {};
+    var Policy = params['Policy'];
+    var PolicyStr = Policy;
+    try {
+        if (typeof Policy === 'string') {
+            Policy = JSON.parse(PolicyStr);
+        } else {
+            PolicyStr = JSON.stringify(Policy);
+        }
+    } catch (e) {
+        callback({error: 'Policy format error'});
+    }
+
+    headers['Content-Type'] = 'application/json';
+    headers['Content-MD5'] = util.binaryBase64(util.md5(PolicyStr));
+
+    submitRequest.call(this, {
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        action: '/?policy',
+        body: PolicyStr,
+        headers: headers,
+        json: true,
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * 获取 Bucket 的 地域信息
+ * @param  {Object}  params             参数对象，必须
+ *     @param  {String}  params.Bucket  Bucket名称，必须
+ *     @param  {String}  params.Region  地域名称，必须
+ * @param  {Function}  callback         回调函数，必须
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data              返回数据，包含地域信息 LocationConstraint
+ */
+function getBucketLocation(params, callback) {
+    submitRequest.call(this, {
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        action: '/?location',
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        callback(null, data);
+    });
+}
+
+/**
+ * 获取 Bucket 的读取权限策略
+ * @param  {Object}  params             参数对象，必须
+ *     @param  {String}  params.Bucket  Bucket名称，必须
+ *     @param  {String}  params.Region  地域名称，必须
+ * @param  {Function}  callback         回调函数，必须
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data              返回数据
+ */
+function getBucketPolicy(params, callback) {
+    submitRequest.call(this, {
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        action: '/?policy',
+        rawBody: true,
+    }, function (err, data) {
+        if (err) {
+            if (err.statusCode && err.statusCode === 403) {
+                return callback({ErrorStatus: 'Access Denied'});
+            }
+            if (err.statusCode && err.statusCode === 405) {
+                return callback({ErrorStatus: 'Method Not Allowed'});
+            }
+            if (err.statusCode && err.statusCode === 404) {
+                return callback({ErrorStatus: 'Policy Not Found'});
+            }
+            return callback(err);
+        }
+        var Policy = {};
+        try {
+            Policy = JSON.parse(data.body);
+        } catch (e) {
+        }
+        callback(null, {
+            Policy: Policy,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * 获取 Bucket 的标签设置
+ * @param  {Object}  params             参数对象，必须
+ *     @param  {String}  params.Bucket  Bucket名称，必须
+ *     @param  {String}  params.Region  地域名称，必须
+ * @param  {Function}  callback         回调函数，必须
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data              返回数据
+ */
+function getBucketTagging(params, callback) {
+    submitRequest.call(this, {
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        action: '/?tagging',
+    }, function (err, data) {
+        if (err) {
+            if (err.statusCode === 404 && err.error && (err.error === "Not Found" || err.error.Code === 'NoSuchTagSet')) {
+                var result = {
+                    Tags: [],
+                    statusCode: err.statusCode,
+                };
+                err.headers && (result.headers = err.headers);
+                callback(null, result);
+            } else {
+                callback(err);
+            }
+            return;
+        }
+        var Tags = [];
+        try {
+            Tags = data.Tagging.TagSet.Tag || [];
+        } catch (e) {
+        }
+        Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
+        callback(null, {
+            Tags: Tags,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * 设置 Bucket 的标签
+ * @param  {Object}  params             参数对象，必须
+ *     @param  {String}  params.Bucket  Bucket名称，必须
+ *     @param  {String}  params.Region  地域名称，必须
+ *     @param  {Array}   params.TagSet  标签设置，必须
+ * @param  {Function}  callback         回调函数，必须
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data              返回数据
+ */
+function putBucketTagging(params, callback) {
+
+    var Tagging = params['Tagging'] || {};
+    var Tags = Tagging.TagSet || Tagging.Tags || params['Tags'] || [];
+    Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
+    var xml = util.json2xml({Tagging: {TagSet: {Tag: Tags}}});
+
+    var headers = {};
+    headers['Content-Type'] = 'application/xml';
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+
+    submitRequest.call(this, {
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        body: xml,
+        action: '/?tagging',
+        headers: headers,
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+
+/**
+ * 删除 Bucket 的 标签设置
+ * @param  {Object}  params             参数对象，必须
+ *     @param  {String}  params.Bucket  Bucket名称，必须
+ *     @param  {String}  params.Region  地域名称，必须
+ * @param  {Function}  callback         回调函数，必须
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data              返回的数据
+ */
+function deleteBucketTagging(params, callback) {
+    submitRequest.call(this, {
+        method: 'DELETE',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        action: '/?tagging',
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+function putBucketLifecycle(params, callback) {
+
+    var LifecycleConfiguration = params['LifecycleConfiguration'] || {};
+    var Rules = LifecycleConfiguration.Rules || [];
+    Rules = util.clone(Rules);
+    var xml = util.json2xml({LifecycleConfiguration: {Rule: Rules}});
+
+    var headers = {};
+    headers['Content-Type'] = 'application/xml';
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+
+    submitRequest.call(this, {
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        body: xml,
+        action: '/?lifecycle',
+        headers: headers,
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+function getBucketLifecycle(params, callback) {
+    submitRequest.call(this, {
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        action: '/?lifecycle',
+    }, function (err, data) {
+        if (err) {
+            if (err.statusCode === 404 && err.error && err.error.Code === 'NoSuchLifecycleConfiguration') {
+                var result = {
+                    Rules: [],
+                    statusCode: err.statusCode,
+                };
+                err.headers && (result.headers = err.headers);
+                callback(null, result);
+            } else {
+                callback(err);
+            }
+            return;
+        }
+        var Rules = [];
+        try {
+            Rules = data.LifecycleConfiguration.Rule || [];
+        } catch (e) {
+        }
+        Rules = util.clone(util.isArray(Rules) ? Rules : [Rules]);
+        callback(null, {
+            Rules: Rules,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+function deleteBucketLifecycle(params, callback) {
+    submitRequest.call(this, {
+        method: 'DELETE',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        action: '/?lifecycle',
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+// Object 相关
+
+/**
+ * 取回对应Object的元数据，Head的权限与Get的权限一致
+ * @param  {Object}  params                         参数对象，必须
+ *     @param  {String}  params.Bucket              Bucket名称，必须
+ *     @param  {String}  params.Region              地域名称，必须
+ *     @param  {String}  params.Key                 文件名称，必须
+ *     @param  {String}  params.IfModifiedSince     当Object在指定时间后被修改，则返回对应Object元信息，否则返回304，非必须
+ * @param  {Function}  callback                     回调函数，必须
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data                          为指定 object 的元数据，如果设置了 IfModifiedSince ，且文件未修改，则返回一个对象，NotModified 属性为 true
+ *     @return  {Boolean}  data.NotModified         是否在 IfModifiedSince 时间点之后未修改该 object，则为 true
+ */
+function headObject(params, callback) {
+    var headers = {};
+    headers['If-Modified-Since'] = params['IfModifiedSince'];
+
+    submitRequest.call(this, {
+        method: 'HEAD',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        Key: params.Key,
+        headers: headers,
+    }, function (err, data) {
+        if (err) {
+            var statusCode = err.statusCode;
+            if (headers['If-Modified-Since'] && statusCode && statusCode === 304) {
+                return callback(null, {
+                    NotModified: true,
+                    statusCode: statusCode,
+                });
+            }
+            return callback(err);
+        }
+        callback(null, data);
+    });
+}
+
+/**
+ * 下载 object
+ * @param  {Object}  params                                 参数对象，必须
+ *     @param  {String}  params.Bucket                      Bucket名称，必须
+ *     @param  {String}  params.Region                      地域名称，必须
+ *     @param  {String}  params.Key                         文件名称，必须
+ *     @param  {WriteStream}  params.Output                 文件写入流，非必须
+ *     @param  {String}  params.IfModifiedSince             当Object在指定时间后被修改，则返回对应Object元信息，否则返回304，非必须
+ *     @param  {String}  params.IfUnmodifiedSince           如果文件修改时间早于或等于指定时间，才返回文件内容。否则返回 412 (precondition failed)，非必须
+ *     @param  {String}  params.IfMatch                     当 ETag 与指定的内容一致，才返回文件。否则返回 412 (precondition failed)，非必须
+ *     @param  {String}  params.IfNoneMatch                 当 ETag 与指定的内容不一致，才返回文件。否则返回304 (not modified)，非必须
+ *     @param  {String}  params.ResponseContentType         设置返回头部中的 Content-Type 参数，非必须
+ *     @param  {String}  params.ResponseContentLanguage     设置返回头部中的 Content-Language 参数，非必须
+ *     @param  {String}  params.ResponseExpires             设置返回头部中的 Content-Expires 参数，非必须
+ *     @param  {String}  params.ResponseCacheControl        设置返回头部中的 Cache-Control 参数，非必须
+ *     @param  {String}  params.ResponseContentDisposition  设置返回头部中的 Content-Disposition 参数，非必须
+ *     @param  {String}  params.ResponseContentEncoding     设置返回头部中的 Content-Encoding 参数，非必须
+ * @param  {Function}  callback                             回调函数，必须
+ * @param  {Object}  err                                    请求失败的错误，如果请求成功，则为空。
+ * @param  {Object}  data                                   为对应的 object 数据，包括 body 和 headers
+ */
+function getObject(params, callback) {
+    var self = this;
+    var headers = {};
+    var reqParams = {};
+
+    headers['Range'] = params['Range'];
+    headers['If-Modified-Since'] = params['IfModifiedSince'];
+    headers['If-Unmodified-Since'] = params['IfUnmodifiedSince'];
+    headers['If-Match'] = params['IfMatch'];
+    headers['If-None-Match'] = params['IfNoneMatch'];
+
+    reqParams['response-content-type'] = params['ResponseContentType'];
+    reqParams['response-content-language'] = params['ResponseContentLanguage'];
+    reqParams['response-expires'] = params['ResponseExpires'];
+    reqParams['response-cache-control'] = params['ResponseCacheControl'];
+    reqParams['response-content-disposition'] = params['ResponseContentDisposition'];
+    reqParams['response-content-encoding'] = params['ResponseContentEncoding'];
+
+    var BodyType;
+
+    BodyType = 'string';
+
+    // 如果用户自己传入了 output
+    submitRequest.call(this, {
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        Key: params.Key,
+        headers: headers,
+        qs: reqParams,
+        rawBody: true,
+    }, function (err, data) {
+        if (err) {
+            var statusCode = err.statusCode;
+            if (headers['If-Modified-Since'] && statusCode && statusCode === 304) {
+                return callback(null, {
+                    NotModified: true
+                });
+            }
+            return callback(err);
+        }
+        var result = {};
+        if (BodyType === 'string') {
+            result.Body = data.body;
+        }
+        util.extend(result, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+        callback(null, result);
+    });
+
+}
+
+/**
+ * 上传 object
+ * @param  {Object} params                                          参数对象，必须
+ *     @param  {String}  params.Bucket                              Bucket名称，必须
+ *     @param  {String}  params.Region                              地域名称，必须
+ *     @param  {String}  params.Key                                 文件名称，必须
+ *     @param  {FilePath}  params.FilePath                          要上传的文件路径
+ *     @param  {Function}  params.onProgress                        上传进度回调函数
+ * @param  {Function}  callback                                     回调函数，必须
+ * @return  {Object}  err                                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data                                          为对应的 object 数据
+ *     @return  {String}  data.ETag                                 为对应上传文件的 ETag 值
+ */
+function postObject(params, callback) {
+    var self = this;
+    var headers = {};
+
+    headers['Cache-Control'] = params['CacheControl'];
+    headers['Content-Disposition'] = params['ContentDisposition'];
+    headers['Content-Encoding'] = params['ContentEncoding'];
+    headers['Content-MD5'] = params['ContentMD5'];
+    headers['Content-Length'] = params['ContentLength'];
+    headers['Content-Type'] = params['ContentType'];
+    headers['Expect'] = params['Expect'];
+    headers['Expires'] = params['Expires'];
+    headers['x-cos-acl'] = params['ACL'];
+    headers['x-cos-grant-read'] = params['GrantRead'];
+    headers['x-cos-grant-write'] = params['GrantWrite'];
+    headers['x-cos-grant-full-control'] = params['GrantFullControl'];
+    headers['x-cos-storage-class'] = params['StorageClass'];
+
+    var filePath = params.FilePath;
+    for (var key in params) {
+        if (key.indexOf('x-cos-meta-') > -1) {
+            headers[key] = params[key];
+        }
+    }
+
+    var onProgress = util.throttleOnProgress.call(self, headers['Content-Length'], params.onProgress);
+
+    submitRequest.call(this, {
+        method: 'POST',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        Key: params.Key,
+        headers: headers,
+        filePath: filePath,
+        onProgress: onProgress,
+    }, function (err, data) {
+        onProgress(null, true);
+        if (err) {
+            return callback(err);
+        }
+        if (data && data.headers && data.headers['etag']) {
+            var url = getUrl({
+                domain: self.options.Domain,
+                bucket: params.Bucket,
+                region: params.Region,
+                object: params.Key,
+            });
+            return callback(null, {
+                Location: url,
+                ETag: data.headers['etag'],
+                statusCode: data.statusCode,
+                headers: data.headers,
+            });
+        }
+        callback(null, data);
+    });
+}
+
+/**
+ * 删除 object
+ * @param  {Object}  params                     参数对象，必须
+ *     @param  {String}  params.Bucket          Bucket名称，必须
+ *     @param  {String}  params.Region          地域名称，必须
+ *     @param  {String}  params.Key             object名称，必须
+ * @param  {Function}  callback                 回调函数，必须
+ * @param  {Object}  err                        请求失败的错误，如果请求成功，则为空。
+ * @param  {Object}  data                       删除操作成功之后返回的数据
+ */
+function deleteObject(params, callback) {
+    submitRequest.call(this, {
+        method: 'DELETE',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        Key: params.Key,
+    }, function (err, data) {
+        if (err) {
+            var statusCode = err.statusCode;
+            if (statusCode && statusCode === 204) {
+                return callback(null, {statusCode: statusCode});
+            } else if (statusCode && statusCode === 404) {
+                return callback(null, {BucketNotFound: true, statusCode: statusCode,});
+            } else {
+                return callback(err);
+            }
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * 获取 object 的 权限列表
+ * @param  {Object}  params                         参数对象，必须
+ *     @param  {String}  params.Bucket              Bucket名称，必须
+ *     @param  {String}  params.Region              地域名称，必须
+ *     @param  {String}  params.Key                 object名称，必须
+ * @param  {Function}  callback                     回调函数，必须
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data                          返回的数据
+ *     @return  {Object}  data.AccessControlPolicy  权限列表
+ */
+function getObjectAcl(params, callback) {
+
+    submitRequest.call(this, {
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        Key: params.Key,
+        action: '?acl',
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        var Owner = data.AccessControlPolicy.Owner || {};
+        var Grant = data.AccessControlPolicy.AccessControlList.Grant || [];
+        Grant = util.isArray(Grant) ? Grant : [Grant];
+        var result = decodeAcl(data.AccessControlPolicy);
+        if (data.headers && data.headers['x-cos-acl']) {
+            result.ACL = data.headers['x-cos-acl'];
+        }
+        result = util.extend(result, {
+            Owner: Owner,
+            Grants: Grant,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+        callback(null, result);
+    });
+}
+
+/**
+ * 设置 object 的 权限列表
+ * @param  {Object}  params             参数对象，必须
+ *     @param  {String}  params.Bucket  Bucket名称，必须
+ *     @param  {String}  params.Region  地域名称，必须
+ *     @param  {String}  params.Key     object名称，必须
+ * @param  {Function}  callback         回调函数，必须
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data              返回的数据
+ */
+function putObjectAcl(params, callback) {
+    var headers = {};
+
+    headers['x-cos-acl'] = params['ACL'];
+    headers['x-cos-grant-read'] = params['GrantRead'];
+    headers['x-cos-grant-write'] = params['GrantWrite'];
+    headers['x-cos-grant-full-control'] = params['GrantFullControl'];
+
+    var xml = '';
+    if (params['AccessControlPolicy']) {
+        var AccessControlPolicy = util.clone(params['AccessControlPolicy'] || {});
+        var Grants = AccessControlPolicy.Grants || AccessControlPolicy.Grant;
+        Grants = util.isArray(Grants) ? Grants : [Grants];
+        delete AccessControlPolicy.Grant;
+        delete AccessControlPolicy.Grants;
+        AccessControlPolicy.AccessControlList = {Grant: Grants};
+        xml = util.json2xml({AccessControlPolicy: AccessControlPolicy});
+        headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+        headers['Content-Type'] = 'application/xml';
+    }
+
+    submitRequest.call(this, {
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        Key: params.Key,
+        action: '?acl',
+        headers: headers,
+        body: xml,
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * Options Object请求实现跨域访问的预请求。即发出一个 OPTIONS 请求给服务器以确认是否可以进行跨域操作。
+ * @param  {Object}  params             参数对象，必须
+ *     @param  {String}  params.Bucket  Bucket名称，必须
+ *     @param  {String}  params.Region  地域名称，必须
+ *     @param  {String}  params.Key     object名称，必须
+ * @param  {Function}  callback         回调函数，必须
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data              返回的数据
+ */
+function optionsObject(params, callback) {
+    var headers = {};
+
+    headers['Origin'] = params['Origin'];
+    headers['Access-Control-Request-Method'] = params['AccessControlRequestMethod'];
+    headers['Access-Control-Request-Headers'] = params['AccessControlRequestHeaders'];
+
+    submitRequest.call(this, {
+        method: 'OPTIONS',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        Key: params.Key,
+        headers: headers,
+    }, function (err, data) {
+        if (err) {
+            if (err.statusCode && err.statusCode == 403) {
+                return callback(null, {
+                    OptionsForbidden: true,
+                    statusCode: err.statusCode
+                });
+            }
+            return callback(err);
+        }
+
+        var headers = data.headers || {};
+        callback(null, {
+            AccessControlAllowOrigin: headers['access-control-allow-origin'],
+            AccessControlAllowMethods: headers['access-control-allow-methods'],
+            AccessControlAllowHeaders: headers['access-control-allow-headers'],
+            AccessControlExposeHeaders: headers['access-control-expose-headers'],
+            AccessControlMaxAge: headers['access-control-max-age'],
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * @param  {Object}                                     参数列表
+ *     @param  {String}  Bucket                         Bucket 名称
+ *     @param  {String}  Region                         地域名称
+ *     @param  {String}  Key                            文件名称
+ *     @param  {String}  CopySource                     源文件URL绝对路径，可以通过versionid子资源指定历史版本
+ *     @param  {String}  ACL                            允许用户自定义文件权限。有效值：private，public-read默认值：private。
+ *     @param  {String}  GrantRead                      赋予被授权者读的权限，格式 x-cos-grant-read: uin=" ",uin=" "，当需要给子账户授权时，uin="RootAcountID/SubAccountID"，当需要给根账户授权时，uin="RootAcountID"。
+ *     @param  {String}  GrantWrite                     赋予被授权者写的权限，格式 x-cos-grant-write: uin=" ",uin=" "，当需要给子账户授权时，uin="RootAcountID/SubAccountID"，当需要给根账户授权时，uin="RootAcountID"。
+ *     @param  {String}  GrantFullControl               赋予被授权者读写权限，格式 x-cos-grant-full-control: uin=" ",uin=" "，当需要给子账户授权时，uin="RootAcountID/SubAccountID"，当需要给根账户授权时，uin="RootAcountID"。
+ *     @param  {String}  MetadataDirective              是否拷贝元数据，枚举值：Copy, Replaced，默认值Copy。假如标记为Copy，忽略Header中的用户元数据信息直接复制；假如标记为Replaced，按Header信息修改元数据。当目标路径和原路径一致，即用户试图修改元数据时，必须为Replaced
+ *     @param  {String}  CopySourceIfModifiedSince      当Object在指定时间后被修改，则执行操作，否则返回412。可与x-cos-copy-source-If-None-Match一起使用，与其他条件联合使用返回冲突。
+ *     @param  {String}  CopySourceIfUnmodifiedSince    当Object在指定时间后未被修改，则执行操作，否则返回412。可与x-cos-copy-source-If-Match一起使用，与其他条件联合使用返回冲突。
+ *     @param  {String}  CopySourceIfMatch              当Object的Etag和给定一致时，则执行操作，否则返回412。可与x-cos-copy-source-If-Unmodified-Since一起使用，与其他条件联合使用返回冲突。
+ *     @param  {String}  CopySourceIfNoneMatch          当Object的Etag和给定不一致时，则执行操作，否则返回412。可与x-cos-copy-source-If-Modified-Since一起使用，与其他条件联合使用返回冲突。
+ *     @param  {String}  StorageClass                   存储级别，枚举值：存储级别，枚举值：Standard, Standard_IA，Nearline；默认值：Standard
+ *     @param  {String}  CacheControl                   指定所有缓存机制在整个请求/响应链中必须服从的指令。
+ *     @param  {String}  ContentDisposition             MIME 协议的扩展，MIME 协议指示 MIME 用户代理如何显示附加的文件
+ *     @param  {String}  ContentEncoding                HTTP 中用来对「采用何种编码格式传输正文」进行协定的一对头部字段
+ *     @param  {String}  ContentLength                  设置响应消息的实体内容的大小，单位为字节
+ *     @param  {String}  ContentType                    RFC 2616 中定义的 HTTP 请求内容类型（MIME），例如text/plain
+ *     @param  {String}  Expect                         请求的特定的服务器行为
+ *     @param  {String}  Expires                        响应过期的日期和时间
+ *     @param  {String}  ContentLanguage                指定内容语言
+ *     @param  {String}  x-cos-meta-*                   允许用户自定义的头部信息，将作为 Object 元数据返回。大小限制2K。
+ */
+function putObjectCopy(params, callback) {
+    var headers = {};
+
+    headers['x-cos-copy-source'] = params['CopySource'];
+    headers['x-cos-metadata-directive'] = params['MetadataDirective'];
+    headers['x-cos-copy-source-If-Modified-Since'] = params['CopySourceIfModifiedSince'];
+    headers['x-cos-copy-source-If-Unmodified-Since'] = params['CopySourceIfUnmodifiedSince'];
+    headers['x-cos-copy-source-If-Match'] = params['CopySourceIfMatch'];
+    headers['x-cos-copy-source-If-None-Match'] = params['CopySourceIfNoneMatch'];
+    headers['x-cos-storage-class'] = params['StorageClass'];
+    headers['x-cos-acl'] = params['ACL'];
+    headers['x-cos-grant-read'] = params['GrantRead'];
+    headers['x-cos-grant-write'] = params['GrantWrite'];
+    headers['x-cos-grant-full-control'] = params['GrantFullControl'];
+    headers['Cache-Control'] = params['CacheControl'];
+    headers['Content-Disposition'] = params['ContentDisposition'];
+    headers['Content-Encoding'] = params['ContentEncoding'];
+    headers['Content-Length'] = params['ContentLength'];
+    headers['Content-Type'] = params['ContentType'];
+    headers['Expect'] = params['Expect'];
+    headers['Expires'] = params['Expires'];
+
+    for (var key in params) {
+        if (key.indexOf('x-cos-meta-') > -1) {
+            headers[key] = params[key];
+        }
+    }
+
+    submitRequest.call(this, {
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        Key: params.Key,
+        headers: headers,
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        var result = util.clone(data.CopyObjectResult);
+        util.extend(result, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+        callback(null, result);
+    });
+}
+
+function deleteMultipleObject(params, callback) {
+    var headers = {};
+
+    headers['Content-Type'] = 'application/xml';
+
+    var Objects = params.Objects || {};
+    var Quiet = params.Quiet;
+
+    var DeleteConfiguration = {
+        Delete: {
+            Object: Objects,
+            Quiet: Quiet || false
+        }
+    };
+
+    var xml = util.json2xml(DeleteConfiguration);
+
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+    headers['Content-Length'] = Buffer.byteLength(xml, 'utf8');
+
+    submitRequest.call(this, {
+        method: 'POST',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        body: xml,
+        action: '/?delete',
+        headers: headers,
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        var Deleted = data.DeleteResult.Deleted || [];
+        var Errors = data.DeleteResult.Error || [];
+
+        Deleted = util.isArray(Deleted) ? Deleted : [Deleted];
+        Errors = util.isArray(Errors) ? Errors : [Errors];
+
+        var result = util.clone(data.DeleteResult);
+        util.extend(result, {
+            Error: Errors,
+            Deleted: Deleted,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+        callback(null, result);
+    });
+}
+
+
+
+/**
+ * 获取签名
+ * @param  {Object}  params             参数对象，必须
+ *     @param  {String}  params.Method  请求方法，必须
+ *     @param  {String}  params.Key     object名称，必须
+ *     @param  {String}  params.Expires 名超时时间，单位秒，可选
+ * @return  {String}  data              返回签名字符串
+ */
+function getAuth(params) {
+    return util.getAuth({
+        Method: params.Method,
+        Key: params.Key,
+        Expires: params.Expires,
+        SecretId: params.SecretId || this.options.SecretId || '',
+        SecretKey: params.SecretKey || this.options.SecretKey || ''
+    });
+}
+
+/**
+ * 获取文件下载链接
+ * @param  {Object}  params                 参数对象，必须
+ *     @param  {String}  params.Bucket      Bucket名称，必须
+ *     @param  {String}  params.Region      地域名称，必须
+ *     @param  {String}  params.Key         object名称，必须
+ *     @param  {String}  params.Method      请求的方法，可选
+ *     @param  {String}  params.Expires     签名超时时间，单位秒，可选
+ * @param  {Function}  callback             回调函数，必须
+ *     @return  {Object}    err             请求失败的错误，如果请求成功，则为空。
+ *     @return  {Object}    data            返回的数据
+ */
+function getObjectUrl(params, callback) {
+    var self = this;
+    var url = getUrl({
+        domain: self.options.Domain,
+        bucket: params.Bucket,
+        region: params.Region,
+        object: params.Key,
+    });
+    if (params.Sign !== undefined && !params.Sign) {
+        callback(null, {Url: url});
+        return url;
+    }
+    var authorization = getAuthorizationAsync.call(this, {
+        Method: params.Method || 'get',
+        Key: params.Key,
+    }, function (AuthData) {
+        if (!callback) return;
+        var result = {
+            Url: url + '?sign=' + encodeURIComponent(AuthData.Authorization),
+        };
+        AuthData.XCosSecurityToken && (result.XCosSecurityToken = AuthData.XCosSecurityToken);
+        AuthData.ClientIP && (result.ClientIP = AuthData.ClientIP);
+        AuthData.ClientUA && (result.ClientUA = AuthData.ClientUA);
+        AuthData.Token && (result.Token = AuthData.Token);
+        setTimeout(function () {
+            callback(null, result);
+        });
+    });
+    if (authorization) {
+        return url + '?sign=' + encodeURIComponent(authorization);
+    } else {
+        return url;
+    }
+}
+
+
+/**
+ * 私有方法
+ */
+function decodeAcl(AccessControlPolicy) {
+    var result = {
+        GrantFullControl: [],
+        GrantWrite: [],
+        GrantRead: [],
+        GrantReadAcp: [],
+        GrantWriteAcp: [],
+        ACL: '',
+    };
+    var GrantMap = {
+        'FULL_CONTROL': 'GrantFullControl',
+        'WRITE': 'GrantWrite',
+        'READ': 'GrantRead',
+        'READ_ACP': 'GrantReadAcp',
+        'WRITE_ACP': 'GrantWriteAcp',
+    };
+    var Grant = AccessControlPolicy.AccessControlList.Grant;
+    if (Grant) {
+        Grant = util.isArray(Grant) ? Grant : [Grant];
+    }
+    var PublicAcl = {READ: 0, WRITE: 0, FULL_CONTROL: 0};
+    Grant.length && util.each(Grant, function (item) {
+        if (item.Grantee.ID === 'qcs::cam::anyone:anyone' || item.Grantee.URI === 'http://cam.qcloud.com/groups/global/AllUsers') {
+            PublicAcl[item.Permission] = 1;
+        } else if (item.Grantee.ID !== AccessControlPolicy.Owner.ID) {
+            result[GrantMap[item.Permission]].push('id="' + item.Grantee.ID + '"');
+        }
+    });
+    if (PublicAcl.FULL_CONTROL || (PublicAcl.WRITE && PublicAcl.READ)) {
+        result.ACL = 'public-read-write';
+    } else if (PublicAcl.READ) {
+        result.ACL = 'public-read';
+    } else {
+        result.ACL = 'private';
+    }
+    util.each(GrantMap, function (item) {
+        result[item] = result[item].join(',');
+    });
+    return result;
+}
+
+// 生成操作 url
+function getUrl(params) {
+    var longBucket = params.bucket;
+    var shortBucket = longBucket.substr(0, longBucket.lastIndexOf('-'));
+    var appId = longBucket.substr(longBucket.lastIndexOf('-') + 1);
+    var domain = params.domain;
+    var region = params.region;
+    var object = params.object;
+    var action = params.action;
+    var protocol = 'https:';
+    if (!domain) {
+        if (['cn-south', 'cn-south-2', 'cn-north', 'cn-east', 'cn-southwest', 'sg'].indexOf(region) > -1) {
+            domain = '{{Bucket}}-{{AppId}}.{{Region}}.myqcloud.com';
+        } else {
+            domain = '{{Bucket}}-{{AppId}}.cos.{{Region}}.myqcloud.com';
+        }
+    }
+    domain = domain.replace(/\{\{AppId\}\}/ig, appId)
+        .replace(/\{\{Bucket\}\}/ig, shortBucket)
+        .replace(/\{\{Region\}\}/ig, region)
+        .replace(/\{\{.*?\}\}/ig, '');
+    if (!/^[a-zA-Z]+:\/\//.test(domain)) {
+        domain = protocol + '//' + domain;
+    }
+    if (domain.slice(-1) === '/') {
+        domain = domain.slice(0, -1);
+    }
+    var url = domain;
+
+    if (object) {
+        url += '/' + encodeURIComponent(object).replace(/%2F/g, '/');
+    }
+
+    if (action) {
+        url += action;
+    }
+    if (params.isLocation) {
+        url = url.replace(/^https?:\/\//, '');
+    }
+    return url;
+}
+
+// 异步获取签名
+function getAuthorizationAsync(params, callback) {
+    var self = this;
+    if (self.options.getAuthorization) { // 外部计算签名
+        self.options.getAuthorization.call(self, {
+            Method: params.Method,
+            Key: params.Key,
+        }, function (AuthData) {
+            if (typeof AuthData === 'string') {
+                AuthData = {Authorization: AuthData};
+            }
+            callback && callback(AuthData);
+        });
+    } else if (self.options.getSTS) { // 外部获取临时密钥
+        var Bucket = params.Bucket || '';
+        self._StsMap = self._StsMap || {};
+        var StsData = self._StsMap[Bucket] || {};
+        var runTemp = function () {
+            var Authorization = util.getAuth({
+                SecretId: StsData.SecretId,
+                SecretKey: StsData.SecretKey,
+                Method: params.Method,
+                Key: params.Key,
+            });
+            var AuthData = {
+                Authorization: Authorization,
+                XCosSecurityToken: StsData.XCosSecurityToken || '',
+                Token: StsData.Token || '',
+                ClientIP: StsData.ClientIP || '',
+                ClientUA: StsData.ClientUA || '',
+            };
+            callback && callback(AuthData);
+        };
+        if (StsData.ExpiredTime && StsData.ExpiredTime - (Date.now() / 1000 > 60)) { // 如果缓存的临时密钥有效，并还有超过60秒有效期就直接使用
+            runTemp();
+        } else { // 如果有效时间小于 60 秒就重新获取临时密钥
+            self.options.getSTS.call(self, {
+                Bucket: Bucket
+            }, function (data) {
+                StsData = self._StsMap[Bucket] = data || {};
+                runTemp();
+            });
+        }
+    } else { // 内部计算获取签名
+        var Authorization = util.getAuth({
+            SecretId: params.SecretId || self.options.SecretId,
+            SecretKey: params.SecretKey || self.options.SecretKey,
+            Method: params.Method,
+            Key: params.Key,
+            // headers: opt.headers,
+        });
+        callback && callback({Authorization: Authorization});
+        return Authorization;
+    }
+    return '';
+}
+
+// 获取签名并发起请求
+function submitRequest(params, callback) {
+    var self = this;
+    var authKey = !params.action && params.method.toLowerCase() === 'post' ? '' : params.Key;
+    getAuthorizationAsync.call(self, {
+        Method: params.method,
+        Key: authKey,
+    }, function (AuthData) {
+        params.AuthData = AuthData;
+        _submitRequest.call(self, params, callback);
+    });
+}
+
+// 发起请求
+function _submitRequest(params, callback) {
+    var self = this;
+    var TaskId = params.TaskId;
+    if (TaskId && !self._isRunningTask(TaskId)) return;
+
+    var bucket = params.Bucket;
+    var region = params.Region;
+    var object = params.Key;
+    var action = params.action;
+    var method = params.method || 'GET';
+    var headers = params.headers || {};
+    var url = params.url;
+    var body = params.body;
+    var filePath = params.filePath;
+    var json = params.json;
+    var rawBody = params.rawBody;
+    var qs = params.qs;
+
+    var opt = {
+        url: url || getUrl({
+            domain: self.options.Domain,
+            bucket: bucket,
+            region: region,
+            object: object,
+            action: action,
+        }),
+        method: method,
+        headers: headers || {},
+        filePath: filePath,
+        qs: qs,
+        body: body,
+        json: json,
+    };
+
+    // 获取签名
+    opt.headers.Authorization = params.AuthData.Authorization;
+    params.AuthData.Token && (opt.headers['token'] = params.AuthData.Token);
+    params.AuthData.ClientIP && (opt.headers['clientIP'] = params.AuthData.ClientIP);
+    params.AuthData.ClientUA && (opt.headers['clientUA'] = params.AuthData.ClientUA);
+    params.AuthData.XCosSecurityToken && (opt.headers['x-cos-security-token'] = params.AuthData.XCosSecurityToken);
+
+    // 预先处理 undefined 和 null 的属性
+    opt.headers && (opt.headers = util.clearKey(opt.headers));
+    opt.qs && (opt.qs = util.clearKey(opt.qs));
+    opt = util.clearKey(opt);
+
+    // progress
+    if (params.onProgress && typeof params.onProgress === 'function') {
+        opt.onProgress = function (e) {
+            if (TaskId && !self._isRunningTask(TaskId)) return;
+            var loaded = e ? e.loaded : 0;
+            params.onProgress({loaded: loaded, total: e.total});
+        };
+    }
+
+    var sender = REQUEST(opt, function (err, response, body) {
+
+        // 返回内容添加 状态码 和 headers
+        var cb = function (err, data) {
+            TaskId && self.off('inner-kill-task', killTask);
+            if (TaskId && !self._isRunningTask(TaskId)) return;
+            if (err) {
+                err = err || {};
+                response && response.statusCode && (err.statusCode = response.statusCode);
+                response && response.headers && (err.headers = response.headers);
+                callback(err, null);
+            } else {
+                data = data || {};
+                response && response.statusCode && (data.statusCode = response.statusCode);
+                response && response.headers && (data.headers = response.headers);
+                callback(null, data);
+            }
+        };
+
+        // 请求错误，发生网络错误
+        if (err) {
+            cb({error: err});
+            return;
+        }
+
+        var jsonRes;
+        try {
+            jsonRes = util.xml2json(body) || {};
+        } catch (e) {
+            jsonRes = body || {};
+        }
+
+        // 请求返回码不为 200
+        var statusCode = response.statusCode;
+        if (statusCode !== 200 && statusCode !== 204 && statusCode !== 206) {
+            cb({error: jsonRes.Error || jsonRes});
+            return;
+        }
+
+        // 不对 body 进行转换，body 直接挂载返回
+        if (rawBody) {
+            jsonRes = {};
+            jsonRes.body = body;
+        }
+
+        if (jsonRes.Error) {
+            cb({error: jsonRes.Error});
+            return;
+        }
+        cb(null, jsonRes);
+    });
+
+    // kill task
+    var killTask = function (data) {
+        if (data.TaskId === TaskId) {debugger;
+            sender && sender.abort && sender.abort();
+            self.off('inner-kill-task', killTask);
+        }
+    };
+    TaskId && self.on('inner-kill-task', killTask);
+
+}
+
+
+var API_MAP = {
+    // Bucket 相关方法
+    getService: getService,
+    getBucket: getBucket,
+    headBucket: headBucket,
+    deleteBucket: deleteBucket,
+    getBucketAcl: getBucketAcl,
+    putBucketAcl: putBucketAcl,
+    getBucketCors: getBucketCors,
+    putBucketCors: putBucketCors,
+    deleteBucketCors: deleteBucketCors,
+    getBucketLocation: getBucketLocation,
+    putBucketTagging: putBucketTagging,
+    getBucketTagging: getBucketTagging,
+    deleteBucketTagging: deleteBucketTagging,
+    getBucketPolicy: getBucketPolicy,
+    putBucketPolicy: putBucketPolicy,
+    getBucketLifecycle: getBucketLifecycle,
+    putBucketLifecycle: putBucketLifecycle,
+    deleteBucketLifecycle: deleteBucketLifecycle,
+
+    // Object 相关方法
+    getObject: getObject,
+    headObject: headObject,
+    postObject: postObject,
+    deleteObject: deleteObject,
+    getObjectAcl: getObjectAcl,
+    putObjectAcl: putObjectAcl,
+    optionsObject: optionsObject,
+    putObjectCopy: putObjectCopy,
+
+    // 工具方法
+    getObjectUrl: getObjectUrl,
+    getAuth: getAuth,
+};
+
+util.each(API_MAP, function (fn, apiName) {
+    exports[apiName] = util.apiWrapper(apiName, fn);
+});
+
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1).Buffer))
+
+/***/ }),
+/* 15 */
+/***/ (function(module, exports) {
+
+var request = function (params, callback) {
+    var filePath = params.filePath;
+    var headers = params.headers;
+    var url = params.url;
+    var method = params.method;
+    var onProgress = params.onProgress;
+    var requestTask;
+
+    var cb = function (err, response) {
+        callback(err, {statusCode: response.statusCode, headers: response.header}, response.data);
+    };
+
+    if (filePath) {
+        var m = url.match(/^(https?:\/\/[^/]+\/)(.*)$/);
+        var key = m[2] || '';
+        url = m[1];
+
+        requestTask = wx.uploadFile({
+            url: url,
+            method: method,
+            name: 'file',
+            filePath: filePath,
+            formData: {
+                'key': key,
+                'success_action_status': 200,
+                'Signature': headers.Authorization
+            },
+            success: function (response) {
+                cb(null, response);
+            },
+            fail: function (response) {
+                cb(response.errMsg, response);
+            }
+        });
+        requestTask.onProgressUpdate(function (res) {
+            onProgress({
+                loaded: res.totalBytesSent,
+                total: res.totalBytesExpectedToSend,
+                progress: res.progress / 100
+            });
+        });
+    } else {
+        wx.request({
+            url: url,
+            method: method,
+            header: headers,
+            dataType: 'text',
+            data: params.body,
+            success: function (response) {
+                cb(null, response);
+            },
+            fail: function (response) {
+                cb(response.errMsg, response);
+            }
+        });
+    }
+
+    return requestTask;
+};
+
+module.exports = request;
+
+/***/ })
+/******/ ]);
+});
