@@ -53,6 +53,12 @@ var dao = {
         cos.getService(requestCallback);
     },
     // Bucket
+    putBucket: function () {
+        cos.putBucket({
+            Bucket: 'testnew-' + config.Bucket.substr(config.Bucket.lastIndexOf('-') + 1),
+            Region: 'ap-guangzhou'
+        }, requestCallback);
+    },
     headBucket: function () {
         cos.headBucket({Bucket: config.Bucket, Region: config.Region}, requestCallback);
     },
@@ -60,7 +66,10 @@ var dao = {
         cos.getBucket({Bucket: config.Bucket, Region: config.Region}, requestCallback);
     },
     deleteBucket: function () {
-        cos.deleteBucket({Bucket: config.Bucket, Region: config.Region}, requestCallback);
+        cos.deleteBucket({
+            Bucket: 'testnew-' + config.Bucket.substr(config.Bucket.lastIndexOf('-') + 1),
+            Region: 'ap-guangzhou'
+        }, requestCallback);
     },
     getBucketACL: function () {
         cos.getBucketAcl({Bucket: config.Bucket, Region: config.Region}, requestCallback);
@@ -136,23 +145,32 @@ var dao = {
     deleteBucketTagging: function () {
         cos.deleteBucketTagging({Bucket: config.Bucket, Region: config.Region}, requestCallback);
     },
-    headObject: function () {
-        cos.headObject({Bucket: config.Bucket, Region: config.Region, Key: '1.png'}, requestCallback);
+    // Object
+    putObject: function () {
+        cos.putObject({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: '1.txt',
+            Body: 'hello world' // 在小程序里，putObject 接口只允许传字符串的内容，不支持 TaskReady 和 onProgress，上传请使用 cos.postObject 接口
+        }, requestCallback);
     },
     getObject: function () {
-        cos.getObject({Bucket: config.Bucket, Region: config.Region, Key: '1.png'}, requestCallback);
+        cos.getObject({Bucket: config.Bucket, Region: config.Region, Key: '1.txt'}, requestCallback);
+    },
+    headObject: function () {
+        cos.headObject({Bucket: config.Bucket, Region: config.Region, Key: '1.txt'}, requestCallback);
     },
     deleteObject: function () {
-        cos.deleteObject({Bucket: config.Bucket, Region: config.Region, Key: '1.png'}, requestCallback);
+        cos.deleteObject({Bucket: config.Bucket, Region: config.Region, Key: '1.txt'}, requestCallback);
     },
     getObjectACL: function () {
-        cos.getObjectAcl({Bucket: config.Bucket, Region: config.Region, Key: '1.png'}, requestCallback);
+        cos.getObjectAcl({Bucket: config.Bucket, Region: config.Region, Key: '1.txt'}, requestCallback);
     },
     putObjectACL: function () {
         cos.putObjectAcl({
             Bucket: config.Bucket, // Bucket 格式：test-1250000000
             Region: config.Region,
-            Key: '1.png',
+            Key: '1.txt',
             // GrantFullControl: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"',
             // GrantWrite: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"',
             // GrantRead: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"',
@@ -177,11 +195,11 @@ var dao = {
         cos.putObjectCopy({
             Bucket: config.Bucket, // Bucket 格式：test-1250000000
             Region: config.Region,
-            Key: '1.copy.png',
-            CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/1.png',
+            Key: '1.copy.txt',
+            CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/1.txt',
         }, requestCallback);
     },
-    // Object
+    // 上传
     postObject: function () {
         wx.chooseImage({
             count: 1, // 默认9

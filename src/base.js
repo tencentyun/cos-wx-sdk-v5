@@ -145,6 +145,52 @@ function getBucket(params, callback) {
 }
 
 /**
+ * 创建 Bucket，并初始化访问权限
+ * @param  {Object}  params                         参数对象，必须
+ *     @param  {String}  params.Bucket              Bucket名称，必须
+ *     @param  {String}  params.Region              地域名称，必须
+ *     @param  {String}  params.ACL                 用户自定义文件权限，可以设置：private，public-read；默认值：private，非必须
+ *     @param  {String}  params.GrantRead           赋予被授权者读的权限，格式x-cos-grant-read: uin=" ",uin=" "，非必须
+ *     @param  {String}  params.GrantWrite          赋予被授权者写的权限，格式x-cos-grant-write: uin=" ",uin=" "，非必须
+ *     @param  {String}  params.GrantFullControl    赋予被授权者读写权限，格式x-cos-grant-full-control: uin=" ",uin=" "，非必须
+ * @param  {Function}  callback                     回调函数，必须
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data                          返回的数据
+ *     @return  {String}  data.Location             操作地址
+ */
+function putBucket(params, callback) {
+    var self = this;
+    var headers = {};
+    headers['x-cos-acl'] = params['ACL'];
+    headers['x-cos-grant-read'] = params['GrantRead'];
+    headers['x-cos-grant-write'] = params['GrantWrite'];
+    headers['x-cos-grant-read-acp'] = params['GrantReadAcp'];
+    headers['x-cos-grant-write-acp'] = params['GrantWriteAcp'];
+    headers['x-cos-grant-full-control'] = params['GrantFullControl'];
+    submitRequest.call(this, {
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        headers: headers,
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        var url = getUrl({
+            domain: self.options.Domain,
+            bucket: params.Bucket,
+            region: params.Region,
+            isLocation: true,
+        });
+        callback(null, {
+            Location: url,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
  * 删除 Bucket
  * @param  {Object}  params                 参数对象，必须
  *     @param  {String}  params.Bucket      Bucket名称，必须
@@ -802,6 +848,94 @@ function getObject(params, callback) {
         callback(null, result);
     });
 
+}
+
+/**
+ * 上传 object
+ * @param  {Object} params                                          参数对象，必须
+ *     @param  {String}  params.Bucket                              Bucket名称，必须
+ *     @param  {String}  params.Region                              地域名称，必须
+ *     @param  {String}  params.Key                                 文件名称，必须
+ *     @param  {String}  params.Body                                上传文件的内容，只支持字符串
+ *     @param  {String}  params.CacheControl                        RFC 2616 中定义的缓存策略，将作为 Object 元数据保存，非必须
+ *     @param  {String}  params.ContentDisposition                  RFC 2616 中定义的文件名称，将作为 Object 元数据保存，非必须
+ *     @param  {String}  params.ContentEncoding                     RFC 2616 中定义的编码格式，将作为 Object 元数据保存，非必须
+ *     @param  {String}  params.ContentLength                       RFC 2616 中定义的 HTTP 请求内容长度（字节），必须
+ *     @param  {String}  params.ContentType                         RFC 2616 中定义的内容类型（MIME），将作为 Object 元数据保存，非必须
+ *     @param  {String}  params.Expect                              当使用 Expect: 100-continue 时，在收到服务端确认后，才会发送请求内容，非必须
+ *     @param  {String}  params.Expires                             RFC 2616 中定义的过期时间，将作为 Object 元数据保存，非必须
+ *     @param  {String}  params.ContentSha1                         RFC 3174 中定义的 160-bit 内容 SHA-1 算法校验，非必须
+ *     @param  {String}  params.ACL                                 允许用户自定义文件权限，有效值：private | public-read，非必须
+ *     @param  {String}  params.GrantRead                           赋予被授权者读的权限，格式 x-cos-grant-read: uin=" ",uin=" "，非必须
+ *     @param  {String}  params.GrantWrite                          赋予被授权者写的权限，格式 x-cos-grant-write: uin=" ",uin=" "，非必须
+ *     @param  {String}  params.GrantFullControl                    赋予被授权者读写权限，格式 x-cos-grant-full-control: uin=" ",uin=" "，非必须
+ *     @param  {Function}  params.onProgress                        上传进度回调函数
+ * @param  {Function}  callback                                     回调函数，必须
+ * @return  {Object}  err                                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data                                          为对应的 object 数据
+ *     @return  {String}  data.ETag                                 为对应上传文件的 ETag 值
+ */
+function putObject(params, callback) {
+    var self = this;
+    var headers = {};
+
+    headers['Cache-Control'] = params['CacheControl'];
+    headers['Content-Disposition'] = params['ContentDisposition'];
+    headers['Content-Encoding'] = params['ContentEncoding'];
+    headers['Content-MD5'] = params['ContentMD5'];
+    headers['Content-Length'] = params['ContentLength'];
+    headers['Content-Type'] = params['ContentType'];
+    headers['Expect'] = params['Expect'];
+    headers['Expires'] = params['Expires'];
+    headers['x-cos-acl'] = params['ACL'];
+    headers['x-cos-grant-read'] = params['GrantRead'];
+    headers['x-cos-grant-write'] = params['GrantWrite'];
+    headers['x-cos-grant-full-control'] = params['GrantFullControl'];
+    headers['x-cos-storage-class'] = params['StorageClass'];
+
+    for (var key in params) {
+        if (key.indexOf('x-cos-meta-') > -1) {
+            headers[key] = params[key];
+        }
+    }
+
+    var Body = params.Body;
+
+    if (Body && typeof Body === 'string') { // 在浏览器允许传入字符串作为内容 'hello'
+        headers['Content-Length'] = Body.length;
+    } else {
+        callback({error: 'params body format error, Only allow Buffer, Stream, Blob.'});
+        return;
+    }
+
+    submitRequest.call(this, {
+        TaskId: params.TaskId,
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        Key: params.Key,
+        headers: headers,
+        body: Body,
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        if (data && data.headers && data.headers['etag']) {
+            var url = getUrl({
+                domain: self.options.Domain,
+                bucket: params.Bucket,
+                region: params.Region,
+                object: params.Key,
+            });
+            return callback(null, {
+                Location: url,
+                ETag: data.headers['etag'],
+                statusCode: data.statusCode,
+                headers: data.headers,
+            });
+        }
+        callback(null, data);
+    });
 }
 
 /**
@@ -1514,6 +1648,7 @@ function _submitRequest(params, callback) {
 var API_MAP = {
     // Bucket 相关方法
     getService: getService,
+    putBucket: putBucket,
     getBucket: getBucket,
     headBucket: headBucket,
     deleteBucket: deleteBucket,
@@ -1535,6 +1670,7 @@ var API_MAP = {
     // Object 相关方法
     getObject: getObject,
     headObject: headObject,
+    putObject: putObject,
     postObject: postObject,
     deleteObject: deleteObject,
     getObjectAcl: getObjectAcl,
