@@ -15,7 +15,7 @@ function getService(params, callback) {
         callback = params;
         params = {};
     }
-    var protocol = util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:';
+    var protocol = 'https:';
     var domain = this.options.ServiceDomain;
     var appId = params.AppId || this.options.appId;
     if (domain) {
@@ -755,7 +755,7 @@ function getObject(params, callback) {
 
     var BodyType;
 
-    BodyType = util.isBrowser ? 'string' : 'buffer';
+    BodyType = 'string';
 
     // 如果用户自己传入了 output
     submitRequest.call(this, {
@@ -1283,7 +1283,7 @@ function getUrl(params) {
     var object = params.object;
     var action = params.action;
     var appId = params.appId;
-    var protocol = util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:';
+    var protocol = 'https:';
     if (!domain) {
         if (['cn-south', 'cn-south-2', 'cn-north', 'cn-east', 'cn-southwest', 'sg'].indexOf(region) > -1) {
             domain = '{{Bucket}}-{{AppId}}.{{Region}}.myqcloud.com';

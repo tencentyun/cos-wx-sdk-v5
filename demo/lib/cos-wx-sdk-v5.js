@@ -67,7 +67,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
 /******/
 /******/ 	// __webpack_public_path__
-/******/ 	__webpack_require__.p = "D:\\Documents\\GitRepo\\cos-wx-sdk-v5\\demo\\lib";
+/******/ 	__webpack_require__.p = "D:\\github\\cos-wx-sdk-v5\\demo\\lib";
 /******/
 /******/ 	// Load entry module and return exports
 /******/ 	return __webpack_require__(__webpack_require__.s = 3);
@@ -78,7 +78,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-/* WEBPACK VAR INJECTION */(function(Buffer, global) {
+/* WEBPACK VAR INJECTION */(function(Buffer) {
 
 var md5 = __webpack_require__(8);
 var CryptoJS = __webpack_require__(9);
@@ -355,31 +355,25 @@ var apiWrapper = function (apiName, apiFn) {
     }
 };
 
-var fileSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice;
-
 var util = {
-    fileSlice: fileSlice,
     apiWrapper: apiWrapper,
     getAuth: getAuth,
     xml2json: xml2json,
     json2xml: json2xml,
     md5: md5,
     clearKey: clearKey,
-    getFileMd5: getFileMd5,
     binaryBase64: binaryBase64,
     extend: extend,
     isArray: isArray,
     each: each,
     map: map,
-    filter: filter,
     clone: clone,
     uuid: uuid,
-    isBrowser: !!global.window
 };
 
 
 module.exports = util;
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1).Buffer, __webpack_require__(2)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1).Buffer))
 
 /***/ }),
 /* 1 */
@@ -3842,7 +3836,7 @@ function getService(params, callback) {
         callback = params;
         params = {};
     }
-    var protocol = util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:';
+    var protocol = 'https:';
     var domain = this.options.ServiceDomain;
     var appId = params.AppId || this.options.appId;
     if (domain) {
@@ -4582,7 +4576,7 @@ function getObject(params, callback) {
 
     var BodyType;
 
-    BodyType = util.isBrowser ? 'string' : 'buffer';
+    BodyType = 'string';
 
     // 如果用户自己传入了 output
     submitRequest.call(this, {
@@ -5110,7 +5104,7 @@ function getUrl(params) {
     var object = params.object;
     var action = params.action;
     var appId = params.appId;
-    var protocol = util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:';
+    var protocol = 'https:';
     if (!domain) {
         if (['cn-south', 'cn-south-2', 'cn-north', 'cn-east', 'cn-southwest', 'sg'].indexOf(region) > -1) {
             domain = '{{Bucket}}-{{AppId}}.{{Region}}.myqcloud.com';

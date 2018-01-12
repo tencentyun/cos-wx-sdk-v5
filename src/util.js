@@ -275,26 +275,20 @@ var apiWrapper = function (apiName, apiFn) {
     }
 };
 
-var fileSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice;
-
 var util = {
-    fileSlice: fileSlice,
     apiWrapper: apiWrapper,
     getAuth: getAuth,
     xml2json: xml2json,
     json2xml: json2xml,
     md5: md5,
     clearKey: clearKey,
-    getFileMd5: getFileMd5,
     binaryBase64: binaryBase64,
     extend: extend,
     isArray: isArray,
     each: each,
     map: map,
-    filter: filter,
     clone: clone,
     uuid: uuid,
-    isBrowser: !!global.window
 };
 
 
