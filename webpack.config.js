@@ -28,7 +28,7 @@ module.exports = {
 };
 
 if (process.env.NODE_ENV === 'production') {
-    module.exports.output.filename = 'cos-wx-sdk-v5.min.js';
+    module.exports.output.filename = 'cos-wx-sdk-v5.js';
     module.exports.plugins = (module.exports.plugins || []).concat([
         new webpack.DefinePlugin({
             'process.env': {
