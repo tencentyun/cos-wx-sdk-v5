@@ -16,7 +16,6 @@ function camSafeUrlEncode(str) {
 
 //测试用的key后面可以去掉
 var getAuth = function (opt) {
-
     opt = opt || {};
 
     var SecretId = opt.SecretId;
@@ -55,19 +54,20 @@ var getAuth = function (opt) {
 
     // 签名有效起止时间
     var now = parseInt(new Date().getTime() / 1000) - 1;
-    var expired = now;
+    var exp = now;
 
-    if (opt.expires === undefined) {
-        expired += 3600; // 签名过期时间为当前 + 3600s
+    var Expires = opt.Expires || opt.expires;
+    if (Expires === undefined) {
+        exp += 900; // 签名过期时间为当前 + 900s
     } else {
-        expired += (opt.expires * 1) || 0;
+        exp += (Expires * 1) || 0;
     }
 
     // 要用到的 Authorization 参数列表
     var qSignAlgorithm = 'sha1';
     var qAk = SecretId;
-    var qSignTime = now + ';' + expired;
-    var qKeyTime = now + ';' + expired;
+    var qSignTime = now + ';' + exp;
+    var qKeyTime = now + ';' + exp;
     var qHeaderList = getObjectKeys(headers).join(';').toLowerCase();
     var qUrlParamList = getObjectKeys(queryParams).join(';').toLowerCase();
 
@@ -254,14 +254,22 @@ var apiWrapper = function (apiName, apiFn) {
                 callback({error: 'Region should not be start with "cos."'});
                 return;
             }
-            // 兼容带有 AppId 的 Bucket
-            var appId, bucket = params.Bucket;
-            if (bucket && bucket.indexOf('-') > -1) {
-                var arr = bucket.split('-');
-                appId = arr[1];
-                bucket = arr[0];
-                params.AppId = appId;
-                params.Bucket = bucket;
+            // 兼容不带 AppId 的 Bucket
+            if (params.Bucket) {
+                if (!/^(.+)-(\d+)$/.test(params.Bucket)) {
+                    if (params.AppId) {
+                        params.Bucket = params.Bucket + '-' + params.AppId;
+                    } else if (this.options.AppId) {
+                        params.Bucket = params.Bucket + '-' + this.options.AppId;
+                    } else {
+                        callback({error: 'Bucket should format as "test-1250000000".'});
+                        return;
+                    }
+                }
+                if (params.AppId) {
+                    console.warn('warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g Bucket:"test-1250000000" ).');
+                    delete params.AppId;
+                }
             }
             // 兼容带有斜杠开头的 Key
             if (params.Key && params.Key.substr(0, 1) === '/') {
@@ -269,9 +277,60 @@ var apiWrapper = function (apiName, apiFn) {
             }
         }
         var res = apiFn.call(this, params, callback);
-        if (apiName === 'getAuth') {
+        if (apiName === 'getAuth' || apiName === 'getObjectUrl') {
             return res;
         }
+    }
+};
+
+var throttleOnProgress = function (total, onProgress) {
+    var self = this;
+    var size0 = 0;
+    var size1 = 0;
+    var time0 = Date.now();
+    var time1;
+    var timer;
+    function update() {
+        timer = 0;
+        if (onProgress && (typeof onProgress === 'function')) {
+            time1 = Date.now();
+            var speed = Math.max(0, Math.round((size1 - size0) / ((time1 - time0) / 1000) * 100) / 100);
+            var percent;
+            if (size1 === 0 && total === 0) {
+                percent = 1;
+            } else {
+                percent = Math.round(size1 / total * 100) / 100 || 0;
+            }
+            time0 = time1;
+            size0 = size1;
+            try {
+                onProgress({loaded: size1, total: total, speed: speed, percent: percent});
+            } catch (e) {
+            }
+        }
+    }
+    return function (info, immediately) {
+        if (info) {
+            size1 = info.loaded;
+            total = info.total;
+        }
+        if (immediately) {
+            clearTimeout(timer);
+            update();
+        } else {
+            if (timer) return;
+            timer = setTimeout(update, self.options.ProgressInterval);
+        }
+    };
+};
+
+var fileSlice = function (file, start, end) {
+    if (file.slice) {
+        return file.slice(start, end);
+    } else if (file.mozSlice) {
+        return file.mozSlice(start, end);
+    } else if (file.webkitSlice) {
+        return file.webkitSlice(start, end);
     }
 };
 
@@ -289,6 +348,7 @@ var util = {
     map: map,
     clone: clone,
     uuid: uuid,
+    throttleOnProgress: throttleOnProgress,
 };
 
 

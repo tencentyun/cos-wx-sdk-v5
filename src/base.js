@@ -63,7 +63,6 @@ function headBucket(params, callback) {
     submitRequest.call(this, {
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         method: 'HEAD',
     }, function (err, data) {
         var exist, auth, statusCode;
@@ -122,7 +121,6 @@ function getBucket(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         qs: reqParams,
     }, function (err, data) {
         if (err) {
@@ -161,7 +159,6 @@ function deleteBucket(params, callback) {
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
     }, function (err, data) {
         if (err && err.statusCode === 204) {
             return callback(null, {statusCode: err.statusCode});
@@ -190,7 +187,6 @@ function getBucketAcl(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?acl',
     }, function (err, data) {
         if (err) {
@@ -232,6 +228,8 @@ function putBucketAcl(params, callback) {
     headers['x-cos-acl'] = params['ACL'];
     headers['x-cos-grant-read'] = params['GrantRead'];
     headers['x-cos-grant-write'] = params['GrantWrite'];
+    headers['x-cos-grant-read-acp'] = params['GrantReadAcp'];
+    headers['x-cos-grant-write-acp'] = params['GrantWriteAcp'];
     headers['x-cos-grant-full-control'] = params['GrantFullControl'];
 
     var xml = '';
@@ -251,7 +249,6 @@ function putBucketAcl(params, callback) {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?acl',
         headers: headers,
         body: xml,
@@ -281,11 +278,20 @@ function getBucketCors(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?cors',
     }, function (err, data) {
         if (err) {
-            return callback(err);
+            if (err.statusCode === 404 && err.error && err.error.Code === 'NoSuchCORSConfiguration') {
+                var result = {
+                    CORSRules: [],
+                    statusCode: err.statusCode,
+                };
+                err.headers && (result.headers = err.headers);
+                callback(null, result);
+            } else {
+                callback(err);
+            }
+            return;
         }
         var CORSConfiguration = data.CORSConfiguration || {};
         var CORSRules = CORSConfiguration.CORSRules || CORSConfiguration.CORSRule || [];
@@ -342,7 +348,6 @@ function putBucketCors(params, callback) {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         body: xml,
         action: '/?cors',
         headers: headers,
@@ -371,7 +376,6 @@ function deleteBucketCors(params, callback) {
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?cors',
     }, function (err, data) {
         if (err && err.statusCode === 204) {
@@ -407,7 +411,6 @@ function putBucketPolicy(params, callback) {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?policy',
         body: PolicyStr,
         headers: headers,
@@ -439,7 +442,6 @@ function getBucketLocation(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?location',
     }, function (err, data) {
         if (err) {
@@ -463,7 +465,6 @@ function getBucketPolicy(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?policy',
         rawBody: true,
     }, function (err, data) {
@@ -506,11 +507,20 @@ function getBucketTagging(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?tagging',
     }, function (err, data) {
         if (err) {
-            return callback(err);
+            if (err.statusCode === 404 && err.error && (err.error === "Not Found" || err.error.Code === 'NoSuchTagSet')) {
+                var result = {
+                    Tags: [],
+                    statusCode: err.statusCode,
+                };
+                err.headers && (result.headers = err.headers);
+                callback(null, result);
+            } else {
+                callback(err);
+            }
+            return;
         }
         var Tags = [];
         try {
@@ -551,7 +561,6 @@ function putBucketTagging(params, callback) {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         body: xml,
         action: '/?tagging',
         headers: headers,
@@ -583,7 +592,6 @@ function deleteBucketTagging(params, callback) {
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?tagging',
     }, function (err, data) {
         if (err && err.statusCode === 204) {
@@ -613,7 +621,6 @@ function putBucketLifecycle(params, callback) {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         body: xml,
         action: '/?lifecycle',
         headers: headers,
@@ -635,11 +642,20 @@ function getBucketLifecycle(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?lifecycle',
     }, function (err, data) {
         if (err) {
-            return callback(err);
+            if (err.statusCode === 404 && err.error && err.error.Code === 'NoSuchLifecycleConfiguration') {
+                var result = {
+                    Rules: [],
+                    statusCode: err.statusCode,
+                };
+                err.headers && (result.headers = err.headers);
+                callback(null, result);
+            } else {
+                callback(err);
+            }
+            return;
         }
         var Rules = [];
         try {
@@ -660,7 +676,6 @@ function deleteBucketLifecycle(params, callback) {
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?lifecycle',
     }, function (err, data) {
         if (err && err.statusCode === 204) {
@@ -697,7 +712,6 @@ function headObject(params, callback) {
         method: 'HEAD',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         Key: params.Key,
         headers: headers,
     }, function (err, data) {
@@ -737,6 +751,7 @@ function headObject(params, callback) {
  * @param  {Object}  data                                   为对应的 object 数据，包括 body 和 headers
  */
 function getObject(params, callback) {
+    var self = this;
     var headers = {};
     var reqParams = {};
 
@@ -762,7 +777,6 @@ function getObject(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         Key: params.Key,
         headers: headers,
         qs: reqParams,
@@ -796,19 +810,7 @@ function getObject(params, callback) {
  *     @param  {String}  params.Bucket                              Bucket名称，必须
  *     @param  {String}  params.Region                              地域名称，必须
  *     @param  {String}  params.Key                                 文件名称，必须
- *     @param  {Buffer || ReadStream || File || Blob}  params.Body  上传文件的内容或者流
- *     @param  {String}  params.CacheControl                        RFC 2616 中定义的缓存策略，将作为 Object 元数据保存，非必须
- *     @param  {String}  params.ContentDisposition                  RFC 2616 中定义的文件名称，将作为 Object 元数据保存，非必须
- *     @param  {String}  params.ContentEncoding                     RFC 2616 中定义的编码格式，将作为 Object 元数据保存，非必须
- *     @param  {String}  params.ContentLength                       RFC 2616 中定义的 HTTP 请求内容长度（字节），必须
- *     @param  {String}  params.ContentType                         RFC 2616 中定义的内容类型（MIME），将作为 Object 元数据保存，非必须
- *     @param  {String}  params.Expect                              当使用 Expect: 100-continue 时，在收到服务端确认后，才会发送请求内容，非必须
- *     @param  {String}  params.Expires                             RFC 2616 中定义的过期时间，将作为 Object 元数据保存，非必须
- *     @param  {String}  params.ContentSha1                         RFC 3174 中定义的 160-bit 内容 SHA-1 算法校验，非必须
- *     @param  {String}  params.ACL                                 允许用户自定义文件权限，有效值：private | public-read，非必须
- *     @param  {String}  params.GrantRead                           赋予被授权者读的权限，格式 x-cos-grant-read: uin=" ",uin=" "，非必须
- *     @param  {String}  params.GrantWrite                          赋予被授权者写的权限，格式 x-cos-grant-write: uin=" ",uin=" "，非必须
- *     @param  {String}  params.GrantFullControl                    赋予被授权者读写权限，格式 x-cos-grant-full-control: uin=" ",uin=" "，非必须
+ *     @param  {FilePath}  params.FilePath                          要上传的文件路径
  *     @param  {Function}  params.onProgress                        上传进度回调函数
  * @param  {Function}  callback                                     回调函数，必须
  * @return  {Object}  err                                           请求失败的错误，如果请求成功，则为空。
@@ -817,7 +819,6 @@ function getObject(params, callback) {
  */
 function postObject(params, callback) {
     var self = this;
-    var TaskId = params.TaskId;
     var headers = {};
 
     headers['Cache-Control'] = params['CacheControl'];
@@ -835,71 +836,36 @@ function postObject(params, callback) {
     headers['x-cos-storage-class'] = params['StorageClass'];
 
     var filePath = params.FilePath;
-
     for (var key in params) {
         if (key.indexOf('x-cos-meta-') > -1) {
             headers[key] = params[key];
         }
     }
 
-    var onProgress = params.onProgress;
-    var onFileProgress = (function () {
-        var time0 = Date.now();
-        var size0 = 0;
-        var FinishSize = 0;
-        var FileSize = headers['Content-Length'];
-        var progressTimer;
-        var update = function () {
-            progressTimer = 0;
-            if (onProgress && (typeof onProgress === 'function')) {
-                var time1 = Date.now();
-                var speed = Math.max(0, parseInt((FinishSize - size0) / ((time1 - time0) / 1000) * 100) / 100 || 0);
-                var percent = parseInt(FinishSize / FileSize * 100) / 100 || 0;
-                time0 = time1;
-                size0 = FinishSize;
-                try {
-                    onProgress({
-                        loaded: FinishSize,
-                        total: FileSize,
-                        speed: speed,
-                        percent: percent
-                    });
-                } catch (e) {
-                }
-            }
-        };
-        return function (info, immediately) {
-            if (info && info.loaded) {
-                FinishSize = info.loaded;
-                FileSize = info.total;
-            }
-            if (immediately) {
-                clearTimeout(progressTimer);
-                update();
-            } else {
-                if (progressTimer) return;
-                progressTimer = setTimeout(update, self.options.ProgressInterval);
-            }
-        };
-    })();
+    var onProgress = util.throttleOnProgress.call(self, headers['Content-Length'], params.onProgress);
 
-    var sender = submitRequest.call(this, {
+    submitRequest.call(this, {
         method: 'POST',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         Key: params.Key,
         headers: headers,
         filePath: filePath,
-        onProgress: onFileProgress
+        onProgress: onProgress,
     }, function (err, data) {
-        TaskId && self.off('inner-kill-task', killTask);
-        onFileProgress(null, true);
+        onProgress(null, true);
         if (err) {
             return callback(err);
         }
         if (data && data.headers && data.headers['etag']) {
+            var url = getUrl({
+                domain: self.options.Domain,
+                bucket: params.Bucket,
+                region: params.Region,
+                object: params.Key,
+            });
             return callback(null, {
+                Location: url,
                 ETag: data.headers['etag'],
                 statusCode: data.statusCode,
                 headers: data.headers,
@@ -907,14 +873,6 @@ function postObject(params, callback) {
         }
         callback(null, data);
     });
-
-    var killTask = function (data) {
-        if (data.TaskId === TaskId) {
-            sender && sender.abort && sender.abort();
-            self.off('inner-kill-task', killTask);
-        }
-    };
-    TaskId && this.on('inner-kill-task', killTask);
 }
 
 /**
@@ -932,7 +890,6 @@ function deleteObject(params, callback) {
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         Key: params.Key,
     }, function (err, data) {
         if (err) {
@@ -969,7 +926,6 @@ function getObjectAcl(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         Key: params.Key,
         action: '?acl',
     }, function (err, data) {
@@ -1028,7 +984,6 @@ function putObjectAcl(params, callback) {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         Key: params.Key,
         action: '?acl',
         headers: headers,
@@ -1065,7 +1020,6 @@ function optionsObject(params, callback) {
         method: 'OPTIONS',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         Key: params.Key,
         headers: headers,
     }, function (err, data) {
@@ -1150,7 +1104,6 @@ function putObjectCopy(params, callback) {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         Key: params.Key,
         headers: headers,
     }, function (err, data) {
@@ -1165,7 +1118,6 @@ function putObjectCopy(params, callback) {
         callback(null, result);
     });
 }
-
 
 function deleteMultipleObject(params, callback) {
     var headers = {};
@@ -1191,7 +1143,6 @@ function deleteMultipleObject(params, callback) {
         method: 'POST',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         body: xml,
         action: '/?delete',
         headers: headers,
@@ -1223,15 +1174,64 @@ function deleteMultipleObject(params, callback) {
  * @param  {Object}  params             参数对象，必须
  *     @param  {String}  params.Method  请求方法，必须
  *     @param  {String}  params.Key     object名称，必须
+ *     @param  {String}  params.Expires 名超时时间，单位秒，可选
  * @return  {String}  data              返回签名字符串
  */
 function getAuth(params) {
     return util.getAuth({
-        Method: params.Method || 'get',
-        Key: params.Key || '',
+        Method: params.Method,
+        Key: params.Key,
+        Expires: params.Expires,
         SecretId: params.SecretId || this.options.SecretId || '',
         SecretKey: params.SecretKey || this.options.SecretKey || ''
     });
+}
+
+/**
+ * 获取文件下载链接
+ * @param  {Object}  params                 参数对象，必须
+ *     @param  {String}  params.Bucket      Bucket名称，必须
+ *     @param  {String}  params.Region      地域名称，必须
+ *     @param  {String}  params.Key         object名称，必须
+ *     @param  {String}  params.Method      请求的方法，可选
+ *     @param  {String}  params.Expires     签名超时时间，单位秒，可选
+ * @param  {Function}  callback             回调函数，必须
+ *     @return  {Object}    err             请求失败的错误，如果请求成功，则为空。
+ *     @return  {Object}    data            返回的数据
+ */
+function getObjectUrl(params, callback) {
+    var self = this;
+    var url = getUrl({
+        domain: self.options.Domain,
+        bucket: params.Bucket,
+        region: params.Region,
+        object: params.Key,
+    });
+    if (params.Sign !== undefined && !params.Sign) {
+        callback(null, {Url: url});
+        return url;
+    }
+    var authorization = getAuthorizationAsync.call(this, {
+        Method: params.Method || 'get',
+        Key: params.Key,
+    }, function (AuthData) {
+        if (!callback) return;
+        var result = {
+            Url: url + '?sign=' + encodeURIComponent(AuthData.Authorization),
+        };
+        AuthData.XCosSecurityToken && (result.XCosSecurityToken = AuthData.XCosSecurityToken);
+        AuthData.ClientIP && (result.ClientIP = AuthData.ClientIP);
+        AuthData.ClientUA && (result.ClientUA = AuthData.ClientUA);
+        AuthData.Token && (result.Token = AuthData.Token);
+        setTimeout(function () {
+            callback(null, result);
+        });
+    });
+    if (authorization) {
+        return url + '?sign=' + encodeURIComponent(authorization);
+    } else {
+        return url;
+    }
 }
 
 
@@ -1243,12 +1243,16 @@ function decodeAcl(AccessControlPolicy) {
         GrantFullControl: [],
         GrantWrite: [],
         GrantRead: [],
+        GrantReadAcp: [],
+        GrantWriteAcp: [],
         ACL: '',
     };
-    var GrantMap  = {
+    var GrantMap = {
         'FULL_CONTROL': 'GrantFullControl',
         'WRITE': 'GrantWrite',
         'READ': 'GrantRead',
+        'READ_ACP': 'GrantReadAcp',
+        'WRITE_ACP': 'GrantWriteAcp',
     };
     var Grant = AccessControlPolicy.AccessControlList.Grant;
     if (Grant) {
@@ -1277,12 +1281,13 @@ function decodeAcl(AccessControlPolicy) {
 
 // 生成操作 url
 function getUrl(params) {
+    var longBucket = params.bucket;
+    var shortBucket = longBucket.substr(0, longBucket.lastIndexOf('-'));
+    var appId = longBucket.substr(longBucket.lastIndexOf('-') + 1);
     var domain = params.domain;
-    var bucket = params.bucket;
     var region = params.region;
     var object = params.object;
     var action = params.action;
-    var appId = params.appId;
     var protocol = 'https:';
     if (!domain) {
         if (['cn-south', 'cn-south-2', 'cn-north', 'cn-east', 'cn-southwest', 'sg'].indexOf(region) > -1) {
@@ -1292,7 +1297,7 @@ function getUrl(params) {
         }
     }
     domain = domain.replace(/\{\{AppId\}\}/ig, appId)
-        .replace(/\{\{Bucket\}\}/ig, bucket)
+        .replace(/\{\{Bucket\}\}/ig, shortBucket)
         .replace(/\{\{Region\}\}/ig, region)
         .replace(/\{\{.*?\}\}/ig, '');
     if (!/^[a-zA-Z]+:\/\//.test(domain)) {
@@ -1310,11 +1315,88 @@ function getUrl(params) {
     if (action) {
         url += action;
     }
+    if (params.isLocation) {
+        url = url.replace(/^https?:\/\//, '');
+    }
     return url;
 }
 
-// 发起请求
+// 异步获取签名
+function getAuthorizationAsync(params, callback) {
+    var self = this;
+    if (self.options.getAuthorization) { // 外部计算签名
+        self.options.getAuthorization.call(self, {
+            Method: params.Method,
+            Key: params.Key,
+        }, function (AuthData) {
+            if (typeof AuthData === 'string') {
+                AuthData = {Authorization: AuthData};
+            }
+            callback && callback(AuthData);
+        });
+    } else if (self.options.getSTS) { // 外部获取临时密钥
+        var Bucket = params.Bucket || '';
+        self._StsMap = self._StsMap || {};
+        var StsData = self._StsMap[Bucket] || {};
+        var runTemp = function () {
+            var Authorization = util.getAuth({
+                SecretId: StsData.SecretId,
+                SecretKey: StsData.SecretKey,
+                Method: params.Method,
+                Key: params.Key,
+            });
+            var AuthData = {
+                Authorization: Authorization,
+                XCosSecurityToken: StsData.XCosSecurityToken || '',
+                Token: StsData.Token || '',
+                ClientIP: StsData.ClientIP || '',
+                ClientUA: StsData.ClientUA || '',
+            };
+            callback && callback(AuthData);
+        };
+        if (StsData.ExpiredTime && StsData.ExpiredTime - (Date.now() / 1000 > 60)) { // 如果缓存的临时密钥有效，并还有超过60秒有效期就直接使用
+            runTemp();
+        } else { // 如果有效时间小于 60 秒就重新获取临时密钥
+            self.options.getSTS.call(self, {
+                Bucket: Bucket
+            }, function (data) {
+                StsData = self._StsMap[Bucket] = data || {};
+                runTemp();
+            });
+        }
+    } else { // 内部计算获取签名
+        var Authorization = util.getAuth({
+            SecretId: params.SecretId || self.options.SecretId,
+            SecretKey: params.SecretKey || self.options.SecretKey,
+            Method: params.Method,
+            Key: params.Key,
+            // headers: opt.headers,
+        });
+        callback && callback({Authorization: Authorization});
+        return Authorization;
+    }
+    return '';
+}
+
+// 获取签名并发起请求
 function submitRequest(params, callback) {
+    var self = this;
+    var authKey = !params.action && params.method.toLowerCase() === 'post' ? '' : params.Key;
+    getAuthorizationAsync.call(self, {
+        Method: params.method,
+        Key: authKey,
+    }, function (AuthData) {
+        params.AuthData = AuthData;
+        _submitRequest.call(self, params, callback);
+    });
+}
+
+// 发起请求
+function _submitRequest(params, callback) {
+    var self = this;
+    var TaskId = params.TaskId;
+    if (TaskId && !self._isRunningTask(TaskId)) return;
+
     var bucket = params.Bucket;
     var region = params.Region;
     var object = params.Key;
@@ -1330,12 +1412,11 @@ function submitRequest(params, callback) {
 
     var opt = {
         url: url || getUrl({
-            domain: this.options.Domain,
+            domain: self.options.Domain,
             bucket: bucket,
             region: region,
             object: object,
             action: action,
-            appId: params.AppId || this.options.AppId,
         }),
         method: method,
         headers: headers || {},
@@ -1345,133 +1426,87 @@ function submitRequest(params, callback) {
         json: json,
     };
 
-    var innerSender;
-    var outerSender = {
-        abort: function () {
-            innerSender && innerSender.abort && innerSender.abort();
-        }
-    };
-
-    // 发送请求
-    var getAuthorizationCallback = function (auth) {
-
-        var token, clientIP, clientUA;
-        if (typeof auth === 'object') {
-            token = auth.Token;
-            clientIP = auth.ClientIP;
-            clientUA = auth.ClientUA;
-            auth = auth.Authorization;
-        }
-
-        opt.headers.Authorization = auth;
-        token && (opt.headers['token'] = token);
-        clientIP && (opt.headers['clientIP'] = clientIP);
-        clientUA && (opt.headers['clientUA'] = clientUA);
-
-        // 预先处理 undefined 的属性
-        if (opt.headers) {
-            opt.headers = util.clearKey(opt.headers);
-        }
-
-        if (opt.qs) {
-            opt.qs = util.clearKey(opt.qs);
-        }
-        opt = util.clearKey(opt);
-
-        // progress
-        if (params.onProgress && typeof params.onProgress === 'function') {
-            var contentLength = body && body.size || 0;
-            var time0 = Date.now();
-            var size0 = 0;
-            opt.onProgress = function (e) {
-                var loaded = 0;
-                var total = contentLength;
-                try { loaded = e.loaded; total = e.total; } catch (e) {}
-                var time1 = Date.now();
-                var speed = Math.max(0, parseInt((loaded - size0) / ((time1 - time0) / 1000) * 100) / 100 || 0);
-                var percent = total ? (parseInt(loaded / total * 100) / 100) : 0;
-                time0 = time1;
-                size0 = loaded;
-                params.onProgress({
-                    loaded: loaded,
-                    total: total,
-                    speed: speed,
-                    percent: percent,
-                });
-            };
-        }
-
-        innerSender = REQUEST(opt, function (err, response, body) {
-
-            // 返回内容添加 状态码 和 headers
-            var cb = function (err, data) {
-                if (err) {
-                    err = err || {};
-                    response && response.statusCode && (err.statusCode = response.statusCode);
-                    callback(err, null);
-                } else {
-                    data = data || {};
-                    response && response.statusCode && (data.statusCode = response.statusCode);
-                    response && response.headers && (data.headers = response.headers);
-                    callback(null, data);
-                }
-            };
-
-            // 请求错误，发生网络错误
-            if (err) {
-                cb({error: err});
-                return;
-            }
-
-            var jsonRes;
-            try {
-                jsonRes = util.xml2json(body) || {};
-            } catch (e) {
-                jsonRes = body || {};
-            }
-
-            // 请求返回码不为 200
-            var statusCode = response.statusCode;
-            if (statusCode !== 200 && statusCode !== 204 && statusCode !== 206) {
-                cb({error: jsonRes.Error || jsonRes});
-                return;
-            }
-
-            // 不对 body 进行转换，body 直接挂载返回
-            if (rawBody) {
-                jsonRes = {};
-                jsonRes.body = body;
-            }
-
-            if (jsonRes.Error) {
-                cb({error: jsonRes.Error});
-                return;
-            }
-            cb(null, jsonRes);
-        });
-    };
-
     // 获取签名
-    var authKey = filePath ? '' : (object || '');
-    var authPathname = filePath ? '/' : ('/' + (object || ''));
-    if (this.options.getAuthorization) {
-        this.options.getAuthorization({
-            Method: opt.method,
-            Key: authKey,
-            method: opt.method,
-            pathname: authPathname
-        }, getAuthorizationCallback);
-    } else {
-        var auth = util.getAuth({
-            Method: opt.method,
-            Key: authKey,
-            SecretId: params.SecretId || this.options.SecretId,
-            SecretKey: params.SecretKey || this.options.SecretKey,
-        });
-        getAuthorizationCallback(auth);
+    opt.headers.Authorization = params.AuthData.Authorization;
+    params.AuthData.Token && (opt.headers['token'] = params.AuthData.Token);
+    params.AuthData.ClientIP && (opt.headers['clientIP'] = params.AuthData.ClientIP);
+    params.AuthData.ClientUA && (opt.headers['clientUA'] = params.AuthData.ClientUA);
+    params.AuthData.XCosSecurityToken && (opt.headers['x-cos-security-token'] = params.AuthData.XCosSecurityToken);
+
+    // 预先处理 undefined 和 null 的属性
+    opt.headers && (opt.headers = util.clearKey(opt.headers));
+    opt.qs && (opt.qs = util.clearKey(opt.qs));
+    opt = util.clearKey(opt);
+
+    // progress
+    if (params.onProgress && typeof params.onProgress === 'function') {
+        opt.onProgress = function (e) {
+            if (TaskId && !self._isRunningTask(TaskId)) return;
+            var loaded = e ? e.loaded : 0;
+            params.onProgress({loaded: loaded, total: e.total});
+        };
     }
 
-    return outerSender;
+    var sender = REQUEST(opt, function (err, response, body) {
+
+        // 返回内容添加 状态码 和 headers
+        var cb = function (err, data) {
+            TaskId && self.off('inner-kill-task', killTask);
+            if (TaskId && !self._isRunningTask(TaskId)) return;
+            if (err) {
+                err = err || {};
+                response && response.statusCode && (err.statusCode = response.statusCode);
+                response && response.headers && (err.headers = response.headers);
+                callback(err, null);
+            } else {
+                data = data || {};
+                response && response.statusCode && (data.statusCode = response.statusCode);
+                response && response.headers && (data.headers = response.headers);
+                callback(null, data);
+            }
+        };
+
+        // 请求错误，发生网络错误
+        if (err) {
+            cb({error: err});
+            return;
+        }
+
+        var jsonRes;
+        try {
+            jsonRes = util.xml2json(body) || {};
+        } catch (e) {
+            jsonRes = body || {};
+        }
+
+        // 请求返回码不为 200
+        var statusCode = response.statusCode;
+        if (statusCode !== 200 && statusCode !== 204 && statusCode !== 206) {
+            cb({error: jsonRes.Error || jsonRes});
+            return;
+        }
+
+        // 不对 body 进行转换，body 直接挂载返回
+        if (rawBody) {
+            jsonRes = {};
+            jsonRes.body = body;
+        }
+
+        if (jsonRes.Error) {
+            cb({error: jsonRes.Error});
+            return;
+        }
+        cb(null, jsonRes);
+    });
+
+    // kill task
+    var killTask = function (data) {
+        if (data.TaskId === TaskId) {
+            sender && sender.abort && sender.abort();
+            self.off('inner-kill-task', killTask);
+        }
+    };
+    TaskId && self.on('inner-kill-task', killTask);
 
 }
 
@@ -1498,6 +1533,7 @@ var API_MAP = {
     deleteBucketLifecycle: deleteBucketLifecycle,
 
     // Object 相关方法
+    getObject: getObject,
     headObject: headObject,
     postObject: postObject,
     deleteObject: deleteObject,
@@ -1505,6 +1541,10 @@ var API_MAP = {
     putObjectAcl: putObjectAcl,
     optionsObject: optionsObject,
     putObjectCopy: putObjectCopy,
+
+    // 工具方法
+    getObjectUrl: getObjectUrl,
+    getAuth: getAuth,
 };
 
 util.each(API_MAP, function (fn, apiName) {

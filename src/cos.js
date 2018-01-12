@@ -6,13 +6,11 @@ var task = require('./task');
 var base = require('./base');
 
 var defaultOptions = {
-    AppId: '',
     SecretId: '',
     SecretKey: '',
     FileParallelLimit: 3,
     ChunkParallelLimit: 3,
     ChunkSize: 1024 * 1024,
-    SliceSize: 1024 * 1024 * 20,
     ProgressInterval: 1000,
     Domain: '',
     ServiceDomain: '',
@@ -28,6 +26,6 @@ var COS = function (options) {
 util.extend(COS.prototype, base);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.1.5';
+COS.version = '0.3.5';
 
 module.exports = COS;

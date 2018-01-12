@@ -1,5 +1,5 @@
 //index.js
-var dao = require('../../common/dao');
+var demo = require('../../demo');
 
 var option = {
     data: {
@@ -10,10 +10,10 @@ var option = {
     }
 };
 
-for (var key in dao) {
-    if (dao.hasOwnProperty(key)) {
+for (var key in demo) {
+    if (demo.hasOwnProperty(key)) {
         option.data.list.push(key);
-        option[key] = dao[key];
+        option[key] = demo[key];
     }
 }
 
