@@ -2,8 +2,6 @@
 
 微信小程序 sdk for [腾讯云对象存储服务](https://www.qcloud.com/product/cos)
 
-
-
 ### 一、前期准备
 
 1. 到 (COS对象存储控制台)[https://console.cloud.tencent.com/cos4] 创建存储桶，得到 Bucket（存储桶名称） 和 Region（地域名称）
