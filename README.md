@@ -26,7 +26,7 @@ var cos = new COS({
     getAuthorization: function (options, callback) {
         // 异步获取签名
         wx.request({
-            url: 'https://example.com/getSign',
+            url: 'https://example.com/sign',
             data: {
                 Method: params.Method,
                 Key: params.Key
