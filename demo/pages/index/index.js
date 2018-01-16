@@ -24,7 +24,7 @@ option.simpleUpload = function () {
     var getAuthorization = function (options, callback) {
         wx.request({
             method: 'GET',
-            url: 'https://example.com/auth.php', // 服务端签名，参考 server 目录下的两个签名例子
+            url: 'https://example.com/cos-js-sdk-v5/server/auth.php', // 服务端签名，参考 server 目录下的两个签名例子
             data: {
                 method: options.method.toLowerCase(),
                 pathname: options.pathname
@@ -38,7 +38,7 @@ option.simpleUpload = function () {
 
     // 上传文件
     var uploadFile = function (filePath) {
-        var Key = filePath.substr(filePath.lastIndexOf('/') + 1);
+        var Key = filePath.substr(filePath.lastIndexOf('/') + 1); // 这里指定上传的文件名
         getAuthorization({method: 'post', pathname: '/'}, function (Authorization) {
             var requestTask = wx.uploadFile({
                 url: prefix,
@@ -54,6 +54,7 @@ option.simpleUpload = function () {
                         console.log('上传失败', res);
                     } else {
                         console.log('上传成功', res);
+                        console.log('文件路径', prefix + Key);
                     }
                 },
                 fail: function (res) {
