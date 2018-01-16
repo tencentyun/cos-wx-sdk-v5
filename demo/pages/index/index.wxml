@@ -4,4 +4,7 @@
     <view class="list">
         <button type="primary" class="button {{index}}" bindtap="{{item}}" wx:for="{{list}}" wx:key="key">{{item}}</button>
     </view>
+    <view class="list">
+        <button type="primary" class="button" bindtap="simpleUpload">简单上传</button>
+    </view>
 </view>

@@ -9,6 +9,7 @@
 
 .list {
     padding: 3px;
+    width: 100%;
 }
 
 .button {
