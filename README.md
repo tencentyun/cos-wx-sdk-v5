@@ -28,8 +28,8 @@ var cos = new COS({
         wx.request({
             url: 'https://example.com/sign', // 步骤二提供的签名接口
             data: {
-                Method: params.Method,
-                Key: params.Key
+                Method: options.Method,
+                Key: options.Key
             },
             dataType: 'text',
             success: function (result) {
