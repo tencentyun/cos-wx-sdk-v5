@@ -6,6 +6,9 @@
 
 1. 到 (COS对象存储控制台)[https://console.cloud.tencent.com/cos4] 创建存储桶，得到 Bucket（存储桶名称） 和 Region（地域名称）
 2. 到 (控制台密钥管理)[https://console.cloud.tencent.com/capi] 获取您的项目 SecretId 和 SecretKey
+3. 请您到 https://console.qcloud.com/cos 针对您要操作的 bucket 进行跨域（CORS）设置，可以按照如下范例，修改来源 Origin：
+                                                                 
+    ![./cors.png](./cors.png)
     
 ### 二、计算签名
 
