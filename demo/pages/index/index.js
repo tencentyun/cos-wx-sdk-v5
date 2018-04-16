@@ -47,7 +47,8 @@ option.simpleUpload = function () {
                 formData: {
                     'key': Key,
                     'success_action_status': 200,
-                    'Signature': Authorization
+                    'Signature': Authorization,
+                    'Content-Type': '',
                 },
                 success: function (res) {
                     if (!res || res.data.indexOf('<Error>') > -1) {

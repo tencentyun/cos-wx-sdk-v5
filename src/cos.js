@@ -26,6 +26,6 @@ var COS = function (options) {
 util.extend(COS.prototype, base);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.0';
+COS.version = '0.4.1';
 
 module.exports = COS;

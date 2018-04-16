@@ -1,10 +1,9 @@
 {
   "name": "cos-wx-sdk-v5",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "wx-sdk-v5 for [腾讯云对象存储服务](http://wiki.qcloud.com/wiki/COS%E4%BA%A7%E5%93%81%E4%BB%8B%E7%BB%8D)",
   "main": "index.js",
   "scripts": {
-    "gulp": "gulp",
     "dev": "SET NODE_ENV=development&& webpack -w",
     "build": "SET NODE_ENV=production&& webpack"
   },
