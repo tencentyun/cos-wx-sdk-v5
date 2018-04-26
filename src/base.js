@@ -1,6 +1,7 @@
 'use strict';
-var util = require('./util');
 var REQUEST = require('../lib/request');
+var util = require('./util');
+
 
 // Bucket 相关
 
@@ -63,34 +64,10 @@ function headBucket(params, callback) {
     submitRequest.call(this, {
         Bucket: params.Bucket,
         Region: params.Region,
+        headers: params.Headers,
         method: 'HEAD',
     }, function (err, data) {
-        var exist, auth, statusCode;
-        if (err) {
-            statusCode = err.statusCode;
-            if (statusCode && statusCode === 404) {
-                exist = false;
-                auth = false;
-            } else if (statusCode && statusCode === 403) {
-                exist = true;
-                auth = false;
-            } else {
-                return callback(err);
-            }
-        } else {
-            statusCode = data.statusCode;
-            exist = true;
-            auth = true;
-        }
-        var result = {
-            BucketExist: exist,
-            BucketAuth: auth,
-            statusCode: statusCode
-        };
-        if (data && data.headers) {
-            result.headers = data.headers;
-        }
-        callback(null, result);
+        callback(err, data);
     });
 }
 
@@ -121,20 +98,22 @@ function getBucket(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
+        headers: params.Headers,
         qs: reqParams,
     }, function (err, data) {
         if (err) {
             return callback(err);
         }
-        var contents = data.ListBucketResult.Contents || [];
-        var CommonPrefixes = data.ListBucketResult.CommonPrefixes || [];
+        var ListBucketResult = data.ListBucketResult || {};
+        var Contents = ListBucketResult.Contents || [];
+        var CommonPrefixes = ListBucketResult.CommonPrefixes || [];
 
-        contents = util.isArray(contents) ? contents : [contents];
+        Contents = util.isArray(Contents) ? Contents : [Contents];
         CommonPrefixes = util.isArray(CommonPrefixes) ? CommonPrefixes : [CommonPrefixes];
 
-        var result = util.clone(data.ListBucketResult);
+        var result = util.clone(ListBucketResult);
         util.extend(result, {
-            Contents: contents,
+            Contents: Contents,
             CommonPrefixes: CommonPrefixes,
             statusCode: data.statusCode,
             headers: data.headers,
@@ -202,9 +181,10 @@ function putBucket(params, callback) {
  */
 function deleteBucket(params, callback) {
     submitRequest.call(this, {
-        method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
+        headers: params.Headers,
+        method: 'DELETE',
     }, function (err, data) {
         if (err && err.statusCode === 204) {
             return callback(null, {statusCode: err.statusCode});
@@ -233,15 +213,17 @@ function getBucketAcl(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        action: '/?acl',
+        headers: params.Headers,
+        action: 'acl',
     }, function (err, data) {
         if (err) {
             return callback(err);
         }
-        var Owner = data.AccessControlPolicy.Owner || {};
-        var Grant = data.AccessControlPolicy.AccessControlList.Grant || [];
+        var AccessControlPolicy = data.AccessControlPolicy || {};
+        var Owner = AccessControlPolicy.Owner || {};
+        var Grant = AccessControlPolicy.AccessControlList.Grant || [];
         Grant = util.isArray(Grant) ? Grant : [Grant];
-        var result = decodeAcl(data.AccessControlPolicy);
+        var result = decodeAcl(AccessControlPolicy);
         if (data.headers && data.headers['x-cos-acl']) {
             result.ACL = data.headers['x-cos-acl'];
         }
@@ -269,14 +251,7 @@ function getBucketAcl(params, callback) {
  * @return  {Object}  data                          返回的数据
  */
 function putBucketAcl(params, callback) {
-    var headers = {};
-
-    headers['x-cos-acl'] = params['ACL'];
-    headers['x-cos-grant-read'] = params['GrantRead'];
-    headers['x-cos-grant-write'] = params['GrantWrite'];
-    headers['x-cos-grant-read-acp'] = params['GrantReadAcp'];
-    headers['x-cos-grant-write-acp'] = params['GrantWriteAcp'];
-    headers['x-cos-grant-full-control'] = params['GrantFullControl'];
+    var headers = params.Headers;
 
     var xml = '';
     if (params['AccessControlPolicy']) {
@@ -287,16 +262,24 @@ function putBucketAcl(params, callback) {
         delete AccessControlPolicy.Grants;
         AccessControlPolicy.AccessControlList = {Grant: Grants};
         xml = util.json2xml({AccessControlPolicy: AccessControlPolicy});
-        headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+
         headers['Content-Type'] = 'application/xml';
+        headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
     }
+
+    // Grant Header 去重
+    util.each(headers, function (val, key) {
+        if (key.indexOf('x-cos-grant-') === 0) {
+            headers[key] = uniqGrant(headers[key]);
+        }
+    });
 
     submitRequest.call(this, {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
-        action: '/?acl',
         headers: headers,
+        action: 'acl',
         body: xml,
     }, function (err, data) {
         if (err) {
@@ -324,7 +307,8 @@ function getBucketCors(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        action: '/?cors',
+        headers: params.Headers,
+        action: 'cors',
     }, function (err, data) {
         if (err) {
             if (err.statusCode === 404 && err.error && err.error.Code === 'NoSuchCORSConfiguration') {
@@ -386,16 +370,17 @@ function putBucketCors(params, callback) {
     });
 
     var xml = util.json2xml({CORSConfiguration: {CORSRule: CORSRules}});
-    var headers = {};
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+
+    var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
     submitRequest.call(this, {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
         body: xml,
-        action: '/?cors',
+        action: 'cors',
         headers: headers,
     }, function (err, data) {
         if (err) {
@@ -422,7 +407,8 @@ function deleteBucketCors(params, callback) {
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
-        action: '/?cors',
+        headers: params.Headers,
+        action: 'cors',
     }, function (err, data) {
         if (err && err.statusCode === 204) {
             return callback(null, {statusCode: err.statusCode});
@@ -437,7 +423,6 @@ function deleteBucketCors(params, callback) {
 }
 
 function putBucketPolicy(params, callback) {
-    var headers = {};
     var Policy = params['Policy'];
     var PolicyStr = Policy;
     try {
@@ -450,6 +435,7 @@ function putBucketPolicy(params, callback) {
         callback({error: 'Policy format error'});
     }
 
+    var headers = params.Headers;
     headers['Content-Type'] = 'application/json';
     headers['Content-MD5'] = util.binaryBase64(util.md5(PolicyStr));
 
@@ -457,8 +443,8 @@ function putBucketPolicy(params, callback) {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
-        action: '/?policy',
-        body: PolicyStr,
+        action: 'policy',
+        body: util.isBrowser ? PolicyStr : Policy,
         headers: headers,
         json: true,
     }, function (err, data) {
@@ -488,7 +474,8 @@ function getBucketLocation(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        action: '/?location',
+        headers: params.Headers,
+        action: 'location',
     }, function (err, data) {
         if (err) {
             return callback(err);
@@ -511,7 +498,8 @@ function getBucketPolicy(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        action: '/?policy',
+        headers: params.Headers,
+        action: 'policy',
         rawBody: true,
     }, function (err, data) {
         if (err) {
@@ -553,7 +541,8 @@ function getBucketTagging(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        action: '/?tagging',
+        headers: params.Headers,
+        action: 'tagging',
     }, function (err, data) {
         if (err) {
             if (err.statusCode === 404 && err.error && (err.error === "Not Found" || err.error.Code === 'NoSuchTagSet')) {
@@ -599,7 +588,7 @@ function putBucketTagging(params, callback) {
     Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
     var xml = util.json2xml({Tagging: {TagSet: {Tag: Tags}}});
 
-    var headers = {};
+    var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
@@ -608,7 +597,7 @@ function putBucketTagging(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         body: xml,
-        action: '/?tagging',
+        action: 'tagging',
         headers: headers,
     }, function (err, data) {
         if (err && err.statusCode === 204) {
@@ -638,7 +627,8 @@ function deleteBucketTagging(params, callback) {
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
-        action: '/?tagging',
+        headers: params.Headers,
+        action: 'tagging',
     }, function (err, data) {
         if (err && err.statusCode === 204) {
             return callback(null, {statusCode: err.statusCode});
@@ -659,7 +649,7 @@ function putBucketLifecycle(params, callback) {
     Rules = util.clone(Rules);
     var xml = util.json2xml({LifecycleConfiguration: {Rule: Rules}});
 
-    var headers = {};
+    var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
@@ -668,7 +658,7 @@ function putBucketLifecycle(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         body: xml,
-        action: '/?lifecycle',
+        action: 'lifecycle',
         headers: headers,
     }, function (err, data) {
         if (err && err.statusCode === 204) {
@@ -688,7 +678,8 @@ function getBucketLifecycle(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        action: '/?lifecycle',
+        headers: params.Headers,
+        action: 'lifecycle',
     }, function (err, data) {
         if (err) {
             if (err.statusCode === 404 && err.error && err.error.Code === 'NoSuchLifecycleConfiguration') {
@@ -722,7 +713,136 @@ function deleteBucketLifecycle(params, callback) {
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
-        action: '/?lifecycle',
+        headers: params.Headers,
+        action: 'lifecycle',
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+function putBucketVersioning(params, callback) {
+
+    if (!params['VersioningConfiguration']) {
+        callback({error: 'lack of param VersioningConfiguration'});
+        return;
+    }
+    var VersioningConfiguration = params['VersioningConfiguration'] || {};
+    var xml = util.json2xml({VersioningConfiguration: VersioningConfiguration});
+
+    var headers = params.Headers;
+    headers['Content-Type'] = 'application/xml';
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+
+    submitRequest.call(this, {
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        body: xml,
+        action: 'versioning',
+        headers: headers,
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+function getBucketVersioning(params, callback) {
+    submitRequest.call(this, {
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        headers: params.Headers,
+        action: 'versioning',
+    }, function (err, data) {
+        if (!err) {
+            !data.VersioningConfiguration && (data.VersioningConfiguration = {});
+            !data.VersioningConfiguration.MFADelete && (data.VersioningConfiguration.MFADelete = 'Disabled');
+            !data.VersioningConfiguration.Status && (data.VersioningConfiguration.Status = 'Disabled');
+        }
+        callback(err, data);
+    });
+}
+
+function putBucketReplication(params, callback) {
+    var ReplicationConfiguration = util.clone(params.ReplicationConfiguration);
+    ReplicationConfiguration.Rule = ReplicationConfiguration.Rules;
+    delete ReplicationConfiguration.Rules;
+    var xml = util.json2xml({ReplicationConfiguration: ReplicationConfiguration});
+
+    var headers = params.Headers;
+    headers['Content-Type'] = 'application/xml';
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+
+    submitRequest.call(this, {
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        body: xml,
+        action: 'replication',
+        headers: headers,
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+function getBucketReplication(params, callback) {
+    submitRequest.call(this, {
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        headers: params.Headers,
+        action: 'replication',
+    }, function (err, data) {
+        if (err) {
+            if (err.statusCode === 404 && err.error && (err.error === 'Not Found' || err.error.Code === 'ReplicationConfigurationnotFoundError')) {
+                var result = {
+                    ReplicationConfiguration: {Rules: []},
+                    statusCode: err.statusCode,
+                };
+                err.headers && (result.headers = err.headers);
+                callback(null, result);
+            } else {
+                callback(err);
+            }
+            return;
+        }
+        if (!err) {
+            !data.ReplicationConfiguration && (data.ReplicationConfiguration = {});
+        }
+        callback(err, data);
+    });
+}
+
+function deleteBucketReplication(params, callback) {
+    submitRequest.call(this, {
+        method: 'DELETE',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        headers: params.Headers,
+        action: 'replication',
     }, function (err, data) {
         if (err && err.statusCode === 204) {
             return callback(null, {statusCode: err.statusCode});
@@ -751,19 +871,17 @@ function deleteBucketLifecycle(params, callback) {
  *     @return  {Boolean}  data.NotModified         是否在 IfModifiedSince 时间点之后未修改该 object，则为 true
  */
 function headObject(params, callback) {
-    var headers = {};
-    headers['If-Modified-Since'] = params['IfModifiedSince'];
-
     submitRequest.call(this, {
         method: 'HEAD',
         Bucket: params.Bucket,
         Region: params.Region,
         Key: params.Key,
-        headers: headers,
+        VersionId: params.VersionId,
+        headers: params.Headers,
     }, function (err, data) {
         if (err) {
             var statusCode = err.statusCode;
-            if (headers['If-Modified-Since'] && statusCode && statusCode === 304) {
+            if (params.Headers['If-Modified-Since'] && statusCode && statusCode === 304) {
                 return callback(null, {
                     NotModified: true,
                     statusCode: statusCode,
@@ -772,6 +890,41 @@ function headObject(params, callback) {
             return callback(err);
         }
         callback(null, data);
+    });
+}
+
+
+function listObjectVersions(params, callback) {
+    submitRequest.call(this, {
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        headers: params.Headers,
+        qs: {
+            prefix: params.Prefix
+        },
+        action: 'versions',
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        var ListVersionsResult = data.ListVersionsResult || {};
+        var DeleteMarkers = ListVersionsResult.DeleteMarker || [];
+        DeleteMarkers = util.isArray(DeleteMarkers) ? DeleteMarkers : [DeleteMarkers];
+        var Versions = ListVersionsResult.Version || [];
+        Versions = util.isArray(Versions) ? Versions : [Versions];
+
+        var result = util.clone(ListVersionsResult);
+        delete result.DeleteMarker;
+        delete result.Version;
+        util.extend(result, {
+            DeleteMarkers: DeleteMarkers,
+            Versions: Versions,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+
+        callback(null, result);
     });
 }
 
@@ -797,15 +950,7 @@ function headObject(params, callback) {
  * @param  {Object}  data                                   为对应的 object 数据，包括 body 和 headers
  */
 function getObject(params, callback) {
-    var self = this;
-    var headers = {};
     var reqParams = {};
-
-    headers['Range'] = params['Range'];
-    headers['If-Modified-Since'] = params['IfModifiedSince'];
-    headers['If-Unmodified-Since'] = params['IfUnmodifiedSince'];
-    headers['If-Match'] = params['IfMatch'];
-    headers['If-None-Match'] = params['IfNoneMatch'];
 
     reqParams['response-content-type'] = params['ResponseContentType'];
     reqParams['response-content-language'] = params['ResponseContentLanguage'];
@@ -816,7 +961,7 @@ function getObject(params, callback) {
 
     var BodyType;
 
-    BodyType = 'string';
+    BodyType = util.isBrowser ? 'string' : 'buffer';
 
     // 如果用户自己传入了 output
     submitRequest.call(this, {
@@ -824,13 +969,14 @@ function getObject(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         Key: params.Key,
-        headers: headers,
+        VersionId: params.VersionId,
+        headers: params.Headers,
         qs: reqParams,
         rawBody: true,
     }, function (err, data) {
         if (err) {
             var statusCode = err.statusCode;
-            if (headers['If-Modified-Since'] && statusCode && statusCode === 304) {
+            if (params.Headers['If-Modified-Since'] && statusCode && statusCode === 304) {
                 return callback(null, {
                     NotModified: true
                 });
@@ -869,6 +1015,7 @@ function getObject(params, callback) {
  *     @param  {String}  params.GrantRead                           赋予被授权者读的权限，格式 x-cos-grant-read: uin=" ",uin=" "，非必须
  *     @param  {String}  params.GrantWrite                          赋予被授权者写的权限，格式 x-cos-grant-write: uin=" ",uin=" "，非必须
  *     @param  {String}  params.GrantFullControl                    赋予被授权者读写权限，格式 x-cos-grant-full-control: uin=" ",uin=" "，非必须
+ *     @param  {String}  params.ServerSideEncryption               支持按照指定的加密算法进行服务端数据加密，格式 x-cos-server-side-encryption: "AES256"，非必须
  *     @param  {Function}  params.onProgress                        上传进度回调函数
  * @param  {Function}  callback                                     回调函数，必须
  * @return  {Object}  err                                           请求失败的错误，如果请求成功，则为空。
@@ -877,27 +1024,7 @@ function getObject(params, callback) {
  */
 function putObject(params, callback) {
     var self = this;
-    var headers = {};
-
-    headers['Cache-Control'] = params['CacheControl'];
-    headers['Content-Disposition'] = params['ContentDisposition'];
-    headers['Content-Encoding'] = params['ContentEncoding'];
-    headers['Content-MD5'] = params['ContentMD5'];
-    headers['Content-Length'] = params['ContentLength'];
-    headers['Content-Type'] = params['ContentType'];
-    headers['Expect'] = params['Expect'];
-    headers['Expires'] = params['Expires'];
-    headers['x-cos-acl'] = params['ACL'];
-    headers['x-cos-grant-read'] = params['GrantRead'];
-    headers['x-cos-grant-write'] = params['GrantWrite'];
-    headers['x-cos-grant-full-control'] = params['GrantFullControl'];
-    headers['x-cos-storage-class'] = params['StorageClass'];
-
-    for (var key in params) {
-        if (key.indexOf('x-cos-meta-') > -1) {
-            headers[key] = params[key];
-        }
-    }
+    var headers = params.Headers;
 
     var Body = params.Body;
 
@@ -922,6 +1049,7 @@ function putObject(params, callback) {
         }
         if (data && data.headers && data.headers['etag']) {
             var url = getUrl({
+                protocol: self.options.Protocol,
                 domain: self.options.Domain,
                 bucket: params.Bucket,
                 region: params.Region,
@@ -991,8 +1119,9 @@ function postObject(params, callback) {
         if (err) {
             return callback(err);
         }
-        if (data && data.headers && data.headers['etag']) {
+        if (data) {
             var url = getUrl({
+                protocol: self.options.Protocol,
                 domain: self.options.Domain,
                 bucket: params.Bucket,
                 region: params.Region,
@@ -1000,9 +1129,7 @@ function postObject(params, callback) {
             });
             return callback(null, {
                 Location: url,
-                ETag: data.headers['etag'],
                 statusCode: data.statusCode,
-                headers: data.headers,
             });
         }
         callback(null, data);
@@ -1025,6 +1152,8 @@ function deleteObject(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         Key: params.Key,
+        headers: params.Headers,
+        VersionId: params.VersionId,
     }, function (err, data) {
         if (err) {
             var statusCode = err.statusCode;
@@ -1061,15 +1190,17 @@ function getObjectAcl(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         Key: params.Key,
-        action: '?acl',
+        headers: params.Headers,
+        action: 'acl',
     }, function (err, data) {
         if (err) {
             return callback(err);
         }
-        var Owner = data.AccessControlPolicy.Owner || {};
-        var Grant = data.AccessControlPolicy.AccessControlList.Grant || [];
+        var AccessControlPolicy = data.AccessControlPolicy || {};
+        var Owner = AccessControlPolicy.Owner || {};
+        var Grant = AccessControlPolicy.AccessControlList && AccessControlPolicy.AccessControlList.Grant || [];
         Grant = util.isArray(Grant) ? Grant : [Grant];
-        var result = decodeAcl(data.AccessControlPolicy);
+        var result = decodeAcl(AccessControlPolicy);
         if (data.headers && data.headers['x-cos-acl']) {
             result.ACL = data.headers['x-cos-acl'];
         }
@@ -1094,12 +1225,7 @@ function getObjectAcl(params, callback) {
  * @return  {Object}  data              返回的数据
  */
 function putObjectAcl(params, callback) {
-    var headers = {};
-
-    headers['x-cos-acl'] = params['ACL'];
-    headers['x-cos-grant-read'] = params['GrantRead'];
-    headers['x-cos-grant-write'] = params['GrantWrite'];
-    headers['x-cos-grant-full-control'] = params['GrantFullControl'];
+    var headers = params.Headers;
 
     var xml = '';
     if (params['AccessControlPolicy']) {
@@ -1110,16 +1236,24 @@ function putObjectAcl(params, callback) {
         delete AccessControlPolicy.Grants;
         AccessControlPolicy.AccessControlList = {Grant: Grants};
         xml = util.json2xml({AccessControlPolicy: AccessControlPolicy});
-        headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+
         headers['Content-Type'] = 'application/xml';
+        headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
     }
+
+    // Grant Header 去重
+    util.each(headers, function (val, key) {
+        if (key.indexOf('x-cos-grant-') === 0) {
+            headers[key] = uniqGrant(headers[key]);
+        }
+    });
 
     submitRequest.call(this, {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
         Key: params.Key,
-        action: '?acl',
+        action: 'acl',
         headers: headers,
         body: xml,
     }, function (err, data) {
@@ -1144,8 +1278,8 @@ function putObjectAcl(params, callback) {
  * @return  {Object}  data              返回的数据
  */
 function optionsObject(params, callback) {
-    var headers = {};
 
+    var headers = params.Headers;
     headers['Origin'] = params['Origin'];
     headers['Access-Control-Request-Method'] = params['AccessControlRequestMethod'];
     headers['Access-Control-Request-Headers'] = params['AccessControlRequestHeaders'];
@@ -1158,7 +1292,7 @@ function optionsObject(params, callback) {
         headers: headers,
     }, function (err, data) {
         if (err) {
-            if (err.statusCode && err.statusCode == 403) {
+            if (err.statusCode && err.statusCode === 403) {
                 return callback(null, {
                     OptionsForbidden: true,
                     statusCode: err.statusCode
@@ -1203,48 +1337,48 @@ function optionsObject(params, callback) {
  *     @param  {String}  ContentType                    RFC 2616 中定义的 HTTP 请求内容类型（MIME），例如text/plain
  *     @param  {String}  Expect                         请求的特定的服务器行为
  *     @param  {String}  Expires                        响应过期的日期和时间
+ *     @param  {String}  params.ServerSideEncryption   支持按照指定的加密算法进行服务端数据加密，格式 x-cos-server-side-encryption: "AES256"，非必须
  *     @param  {String}  ContentLanguage                指定内容语言
  *     @param  {String}  x-cos-meta-*                   允许用户自定义的头部信息，将作为 Object 元数据返回。大小限制2K。
  */
 function putObjectCopy(params, callback) {
-    var headers = {};
-
-    headers['x-cos-copy-source'] = params['CopySource'];
-    headers['x-cos-metadata-directive'] = params['MetadataDirective'];
-    headers['x-cos-copy-source-If-Modified-Since'] = params['CopySourceIfModifiedSince'];
-    headers['x-cos-copy-source-If-Unmodified-Since'] = params['CopySourceIfUnmodifiedSince'];
-    headers['x-cos-copy-source-If-Match'] = params['CopySourceIfMatch'];
-    headers['x-cos-copy-source-If-None-Match'] = params['CopySourceIfNoneMatch'];
-    headers['x-cos-storage-class'] = params['StorageClass'];
-    headers['x-cos-acl'] = params['ACL'];
-    headers['x-cos-grant-read'] = params['GrantRead'];
-    headers['x-cos-grant-write'] = params['GrantWrite'];
-    headers['x-cos-grant-full-control'] = params['GrantFullControl'];
-    headers['Cache-Control'] = params['CacheControl'];
-    headers['Content-Disposition'] = params['ContentDisposition'];
-    headers['Content-Encoding'] = params['ContentEncoding'];
-    headers['Content-Length'] = params['ContentLength'];
-    headers['Content-Type'] = params['ContentType'];
-    headers['Expect'] = params['Expect'];
-    headers['Expires'] = params['Expires'];
-
-    for (var key in params) {
-        if (key.indexOf('x-cos-meta-') > -1) {
-            headers[key] = params[key];
-        }
-    }
-
     submitRequest.call(this, {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
         Key: params.Key,
-        headers: headers,
+        VersionId: params.VersionId,
+        headers: params.Headers,
     }, function (err, data) {
         if (err) {
             return callback(err);
         }
-        var result = util.clone(data.CopyObjectResult);
+        var result = util.clone(data.CopyObjectResult || {});
+        util.extend(result, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+        callback(null, result);
+    });
+}
+
+function uploadPartCopy(params, callback) {
+    submitRequest.call(this, {
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        Key: params.Key,
+        VersionId: params.VersionId,
+        qs: {
+            partNumber: params['PartNumber'],
+            uploadId: params['UploadId'],
+        },
+        headers: params.Headers,
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        var result = util.clone(data.CopyObjectResult || {});
         util.extend(result, {
             statusCode: data.statusCode,
             headers: data.headers,
@@ -1254,43 +1388,34 @@ function putObjectCopy(params, callback) {
 }
 
 function deleteMultipleObject(params, callback) {
-    var headers = {};
-
-    headers['Content-Type'] = 'application/xml';
-
     var Objects = params.Objects || {};
     var Quiet = params.Quiet;
 
-    var DeleteConfiguration = {
-        Delete: {
-            Object: Objects,
-            Quiet: Quiet || false
-        }
-    };
+    var xml = util.json2xml({Delete: {Object: Objects, Quiet: Quiet || false}});
 
-    var xml = util.json2xml(DeleteConfiguration);
-
+    var headers = params.Headers;
+    headers['Content-Type'] = 'application/xml';
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
-    headers['Content-Length'] = Buffer.byteLength(xml, 'utf8');
 
     submitRequest.call(this, {
         method: 'POST',
         Bucket: params.Bucket,
         Region: params.Region,
         body: xml,
-        action: '/?delete',
+        action: 'delete',
         headers: headers,
     }, function (err, data) {
         if (err) {
             return callback(err);
         }
-        var Deleted = data.DeleteResult.Deleted || [];
-        var Errors = data.DeleteResult.Error || [];
+        var DeleteResult = data.DeleteResult || {};
+        var Deleted = DeleteResult.Deleted || [];
+        var Errors = DeleteResult.Error || [];
 
         Deleted = util.isArray(Deleted) ? Deleted : [Deleted];
         Errors = util.isArray(Errors) ? Errors : [Errors];
 
-        var result = util.clone(data.DeleteResult);
+        var result = util.clone(DeleteResult);
         util.extend(result, {
             Error: Errors,
             Deleted: Deleted,
@@ -1301,7 +1426,333 @@ function deleteMultipleObject(params, callback) {
     });
 }
 
+function restoreObject(params, callback) {
+    var headers = params.Headers;
+    if (!params['RestoreRequest']) {
+        callback({error: 'lack of param RestoreRequest'});
+        return;
+    }
 
+    var RestoreRequest = params.RestoreRequest || {};
+    var xml = util.json2xml({RestoreRequest: RestoreRequest});
+
+    headers['Content-Type'] = 'application/xml';
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+
+    submitRequest.call(this, {
+        method: 'POST',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        Key: params.Key,
+        VersionId: params.VersionId,
+        body: xml,
+        action: 'restore',
+        headers: headers,
+    }, function (err, data) {
+        callback(err, data);
+    });
+}
+
+
+// 分块上传
+
+
+/**
+ * 初始化分块上传
+ * @param  {Object}  params                                     参数对象，必须
+ *     @param  {String}  params.Bucket                          Bucket名称，必须
+ *     @param  {String}  params.Region                          地域名称，必须
+ *     @param  {String}  params.Key                             object名称，必须
+ *     @param  {String}  params.UploadId                        object名称，必须
+ *     @param  {String}  params.CacheControl                    RFC 2616 中定义的缓存策略，将作为 Object 元数据保存，非必须
+ *     @param  {String}  params.ContentDisposition              RFC 2616 中定义的文件名称，将作为 Object 元数据保存    ，非必须
+ *     @param  {String}  params.ContentEncoding                 RFC 2616 中定义的编码格式，将作为 Object 元数据保存，非必须
+ *     @param  {String}  params.ContentType                     RFC 2616 中定义的内容类型（MIME），将作为 Object 元数据保存，非必须
+ *     @param  {String}  params.Expires                         RFC 2616 中定义的过期时间，将作为 Object 元数据保存，非必须
+ *     @param  {String}  params.ACL                             允许用户自定义文件权限，非必须
+ *     @param  {String}  params.GrantRead                       赋予被授权者读的权限 ，非必须
+ *     @param  {String}  params.GrantWrite                      赋予被授权者写的权限 ，非必须
+ *     @param  {String}  params.GrantFullControl                赋予被授权者读写权限 ，非必须
+ *     @param  {String}  params.StorageClass                    设置Object的存储级别，枚举值：Standard，Standard_IA，Nearline，非必须
+ *     @param  {String}  params.ServerSideEncryption           支持按照指定的加密算法进行服务端数据加密，格式 x-cos-server-side-encryption: "AES256"，非必须
+ * @param  {Function}  callback                                 回调函数，必须
+ * @return  {Object}  err                                       请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data                                      返回的数据
+ */
+function multipartInit(params, callback) {
+    submitRequest.call(this, {
+        method: 'POST',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        Key: params.Key,
+        action: 'uploads',
+        headers: params.Headers,
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        data = util.clone(data || {});
+        if (data && data.InitiateMultipartUploadResult) {
+            return callback(null, util.extend(data.InitiateMultipartUploadResult, {
+                statusCode: data.statusCode,
+                headers: data.headers,
+            }));
+        }
+        callback(null, data);
+    });
+}
+
+/**
+ * 分块上传
+ * @param  {Object}  params                             参数对象，必须
+ *     @param  {String}  params.Bucket                  Bucket名称，必须
+ *     @param  {String}  params.Region                  地域名称，必须
+ *     @param  {String}  params.Key                     object名称，必须
+ * @param  {String}      params.ContentLength           RFC 2616 中定义的 HTTP 请求内容长度（字节），非必须
+ * @param  {String}      params.Expect                  当使用 Expect: 100-continue 时，在收到服务端确认后，才会发送请求内容，非必须
+ * @param  {String}      params.ServerSideEncryption    支持按照指定的加密算法进行服务端数据加密，格式 x-cos-server-side-encryption: "AES256"，非必须
+ * @param  {String}      params.ContentSha1             RFC 3174 中定义的 160-bit 内容 SHA-1 算法校验值，非必须
+ * @param  {Function}  callback                         回调函数，必须
+ * @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data                              返回的数据
+ *     @return  {Object}  data.ETag                     返回的文件分块 sha1 值
+ */
+function multipartUpload(params, callback) {
+    submitRequest.call(this, {
+        TaskId: params.TaskId,
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        Key: params.Key,
+        qs: {
+            partNumber: params['PartNumber'],
+            uploadId: params['UploadId'],
+        },
+        headers: params.Headers,
+        onProgress: params.onProgress,
+        body: params.Body || null
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        data['headers'] = data['headers'] || {};
+        callback(null, {
+            ETag: data['headers']['etag'] || '',
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+
+}
+
+/**
+ * 完成分块上传
+ * @param  {Object}  params                             参数对象，必须
+ *     @param  {String}  params.Bucket                  Bucket名称，必须
+ *     @param  {String}  params.Region                  地域名称，必须
+ *     @param  {String}  params.Key                     object名称，必须
+ *     @param  {Array}   params.Parts                   分块信息列表，必须
+ *     @param  {String}  params.Parts[i].PartNumber     块编号，必须
+ *     @param  {String}  params.Parts[i].ETag           分块的 sha1 校验值
+ * @param  {Function}  callback                         回调函数，必须
+ * @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data                              返回的数据
+ *     @return  {Object}  data.CompleteMultipartUpload  完成分块上传后的文件信息，包括Location, Bucket, Key 和 ETag
+ */
+function multipartComplete(params, callback) {
+    var self = this;
+
+    var UploadId = params.UploadId;
+
+    var Parts = params['Parts'];
+
+    for (var i = 0, len = Parts.length; i < len; i++) {
+        if (Parts[i]['ETag'].indexOf('"') === 0) {
+            continue;
+        }
+        Parts[i]['ETag'] = '"' + Parts[i]['ETag'] + '"';
+    }
+
+    var xml = util.json2xml({CompleteMultipartUpload: {Part: Parts}});
+
+    var headers = params.Headers;
+    headers['Content-Type'] = 'application/xml';
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+
+    submitRequest.call(this, {
+        method: 'POST',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        Key: params.Key,
+        qs: {
+            uploadId: UploadId
+        },
+        body: xml,
+        headers: headers,
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        var url = getUrl({
+            protocol: self.options.Protocol,
+            domain: self.options.Domain,
+            bucket: params.Bucket,
+            region: params.Region,
+            object: params.Key,
+            isLocation: true,
+        });
+        var CompleteMultipartUploadResult = data.CompleteMultipartUploadResult || {};
+        var result = util.extend(CompleteMultipartUploadResult, {
+            Location: url,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+        callback(null, result);
+    });
+}
+
+/**
+ * 分块上传任务列表查询
+ * @param  {Object}  params                                 参数对象，必须
+ *     @param  {String}  params.Bucket                      Bucket名称，必须
+ *     @param  {String}  params.Region                      地域名称，必须
+ *     @param  {String}  params.Delimiter                   定界符为一个符号，如果有Prefix，则将Prefix到delimiter之间的相同路径归为一类，定义为Common Prefix，然后列出所有Common Prefix。如果没有Prefix，则从路径起点开始，非必须
+ *     @param  {String}  params.EncodingType                规定返回值的编码方式，非必须
+ *     @param  {String}  params.Prefix                      前缀匹配，用来规定返回的文件前缀地址，非必须
+ *     @param  {String}  params.MaxUploads                  单次返回最大的条目数量，默认1000，非必须
+ *     @param  {String}  params.KeyMarker                   与upload-id-marker一起使用 </Br>当upload-id-marker未被指定时，ObjectName字母顺序大于key-marker的条目将被列出 </Br>当upload-id-marker被指定时，ObjectName字母顺序大于key-marker的条目被列出，ObjectName字母顺序等于key-marker同时UploadId大于upload-id-marker的条目将被列出，非必须
+ *     @param  {String}  params.UploadIdMarker              与key-marker一起使用 </Br>当key-marker未被指定时，upload-id-marker将被忽略 </Br>当key-marker被指定时，ObjectName字母顺序大于key-marker的条目被列出，ObjectName字母顺序等于key-marker同时UploadId大于upload-id-marker的条目将被列出，非必须
+ * @param  {Function}  callback                             回调函数，必须
+ * @return  {Object}  err                                   请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data                                  返回的数据
+ *     @return  {Object}  data.ListMultipartUploadsResult   分块上传任务信息
+ */
+function multipartList(params, callback) {
+    var reqParams = {};
+
+    reqParams['delimiter'] = params['Delimiter'];
+    reqParams['encoding-type'] = params['EncodingType'];
+    reqParams['prefix'] = params['Prefix'];
+
+    reqParams['max-uploads'] = params['MaxUploads'];
+
+    reqParams['key-marker'] = params['KeyMarker'];
+    reqParams['upload-id-marker'] = params['UploadIdMarker'];
+
+    reqParams = util.clearKey(reqParams);
+
+    submitRequest.call(this, {
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        headers: params.Headers,
+        qs: reqParams,
+        action: 'uploads',
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+
+        if (data && data.ListMultipartUploadsResult) {
+            var Upload = data.ListMultipartUploadsResult.Upload || [];
+
+            var CommonPrefixes = data.ListMultipartUploadsResult.CommonPrefixes || [];
+
+            CommonPrefixes = util.isArray(CommonPrefixes) ? CommonPrefixes : [CommonPrefixes];
+            Upload = util.isArray(Upload) ? Upload : [Upload];
+
+            data.ListMultipartUploadsResult.Upload = Upload;
+            data.ListMultipartUploadsResult.CommonPrefixes = CommonPrefixes;
+        }
+        var result = util.clone(data.ListMultipartUploadsResult || {});
+        util.extend(result, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+        callback(null, result);
+    });
+}
+
+/**
+ * 上传的分块列表查询
+ * @param  {Object}  params                                 参数对象，必须
+ *     @param  {String}  params.Bucket                      Bucket名称，必须
+ *     @param  {String}  params.Region                      地域名称，必须
+ *     @param  {String}  params.Key                         object名称，必须
+ *     @param  {String}  params.UploadId                    标示本次分块上传的ID，必须
+ *     @param  {String}  params.EncodingType                规定返回值的编码方式，非必须
+ *     @param  {String}  params.MaxParts                    单次返回最大的条目数量，默认1000，非必须
+ *     @param  {String}  params.PartNumberMarker            默认以UTF-8二进制顺序列出条目，所有列出条目从marker开始，非必须
+ * @param  {Function}  callback                             回调函数，必须
+ * @return  {Object}  err                                   请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data                                  返回的数据
+ *     @return  {Object}  data.ListMultipartUploadsResult   分块信息
+ */
+function multipartListPart(params, callback) {
+    var reqParams = {};
+
+    reqParams['uploadId'] = params['UploadId'];
+    reqParams['encoding-type'] = params['EncodingType'];
+    reqParams['max-parts'] = params['MaxParts'];
+    reqParams['part-number-marker'] = params['PartNumberMarker'];
+
+    submitRequest.call(this, {
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        Key: params.Key,
+        headers: params.Headers,
+        qs: reqParams,
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        var ListPartsResult = data.ListPartsResult || {};
+        var Part = ListPartsResult.Part || [];
+        Part = util.isArray(Part) ? Part : [Part];
+
+        ListPartsResult.Part = Part;
+        var result = util.clone(ListPartsResult);
+        util.extend(result, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+        callback(null, result);
+    });
+}
+
+/**
+ * 抛弃分块上传
+ * @param  {Object}  params                 参数对象，必须
+ *     @param  {String}  params.Bucket      Bucket名称，必须
+ *     @param  {String}  params.Region      地域名称，必须
+ *     @param  {String}  params.Key         object名称，必须
+ *     @param  {String}  params.UploadId    标示本次分块上传的ID，必须
+ * @param  {Function}  callback             回调函数，必须
+ *     @return  {Object}    err             请求失败的错误，如果请求成功，则为空。
+ *     @return  {Object}    data            返回的数据
+ */
+function multipartAbort(params, callback) {
+    var reqParams = {};
+
+    reqParams['uploadId'] = params['UploadId'];
+    submitRequest.call(this, {
+        method: 'DELETE',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        Key: params.Key,
+        headers: params.Headers,
+        qs: reqParams,
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
 
 /**
  * 获取签名
@@ -1313,11 +1764,13 @@ function deleteMultipleObject(params, callback) {
  */
 function getAuth(params) {
     return util.getAuth({
+        SecretId: params.SecretId || this.options.SecretId || '',
+        SecretKey: params.SecretKey || this.options.SecretKey || '',
         Method: params.Method,
         Key: params.Key,
+        Query: params.Query,
+        Headers: params.Headers,
         Expires: params.Expires,
-        SecretId: params.SecretId || this.options.SecretId || '',
-        SecretKey: params.SecretKey || this.options.SecretKey || ''
     });
 }
 
@@ -1336,6 +1789,7 @@ function getAuth(params) {
 function getObjectUrl(params, callback) {
     var self = this;
     var url = getUrl({
+        protocol: self.options.Protocol,
         domain: self.options.Domain,
         bucket: params.Bucket,
         region: params.Region,
@@ -1346,6 +1800,8 @@ function getObjectUrl(params, callback) {
         return url;
     }
     var authorization = getAuthorizationAsync.call(this, {
+        Bucket: params.Bucket || '',
+        Region: params.Region || '',
         Method: params.Method || 'get',
         Key: params.Key,
     }, function (AuthData) {
@@ -1408,9 +1864,27 @@ function decodeAcl(AccessControlPolicy) {
         result.ACL = 'private';
     }
     util.each(GrantMap, function (item) {
-        result[item] = result[item].join(',');
+        result[item] = uniqGrant(result[item].join(','));
     });
     return result;
+}
+
+// Grant 去重
+function uniqGrant(str) {
+    var arr = str.split(',');
+    var exist = {};
+    var i, item;
+    for (i = 0; i < arr.length; ) {
+        item = arr[i].trim();
+        if (exist[item]) {
+            arr.splice(i, 1);
+        } else {
+            exist[item] = true;
+            arr[i] = item;
+            i++;
+        }
+    }
+    return arr.join(',');
 }
 
 // 生成操作 url
@@ -1421,8 +1895,7 @@ function getUrl(params) {
     var domain = params.domain;
     var region = params.region;
     var object = params.object;
-    var action = params.action;
-    var protocol = 'https:';
+    var protocol = params.protocol || 'https:';
     if (!domain) {
         if (['cn-south', 'cn-south-2', 'cn-north', 'cn-east', 'cn-southwest', 'sg'].indexOf(region) > -1) {
             domain = '{{Bucket}}-{{AppId}}.{{Region}}.myqcloud.com';
@@ -1446,9 +1919,6 @@ function getUrl(params) {
         url += '/' + encodeURIComponent(object).replace(/%2F/g, '/');
     }
 
-    if (action) {
-        url += action;
-    }
     if (params.isLocation) {
         url = url.replace(/^https?:\/\//, '');
     }
@@ -1458,53 +1928,73 @@ function getUrl(params) {
 // 异步获取签名
 function getAuthorizationAsync(params, callback) {
     var self = this;
-    if (self.options.getAuthorization) { // 外部计算签名
-        self.options.getAuthorization.call(self, {
+    var Bucket = params.Bucket || '';
+    var Region = params.Region || '';
+    self._StsMap = self._StsMap || {};
+    var StsData = self._StsMap[Bucket + '.' + Region] || {};
+
+    var calcAuthByTmpKey = function () {
+        var Authorization = util.getAuth({
+            SecretId: StsData.TmpSecretId,
+            SecretKey: StsData.TmpSecretKey,
             Method: params.Method,
-            Key: params.Key,
+            Key: params.Key || '',
+            Query: params.Query,
+            Headers: params.Headers,
+        });
+        var AuthData = {
+            Authorization: Authorization,
+            XCosSecurityToken: StsData.XCosSecurityToken || '',
+            Token: StsData.Token || '',
+            ClientIP: StsData.ClientIP || '',
+            ClientUA: StsData.ClientUA || '',
+        };
+        callback && callback(AuthData);
+    };
+
+    // 先判断是否有临时密钥
+    if (StsData.ExpiredTime && StsData.ExpiredTime - (Date.now() / 1000 > 60)) { // 如果缓存的临时密钥有效，并还有超过60秒有效期就直接使用
+        calcAuthByTmpKey();
+    } else if (self.options.getAuthorization) { // 外部计算签名或获取临时密钥
+        self.options.getAuthorization.call(self, {
+            Bucket: Bucket,
+            Region: Region,
+            Method: params.Method,
+            Key: params.Key || '',
+            Query: params.Query,
+            Headers: params.Headers,
         }, function (AuthData) {
             if (typeof AuthData === 'string') {
                 AuthData = {Authorization: AuthData};
             }
-            callback && callback(AuthData);
+            if (AuthData.TmpSecretId &&
+                AuthData.TmpSecretKey &&
+                AuthData.XCosSecurityToken &&
+                AuthData.ExpiredTime) {
+                StsData = self._StsMap[Bucket + '.' + Region] = AuthData;
+                calcAuthByTmpKey();
+            } else {
+                callback && callback(AuthData);
+            }
         });
     } else if (self.options.getSTS) { // 外部获取临时密钥
-        var Bucket = params.Bucket || '';
-        self._StsMap = self._StsMap || {};
-        var StsData = self._StsMap[Bucket] || {};
-        var runTemp = function () {
-            var Authorization = util.getAuth({
-                SecretId: StsData.SecretId,
-                SecretKey: StsData.SecretKey,
-                Method: params.Method,
-                Key: params.Key,
-            });
-            var AuthData = {
-                Authorization: Authorization,
-                XCosSecurityToken: StsData.XCosSecurityToken || '',
-                Token: StsData.Token || '',
-                ClientIP: StsData.ClientIP || '',
-                ClientUA: StsData.ClientUA || '',
-            };
-            callback && callback(AuthData);
-        };
-        if (StsData.ExpiredTime && StsData.ExpiredTime - (Date.now() / 1000 > 60)) { // 如果缓存的临时密钥有效，并还有超过60秒有效期就直接使用
-            runTemp();
-        } else { // 如果有效时间小于 60 秒就重新获取临时密钥
-            self.options.getSTS.call(self, {
-                Bucket: Bucket
-            }, function (data) {
-                StsData = self._StsMap[Bucket] = data || {};
-                runTemp();
-            });
-        }
+        self.options.getSTS.call(self, {
+            Bucket: Bucket,
+            Region: Region,
+        }, function (data) {
+            StsData = self._StsMap[Bucket + '.' + Region] = data || {};
+            StsData.TmpSecretId = StsData.SecretId;
+            StsData.TmpSecretKey = StsData.SecretKey;
+            calcAuthByTmpKey();
+        });
     } else { // 内部计算获取签名
         var Authorization = util.getAuth({
             SecretId: params.SecretId || self.options.SecretId,
             SecretKey: params.SecretKey || self.options.SecretKey,
             Method: params.Method,
-            Key: params.Key,
-            // headers: opt.headers,
+            Key: params.Key || '',
+            Query: params.Query,
+            Headers: params.Headers,
         });
         callback && callback({Authorization: Authorization});
         return Authorization;
@@ -1515,11 +2005,61 @@ function getAuthorizationAsync(params, callback) {
 // 获取签名并发起请求
 function submitRequest(params, callback) {
     var self = this;
-    var authKey = !params.action && params.method.toLowerCase() === 'post' ? '' : params.Key;
+
+    // 处理 headers
+    !params.headers && (params.headers = {});
+
+    // 处理 query
+    !params.qs && (params.qs = {});
+    params.VersionId && (params.qs.versionId = params.VersionId);
+    params.qs = util.clearKey(params.qs);
+
+    // 清理 undefined 和 null 字段
+    params.headers && (params.headers = util.clearKey(params.headers));
+    params.qs && (params.qs = util.clearKey(params.qs));
+
+    var Query = util.clone(params.qs);
+    params.action && (Query[params.action] = '');
+
     getAuthorizationAsync.call(self, {
+        Bucket: params.Bucket || '',
+        Region: params.Region || '',
         Method: params.method,
-        Key: authKey,
+        Key: params.filePath && params.method === 'POST' ? '' : params.Key,
+        Query: Query,
+        Headers: params.headers,
     }, function (AuthData) {
+
+        // 检查签名格式
+        var auth = AuthData.Authorization;
+        var formatAllow = false;
+        if (auth) {
+            if (auth.indexOf(' ') > -1) {
+                formatAllow = false;
+            } else if (auth.indexOf('q-sign-algorithm=') > -1 &&
+                auth.indexOf('q-ak=') > -1 &&
+                auth.indexOf('q-sign-time=') > -1 &&
+                auth.indexOf('q-key-time=') > -1 &&
+                auth.indexOf('q-url-param-list=') > -1) {
+                formatAllow = true;
+            } else {
+                try {
+                    auth = atob(auth);
+                    if (auth.indexOf('a=') > -1 &&
+                        auth.indexOf('k=') > -1 &&
+                        auth.indexOf('t=') > -1 &&
+                        auth.indexOf('r=') > -1 &&
+                        auth.indexOf('b=') > -1) {
+                        formatAllow = true;
+                    }
+                } catch (e) {}
+            }
+        }
+        if (!formatAllow) {
+            callback('authorization error');
+            return;
+        }
+
         params.AuthData = AuthData;
         _submitRequest.call(self, params, callback);
     });
@@ -1534,28 +2074,30 @@ function _submitRequest(params, callback) {
     var bucket = params.Bucket;
     var region = params.Region;
     var object = params.Key;
-    var action = params.action;
     var method = params.method || 'GET';
-    var headers = params.headers || {};
     var url = params.url;
     var body = params.body;
-    var filePath = params.filePath;
     var json = params.json;
     var rawBody = params.rawBody;
-    var qs = params.qs;
+
+    // url
+    url = url || getUrl({
+        protocol: self.options.Protocol,
+        domain: self.options.Domain,
+        bucket: bucket,
+        region: region,
+        object: object,
+    });
+    if (params.action) {
+        url  = url + (object ? '' : '/') + '?' + params.action;
+    }
 
     var opt = {
-        url: url || getUrl({
-            domain: self.options.Domain,
-            bucket: bucket,
-            region: region,
-            object: object,
-            action: action,
-        }),
         method: method,
-        headers: headers || {},
-        filePath: filePath,
-        qs: qs,
+        url: url,
+        headers: params.headers,
+        qs: params.qs,
+        filePath: params.filePath,
         body: body,
         json: json,
     };
@@ -1567,9 +2109,8 @@ function _submitRequest(params, callback) {
     params.AuthData.ClientUA && (opt.headers['clientUA'] = params.AuthData.ClientUA);
     params.AuthData.XCosSecurityToken && (opt.headers['x-cos-security-token'] = params.AuthData.XCosSecurityToken);
 
-    // 预先处理 undefined 和 null 的属性
+    // 清理 undefined 和 null 字段
     opt.headers && (opt.headers = util.clearKey(opt.headers));
-    opt.qs && (opt.qs = util.clearKey(opt.qs));
     opt = util.clearKey(opt);
 
     // progress
@@ -1584,18 +2125,19 @@ function _submitRequest(params, callback) {
     var sender = REQUEST(opt, function (err, response, body) {
 
         // 返回内容添加 状态码 和 headers
+        var hasReturned;
         var cb = function (err, data) {
             TaskId && self.off('inner-kill-task', killTask);
-            if (TaskId && !self._isRunningTask(TaskId)) return;
+            if (hasReturned) return;
+            hasReturned = true;
+            var attrs = {};
+            response && response.statusCode && (attrs.statusCode = response.statusCode);
+            response && response.headers && (attrs.headers = response.headers);
             if (err) {
-                err = err || {};
-                response && response.statusCode && (err.statusCode = response.statusCode);
-                response && response.headers && (err.headers = response.headers);
+                err = util.extend(err || {}, attrs);
                 callback(err, null);
             } else {
-                data = data || {};
-                response && response.statusCode && (data.statusCode = response.statusCode);
-                response && response.headers && (data.headers = response.headers);
+                data = util.extend(data || {}, attrs);
                 callback(null, data);
             }
         };
@@ -1615,7 +2157,8 @@ function _submitRequest(params, callback) {
 
         // 请求返回码不为 200
         var statusCode = response.statusCode;
-        if (statusCode !== 200 && statusCode !== 204 && statusCode !== 206) {
+        var statusSuccess = Math.floor(statusCode / 100) === 2; // 200 202 204 206
+        if (!statusSuccess) {
             cb({error: jsonRes.Error || jsonRes});
             return;
         }
@@ -1635,7 +2178,7 @@ function _submitRequest(params, callback) {
 
     // kill task
     var killTask = function (data) {
-        if (data.TaskId === TaskId) {debugger;
+        if (data.TaskId === TaskId) {
             sender && sender.abort && sender.abort();
             self.off('inner-kill-task', killTask);
         }
@@ -1666,10 +2209,16 @@ var API_MAP = {
     getBucketLifecycle: getBucketLifecycle,
     putBucketLifecycle: putBucketLifecycle,
     deleteBucketLifecycle: deleteBucketLifecycle,
+    putBucketVersioning: putBucketVersioning,
+    getBucketVersioning: getBucketVersioning,
+    putBucketReplication: putBucketReplication,
+    getBucketReplication: getBucketReplication,
+    deleteBucketReplication: deleteBucketReplication,
 
     // Object 相关方法
     getObject: getObject,
     headObject: headObject,
+    listObjectVersions: listObjectVersions,
     putObject: putObject,
     postObject: postObject,
     deleteObject: deleteObject,
@@ -1677,6 +2226,7 @@ var API_MAP = {
     putObjectAcl: putObjectAcl,
     optionsObject: optionsObject,
     putObjectCopy: putObjectCopy,
+    restoreObject: restoreObject,
 
     // 工具方法
     getObjectUrl: getObjectUrl,

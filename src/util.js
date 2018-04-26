@@ -4,6 +4,10 @@ var md5 = require('../lib/md5');
 var CryptoJS = require('../lib/crypto');
 var xml2json = require('../lib/xml2json');
 var json2xml = require('../lib/json2xml');
+var base64 = require('../lib/base64');
+
+var atob = base64.atob;
+var btoa = base64.btoa;
 
 function camSafeUrlEncode(str) {
     return encodeURIComponent(str)
@@ -22,8 +26,8 @@ var getAuth = function (opt) {
     var SecretKey = opt.SecretKey;
     var method = (opt.method || opt.Method || 'get').toLowerCase();
     var pathname = opt.pathname || opt.Key || '/';
-    var queryParams = opt.params || '';
-    var headers = opt.headers || '';
+    var queryParams = clone(opt.Query || opt.params || {});
+    var headers = clone(opt.Headers || opt.headers || {});
     pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
 
     if (!SecretId) return console.error('lack of param SecretId');
@@ -45,9 +49,11 @@ var getAuth = function (opt) {
         var keyList = getObjectKeys(obj);
         for (i = 0; i < keyList.length; i++) {
             key = keyList[i];
-            val = obj[key] || '';
+            val = (obj[key] === undefined || obj[key] === null) ? '' : ('' + obj[key]);
             key = key.toLowerCase();
-            list.push(camSafeUrlEncode(key) + '=' + camSafeUrlEncode(val));
+            key = camSafeUrlEncode(key);
+            val = camSafeUrlEncode(val) || '';
+            list.push(key + '=' +  val)
         }
         return list.join('&');
     };
@@ -168,6 +174,16 @@ function extend(target, source) {
 function isArray(arr) {
     return arr instanceof Array;
 }
+function isInArray(arr, item) {
+    var flag = false;
+    for (var i = 0; i < arr.length; i++) {
+        if (item === arr[i]) {
+            flag = true;
+            break;
+        }
+    }
+    return flag;
+}
 function each(obj, fn) {
     for (var i in obj) {
         if (obj.hasOwnProperty(i)) {
@@ -201,12 +217,12 @@ function filter(obj, fn) {
     return o;
 }
 var binaryBase64 = function (str) {
-    var i, len, char, arr = [];
+    var i, len, char, res = '';
     for (i = 0, len = str.length / 2; i < len; i++) {
         char = parseInt(str[i * 2] + str[i * 2 + 1], 16);
-        arr.push(char);
+        res += String.fromCharCode(char);
     }
-    return new Buffer(arr).toString('base64');
+    return btoa(res);
 };
 var uuid = function () {
     var S4 = function () {
@@ -219,7 +235,7 @@ var checkParams = function (apiName, params) {
     var bucket = params.Bucket;
     var region = params.Region;
     var object = params.Key;
-    if (apiName.indexOf('Bucket') > -1 || apiName === 'deleteMultipleObject' || apiName === 'multipartList') {
+    if (apiName.indexOf('Bucket') > -1 || apiName === 'deleteMultipleObject' || apiName === 'multipartList' || apiName === 'listObjectVersions') {
         return bucket && region;
     }
     if (apiName.indexOf('Object') > -1 || apiName.indexOf('multipart') > -1 || apiName === 'sliceUploadFile' || apiName === 'abortUploadTask') {
@@ -229,29 +245,87 @@ var checkParams = function (apiName, params) {
 };
 
 var apiWrapper = function (apiName, apiFn) {
-    var regionMap = {
-        'gz': 'ap-guangzhou',
-        'tj': 'ap-beijing-2',
-        'sh': 'ap-shanghai',
-        'cd': 'ap-chengdu'
-    };
     return function (params, callback) {
-        callback = callback || function () {
-            };
+
+        // 处理参数
+        if (typeof params === 'function') {
+            callback = params;
+            params = {};
+        }
+
+        // 复制参数对象
+        params = extend({}, params);
+
+        // 统一处理 Headers
+        var Headers = params.Headers || {};
+        if (params && typeof params === 'object') {
+            (function () {
+                for (var key in params) {
+                    if (params.hasOwnProperty(key) && key.indexOf('x-cos-') > -1) {
+                        Headers[key] = params[key];
+                    }
+                }
+            })();
+
+            // params headers
+            Headers['x-cos-mfa'] = params['MFA'];
+            Headers['Content-MD5'] = params['ContentMD5'];
+            Headers['Content-Length'] = params['ContentLength'];
+            Headers['Content-Type'] = params['ContentType'];
+            Headers['Expect'] = params['Expect'];
+            Headers['Expires'] = params['Expires'];
+            Headers['Cache-Control'] = params['CacheControl'];
+            Headers['Content-Disposition'] = params['ContentDisposition'];
+            Headers['Content-Encoding'] = params['ContentEncoding'];
+            Headers['Range'] = params['Range'];
+            Headers['If-Modified-Since'] = params['IfModifiedSince'];
+            Headers['If-Unmodified-Since'] = params['IfUnmodifiedSince'];
+            Headers['If-Match'] = params['IfMatch'];
+            Headers['If-None-Match'] = params['IfNoneMatch'];
+            Headers['x-cos-copy-source'] = params['CopySource'];
+            Headers['x-cos-copy-source-Range'] = params['CopySourceRange'];
+            Headers['x-cos-metadata-directive'] = params['MetadataDirective'];
+            Headers['x-cos-copy-source-If-Modified-Since'] = params['CopySourceIfModifiedSince'];
+            Headers['x-cos-copy-source-If-Unmodified-Since'] = params['CopySourceIfUnmodifiedSince'];
+            Headers['x-cos-copy-source-If-Match'] = params['CopySourceIfMatch'];
+            Headers['x-cos-copy-source-If-None-Match'] = params['CopySourceIfNoneMatch'];
+            Headers['x-cos-server-side-encryption'] = params['ServerSideEncryption'];
+            Headers['x-cos-acl'] = params['ACL'];
+            Headers['x-cos-grant-read'] = params['GrantRead'];
+            Headers['x-cos-grant-write'] = params['GrantWrite'];
+            Headers['x-cos-grant-full-control'] = params['GrantFullControl'];
+            Headers['x-cos-grant-read-acp'] = params['GrantReadAcp'];
+            Headers['x-cos-grant-write-acp'] = params['GrantWriteAcp'];
+            Headers['x-cos-storage-class'] = params['StorageClass'];
+            params.Headers = clearKey(Headers);
+        }
+
+        // 代理回调函数
+        var formatResult = function (result) {
+            if (result && result.headers) {
+                result.headers['x-cos-version-id'] && (result.VersionId = result.headers['x-cos-version-id']);
+                result.headers['x-cos-delete-marker'] && (result.DeleteMarker = result.headers['x-cos-delete-marker']);
+            }
+            return result;
+        };
+        var _callback = function (err, data) {
+            callback && callback(formatResult(err), formatResult(data));
+        };
+
         if (apiName !== 'getService' && apiName !== 'abortUploadTask') {
             // 判断参数是否完整
             if (!checkParams(apiName, params)) {
-                callback({error: 'lack of required params'});
+                _callback({error: 'lack of required params'});
                 return;
             }
             // 判断 region 格式
-            if (params.Region && regionMap[params.Region]) {
-                callback({error: 'Region should be ' + regionMap[params.Region]});
+            if (params.Region && params.Region.indexOf('-') === -1 && params.Region !== 'yfb') {
+                _callback({error: 'Region format error, find help here: https://cloud.tencent.com/document/product/436/6224'});
                 return;
             }
             // 判断 region 格式
             if (params.Region && params.Region.indexOf('cos.') > -1) {
-                callback({error: 'Region should not be start with "cos."'});
+                _callback({error: 'Region should not be start with "cos."'});
                 return;
             }
             // 兼容不带 AppId 的 Bucket
@@ -262,7 +336,7 @@ var apiWrapper = function (apiName, apiFn) {
                     } else if (this.options.AppId) {
                         params.Bucket = params.Bucket + '-' + this.options.AppId;
                     } else {
-                        callback({error: 'Bucket should format as "test-1250000000".'});
+                        _callback({error: 'Bucket should format as "test-1250000000".'});
                         return;
                     }
                 }
@@ -276,7 +350,7 @@ var apiWrapper = function (apiName, apiFn) {
                 params.Key = params.Key.substr(1);
             }
         }
-        var res = apiFn.call(this, params, callback);
+        var res = apiFn.call(this, params, _callback);
         if (apiName === 'getAuth' || apiName === 'getObjectUrl') {
             return res;
         }
@@ -324,16 +398,6 @@ var throttleOnProgress = function (total, onProgress) {
     };
 };
 
-var fileSlice = function (file, start, end) {
-    if (file.slice) {
-        return file.slice(start, end);
-    } else if (file.mozSlice) {
-        return file.mozSlice(start, end);
-    } else if (file.webkitSlice) {
-        return file.webkitSlice(start, end);
-    }
-};
-
 var util = {
     apiWrapper: apiWrapper,
     getAuth: getAuth,
@@ -341,15 +405,18 @@ var util = {
     json2xml: json2xml,
     md5: md5,
     clearKey: clearKey,
+    getFileMd5: getFileMd5,
     binaryBase64: binaryBase64,
     extend: extend,
     isArray: isArray,
+    isInArray: isInArray,
     each: each,
     map: map,
+    filter: filter,
     clone: clone,
     uuid: uuid,
     throttleOnProgress: throttleOnProgress,
+    isBrowser: !!global.document,
 };
-
 
 module.exports = util;

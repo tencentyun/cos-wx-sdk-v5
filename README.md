@@ -45,7 +45,7 @@ var cos = new COS({
 // 选择文件
 wx.chooseImage({
     count: 1, // 默认9
-    sizeType: ['original', 'compressed'], // 可以指定是原图还是压缩图，默认二者都有
+    sizeType: ['original'], // 可以指定是原图还是压缩图，默认用原图
     sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有
     success: function (res) {
         var filepath = res.tempFilePaths[0];
@@ -67,6 +67,6 @@ wx.chooseImage({
 
 ## 说明文档
 
-完整文档有待完善，不支持分片相关接口，上传下载相关方法请查看源码和例子 [使用例子](demo/demo.js)
+完整文档有待完善，不支持分片相关接口，上传下载相关方法请查看源码和例子 [使用例子](demo/demo-sdk.js)
 
 其他大部分接口可以参考以下 JS SDK 文档 [接口文档](https://cloud.tencent.com/document/product/436/12260)

@@ -6,39 +6,29 @@ var config = {
 
 var TaskId;
 var cos = new COS({
-    getAuthorization: function (params, callback) {//获取签名 必填参数
-
-        // 方法一（推荐）服务器提供计算签名的接口
-        /*
+    getAuthorization: function (options, callback) {
         wx.request({
-            url: 'SIGN_SERVER_URL',
-            data: {
-                Method: params.Method,
-                Key: params.Key
-            },
-            dataType: 'text',
+            method: 'GET',
+            url: 'https://example.com/server/sts.php', // 服务端签名，参考 server 目录下的两个签名例子
+            dataType: 'json',
             success: function (result) {
-                callback(result.data);
+                var data = result.data;
+                callback({
+                    TmpSecretId: data.credentials && data.credentials.tmpSecretId,
+                    TmpSecretKey: data.credentials && data.credentials.tmpSecretKey,
+                    XCosSecurityToken: data.credentials && data.credentials.sessionToken,
+                    ExpiredTime: data.expiredTime,
+                });
             }
         });
-        */
-
-        // 方法二（适用于前端调试）
-        var authorization = COS.getAuthorization({
-            SecretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-            SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-            Method: params.Method,
-            Key: params.Key
-        });
-        callback(authorization);
-    }
+    },
 });
 
 // 回调统一处理函数
 var requestCallback =function (err, data) {
     console.log(err || data);
     if (err && err.error) {
-        wx.showModal({title: '返回错误', content: '请求失败：' + err.error.Message + '；状态码：' + err.statusCode, showCancel: false});
+        wx.showModal({title: '返回错误', content: '请求失败：' + (err.error.Message || err.error) + '；状态码：' + err.statusCode, showCancel: false});
     } else if (err) {
         wx.showModal({title: '请求出错', content: '请求出错：' + err + '；状态码：' + err.statusCode, showCancel: false});
     } else {
@@ -203,7 +193,7 @@ var dao = {
     postObject: function () {
         wx.chooseImage({
             count: 1, // 默认9
-            sizeType: ['original', 'compressed'], // 可以指定是原图还是压缩图，默认二者都有
+            sizeType: ['original'], // 可以指定是原图还是压缩图，默认二者都有
             sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有
             success: function (res) {
                 cos.postObject({

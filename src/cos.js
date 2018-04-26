@@ -9,11 +9,10 @@ var defaultOptions = {
     SecretId: '',
     SecretKey: '',
     FileParallelLimit: 3,
-    ChunkParallelLimit: 3,
-    ChunkSize: 1024 * 1024,
     ProgressInterval: 1000,
     Domain: '',
     ServiceDomain: '',
+    Protocol: '',
 };
 
 // 对外暴露的类
