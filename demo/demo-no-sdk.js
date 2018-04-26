@@ -8,7 +8,7 @@ var uploadFile = function () {
     var getAuthorization = function (options, callback) {
         wx.request({
             method: 'GET',
-            url: 'https://carsonxu.com/server/sts-auth.php', // 服务端签名，参考 server 目录下的两个签名例子
+            url: 'https://example.com/server/sts-auth.php', // 服务端签名，参考 server 目录下的两个签名例子
             data: {
                 method: options.method,
                 pathname: options.pathname,
