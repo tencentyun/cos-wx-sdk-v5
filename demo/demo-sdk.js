@@ -1,6 +1,6 @@
 var COS = require('./lib/cos-wx-sdk-v5');
 var config = {
-    Bucket: 'test-1251902136',
+    Bucket: 'test-1250000000',
     Region: 'ap-guangzhou'
 };
 
@@ -9,7 +9,7 @@ var cos = new COS({
     getAuthorization: function (options, callback) {
         wx.request({
             method: 'GET',
-            url: 'https://carsonxu.com/cos-js-sdk-v5/server/sts.php', // 服务端签名，参考 server 目录下的两个签名例子
+            url: 'https://example.com/cos-js-sdk-v5/server/sts.php', // 服务端签名，参考 server 目录下的两个签名例子
             dataType: 'json',
             success: function (result) {
                 var data = result.data;
