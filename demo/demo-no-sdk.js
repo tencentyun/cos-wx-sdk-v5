@@ -37,7 +37,11 @@ var uploadFile = function () {
                 },
                 success: function (res) {
                     var Location = prefix + Key;
-                    wx.showModal({title: '上传成功', content: Location, showCancel: false});
+                    if (res.statusCode === 200) {
+                        wx.showModal({title: '上传成功', content: Location, showCancel: false});
+                    } else {
+                        wx.showModal({title: '上传失败', content: JSON.stringify(res), showCancel: false});
+                    }
                 },
                 fail: function (res) {
                     wx.showModal({title: '上传失败', content: JSON.stringify(res), showCancel: false});
