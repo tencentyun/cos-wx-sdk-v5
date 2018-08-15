@@ -58,7 +58,7 @@ var getTempKeys = function (callback) {
         'statement': [{
             'action': [
                 // 这里可以从临时密钥的权限上控制前端允许的操作
-                // 'name/cos:*', // 这样写可以包含下面所有权限
+                'name/cos:*', // 这样写可以包含下面所有权限
 
                 // // 列出所有允许的操作
                 // // ACL 读写
@@ -91,25 +91,26 @@ var getTempKeys = function (callback) {
                 // 'name/cos:DeleteMultipleObject',
                 // 'name/cos:DeleteObject',
                 // 简单文件操作
-                'name/cos:PutObject',
-                'name/cos:PostObject',
-                'name/cos:AppendObject',
-                'name/cos:GetObject',
-                'name/cos:HeadObject',
-                'name/cos:OptionsObject',
-                'name/cos:PutObjectCopy',
-                'name/cos:PostObjectRestore',
+                // 'name/cos:PutObject',
+                // 'name/cos:PostObject',
+                // 'name/cos:AppendObject',
+                // 'name/cos:GetObject',
+                // 'name/cos:HeadObject',
+                // 'name/cos:OptionsObject',
+                // 'name/cos:PutObjectCopy',
+                // 'name/cos:PostObjectRestore',
                 // 分片上传操作
-                'name/cos:InitiateMultipartUpload',
-                'name/cos:ListMultipartUploads',
-                'name/cos:ListParts',
-                'name/cos:UploadPart',
-                'name/cos:CompleteMultipartUpload',
-                'name/cos:AbortMultipartUpload',
+                // 'name/cos:InitiateMultipartUpload',
+                // 'name/cos:ListMultipartUploads',
+                // 'name/cos:ListParts',
+                // 'name/cos:UploadPart',
+                // 'name/cos:CompleteMultipartUpload',
+                // 'name/cos:AbortMultipartUpload',
             ],
             'effect': 'allow',
             'principal': {'qcs': ['*']},
             'resource': [
+                '*',
                 'qcs::cos:' + config.Region + ':uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName + '/',
                 'qcs::cos:' + config.Region + ':uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName + '/' + config.AllowPrefix
             ]

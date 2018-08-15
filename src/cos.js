@@ -4,11 +4,14 @@ var util = require('./util');
 var event = require('./event');
 var task = require('./task');
 var base = require('./base');
+var advance = require('./advance');
 
 var defaultOptions = {
     SecretId: '',
     SecretKey: '',
     FileParallelLimit: 3,
+    ChunkParallelLimit: 3,
+    ChunkSize: 1024 * 1024,
     ProgressInterval: 1000,
     Domain: '',
     ServiceDomain: '',
@@ -23,6 +26,7 @@ var COS = function (options) {
 };
 
 util.extend(COS.prototype, base);
+util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
 COS.version = '0.6.0';

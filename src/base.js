@@ -1378,7 +1378,7 @@ function uploadPartCopy(params, callback) {
         if (err) {
             return callback(err);
         }
-        var result = util.clone(data.CopyObjectResult || {});
+        var result = util.clone(data.CopyPartResult || {});
         util.extend(result, {
             statusCode: data.statusCode,
             headers: data.headers,
@@ -2227,6 +2227,14 @@ var API_MAP = {
     optionsObject: optionsObject,
     putObjectCopy: putObjectCopy,
     restoreObject: restoreObject,
+    deleteMultipleObject: deleteMultipleObject,
+
+    // 分块上传相关方法
+    uploadPartCopy: uploadPartCopy,
+    multipartInit: multipartInit,
+    multipartComplete: multipartComplete,
+    multipartList: multipartList,
+
 
     // 工具方法
     getObjectUrl: getObjectUrl,
