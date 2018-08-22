@@ -14,8 +14,6 @@
   "author": "carsonxu",
   "license": "ISC",
   "devDependencies": {
-    "request": "^2.87.0",
-    "webpack": "^2.6.1",
-    "xmldom": "^0.1.27"
+    "webpack": "^2.6.1"
   }
 }
