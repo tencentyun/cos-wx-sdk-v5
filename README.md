@@ -29,14 +29,20 @@ var cos = new COS({
     getAuthorization: function (options, callback) {
         // 异步获取签名
         wx.request({
-            url: 'https://example.com/sign', // 步骤二提供的签名接口
+            url: 'https://example.com/server/sts.php', // 步骤二提供的签名接口
             data: {
                 Method: options.Method,
                 Key: options.Key
             },
             dataType: 'text',
             success: function (result) {
-                callback(result.data);
+                var data = result.data;
+                callback({
+                    TmpSecretId: data.credentials && data.credentials.tmpSecretId,
+                    TmpSecretKey: data.credentials && data.credentials.tmpSecretKey,
+                    XCosSecurityToken: data.credentials && data.credentials.sessionToken,
+                    ExpiredTime: data.expiredTime,
+                });
             }
         });
     }
