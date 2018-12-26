@@ -1,6 +1,6 @@
-# cos-wx-sdk-v5
+## 快速入门
 
-微信小程序 sdk for [腾讯云对象存储服务](https://www.qcloud.com/product/cos)
+微信小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)
 
 ### 一、前期准备
 
