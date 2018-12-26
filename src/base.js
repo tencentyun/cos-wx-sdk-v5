@@ -32,6 +32,7 @@ function getService(params, callback) {
     }
 
     submitRequest.call(this, {
+        Action: 'name/cos:GetService',
         url: domain + '/',
         method: 'GET',
     }, function (err, data) {
@@ -55,13 +56,14 @@ function getService(params, callback) {
  *     @param  {String}  params.Bucket          Bucket名称，必须
  *     @param  {String}  params.Region          地域名称，必须
  * @param  {Function}  callback                 回调函数，必须
- * @return  {Object}  err                       请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                       请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                      返回的数据
  *     @return  {Boolean}  data.BucketExist     Bucket是否存在
  *     @return  {Boolean}  data.BucketAuth      是否有 Bucket 的访问权限
  */
 function headBucket(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:HeadBucket',
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
@@ -82,19 +84,21 @@ function headBucket(params, callback) {
  *     @param  {String}  params.MaxKeys             单次返回最大的条目数量，默认1000，非必须
  *     @param  {String}  params.EncodingType        规定返回值的编码方式，非必须
  * @param  {Function}  callback                     回调函数，必须
- * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                          返回的数据
  *     @return  {Object}  data.ListBucketResult     返回的 object 列表信息
  */
 function getBucket(params, callback) {
     var reqParams = {};
-    reqParams['prefix'] = params['Prefix'];
+    reqParams['prefix'] = params['Prefix'] || '';
     reqParams['delimiter'] = params['Delimiter'];
     reqParams['marker'] = params['Marker'];
     reqParams['max-keys'] = params['MaxKeys'];
     reqParams['encoding-type'] = params['EncodingType'];
 
     submitRequest.call(this, {
+        Action: 'name/cos:GetBucket',
+        ResourceKey: reqParams['prefix'],
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -133,7 +137,7 @@ function getBucket(params, callback) {
  *     @param  {String}  params.GrantWrite          赋予被授权者写的权限，格式x-cos-grant-write: uin=" ",uin=" "，非必须
  *     @param  {String}  params.GrantFullControl    赋予被授权者读写权限，格式x-cos-grant-full-control: uin=" ",uin=" "，非必须
  * @param  {Function}  callback                     回调函数，必须
- * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                          返回的数据
  *     @return  {String}  data.Location             操作地址
  */
@@ -147,6 +151,7 @@ function putBucket(params, callback) {
     headers['x-cos-grant-write-acp'] = params['GrantWriteAcp'];
     headers['x-cos-grant-full-control'] = params['GrantFullControl'];
     submitRequest.call(this, {
+        Action: 'name/cos:PutBucket',
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -175,12 +180,13 @@ function putBucket(params, callback) {
  *     @param  {String}  params.Bucket      Bucket名称，必须
  *     @param  {String}  params.Region      地域名称，必须
  * @param  {Function}  callback             回调函数，必须
- * @return  {Object}  err                   请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                  返回的数据
  *     @return  {String}  data.Location     操作地址
  */
 function deleteBucket(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:DeleteBucket',
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
@@ -204,12 +210,13 @@ function deleteBucket(params, callback) {
  *     @param  {String}  params.Bucket              Bucket名称，必须
  *     @param  {String}  params.Region              地域名称，必须
  * @param  {Function}  callback                     回调函数，必须
- * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                          返回的数据
  *     @return  {Object}  data.AccessControlPolicy  访问权限信息
  */
 function getBucketAcl(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:GetBucketACL',
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -247,7 +254,7 @@ function getBucketAcl(params, callback) {
  *     @param  {String}  params.GrantWrite          赋予被授权者写的权限，格式x-cos-grant-write: uin=" ",uin=" "，非必须
  *     @param  {String}  params.GrantFullControl    赋予被授权者读写权限，格式x-cos-grant-full-control: uin=" ",uin=" "，非必须
  * @param  {Function}  callback                     回调函数，必须
- * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                          返回的数据
  */
 function putBucketAcl(params, callback) {
@@ -275,6 +282,7 @@ function putBucketAcl(params, callback) {
     });
 
     submitRequest.call(this, {
+        Action: 'name/cos:PutBucketACL',
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -298,12 +306,13 @@ function putBucketAcl(params, callback) {
  *     @param  {String}  params.Bucket              Bucket名称，必须
  *     @param  {String}  params.Region              地域名称，必须
  * @param  {Function}  callback                     回调函数，必须
- * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                          返回的数据
  *     @return  {Object}  data.CORSRules            Bucket的跨域设置
  */
 function getBucketCors(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:GetBucketCORS',
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -352,7 +361,7 @@ function getBucketCors(params, callback) {
  *     @param  {Object}  params.CORSConfiguration       相关的跨域设置，必须
  * @param  {Array}  params.CORSConfiguration.CORSRules  对应的跨域规则
  * @param  {Function}  callback                         回调函数，必须
- * @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                              返回的数据
  */
 function putBucketCors(params, callback) {
@@ -376,6 +385,7 @@ function putBucketCors(params, callback) {
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
     submitRequest.call(this, {
+        Action: 'name/cos:PutBucketCORS',
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -399,11 +409,12 @@ function putBucketCors(params, callback) {
  *     @param  {String}  params.Bucket      Bucket名称，必须
  *     @param  {String}  params.Region      地域名称，必须
  * @param  {Function}  callback             回调函数，必须
- * @return  {Object}  err                   请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                  返回的数据
  */
 function deleteBucketCors(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:DeleteBucketCORS',
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -440,6 +451,7 @@ function putBucketPolicy(params, callback) {
     headers['Content-MD5'] = util.binaryBase64(util.md5(PolicyStr));
 
     submitRequest.call(this, {
+        Action: 'name/cos:PutBucketPolicy',
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -461,16 +473,47 @@ function putBucketPolicy(params, callback) {
 }
 
 /**
+ * 删除 Bucket 的 跨域设置
+ * @param  {Object}  params                 参数对象，必须
+ *     @param  {String}  params.Bucket      Bucket名称，必须
+ *     @param  {String}  params.Region      地域名称，必须
+ * @param  {Function}  callback             回调函数，必须
+ * @return  {Object}  err                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ * @return  {Object}  data                  返回的数据
+ */
+function deleteBucketPolicy(params, callback) {
+    submitRequest.call(this, {
+        Action: 'name/cos:DeleteBucketPolicy',
+        method: 'DELETE',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        headers: params.Headers,
+        action: 'policy',
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode || err.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
  * 获取 Bucket 的 地域信息
  * @param  {Object}  params             参数对象，必须
  *     @param  {String}  params.Bucket  Bucket名称，必须
  *     @param  {String}  params.Region  地域名称，必须
  * @param  {Function}  callback         回调函数，必须
- * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据，包含地域信息 LocationConstraint
  */
 function getBucketLocation(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:GetBucketLocation',
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -490,11 +533,12 @@ function getBucketLocation(params, callback) {
  *     @param  {String}  params.Bucket  Bucket名称，必须
  *     @param  {String}  params.Region  地域名称，必须
  * @param  {Function}  callback         回调函数，必须
- * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据
  */
 function getBucketPolicy(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:GetBucketPolicy',
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -533,11 +577,12 @@ function getBucketPolicy(params, callback) {
  *     @param  {String}  params.Bucket  Bucket名称，必须
  *     @param  {String}  params.Region  地域名称，必须
  * @param  {Function}  callback         回调函数，必须
- * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据
  */
 function getBucketTagging(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:GetBucketTagging',
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -578,7 +623,7 @@ function getBucketTagging(params, callback) {
  *     @param  {String}  params.Region  地域名称，必须
  *     @param  {Array}   params.TagSet  标签设置，必须
  * @param  {Function}  callback         回调函数，必须
- * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据
  */
 function putBucketTagging(params, callback) {
@@ -593,6 +638,7 @@ function putBucketTagging(params, callback) {
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
     submitRequest.call(this, {
+        Action: 'name/cos:PutBucketTagging',
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -619,11 +665,12 @@ function putBucketTagging(params, callback) {
  *     @param  {String}  params.Bucket  Bucket名称，必须
  *     @param  {String}  params.Region  地域名称，必须
  * @param  {Function}  callback         回调函数，必须
- * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回的数据
  */
 function deleteBucketTagging(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:DeleteBucketTagging',
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -654,6 +701,7 @@ function putBucketLifecycle(params, callback) {
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
     submitRequest.call(this, {
+        Action: 'name/cos:PutBucketLifecycle',
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -675,6 +723,7 @@ function putBucketLifecycle(params, callback) {
 
 function getBucketLifecycle(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:GetBucketLifecycle',
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -710,6 +759,7 @@ function getBucketLifecycle(params, callback) {
 
 function deleteBucketLifecycle(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:DeleteBucketLifecycle',
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -731,7 +781,7 @@ function deleteBucketLifecycle(params, callback) {
 function putBucketVersioning(params, callback) {
 
     if (!params['VersioningConfiguration']) {
-        callback({error: 'lack of param VersioningConfiguration'});
+        callback({error: 'missing param VersioningConfiguration'});
         return;
     }
     var VersioningConfiguration = params['VersioningConfiguration'] || {};
@@ -742,6 +792,7 @@ function putBucketVersioning(params, callback) {
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
     submitRequest.call(this, {
+        Action: 'name/cos:PutBucketVersioning',
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -763,6 +814,7 @@ function putBucketVersioning(params, callback) {
 
 function getBucketVersioning(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:GetBucketVersioning',
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -771,8 +823,6 @@ function getBucketVersioning(params, callback) {
     }, function (err, data) {
         if (!err) {
             !data.VersioningConfiguration && (data.VersioningConfiguration = {});
-            !data.VersioningConfiguration.MFADelete && (data.VersioningConfiguration.MFADelete = 'Disabled');
-            !data.VersioningConfiguration.Status && (data.VersioningConfiguration.Status = 'Disabled');
         }
         callback(err, data);
     });
@@ -780,15 +830,16 @@ function getBucketVersioning(params, callback) {
 
 function putBucketReplication(params, callback) {
     var ReplicationConfiguration = util.clone(params.ReplicationConfiguration);
-    ReplicationConfiguration.Rule = ReplicationConfiguration.Rules;
-    delete ReplicationConfiguration.Rules;
     var xml = util.json2xml({ReplicationConfiguration: ReplicationConfiguration});
+    xml = xml.replace(/<(\/?)Rules>/ig, '<$1Rule>');
+    xml = xml.replace(/<(\/?)Tags>/ig, '<$1Tag>');
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
     submitRequest.call(this, {
+        Action: 'name/cos:PutBucketReplication',
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -810,6 +861,7 @@ function putBucketReplication(params, callback) {
 
 function getBucketReplication(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:GetBucketReplication',
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -832,12 +884,17 @@ function getBucketReplication(params, callback) {
         if (!err) {
             !data.ReplicationConfiguration && (data.ReplicationConfiguration = {});
         }
+        if (data.ReplicationConfiguration.Rule) {
+            data.ReplicationConfiguration.Rules = data.ReplicationConfiguration.Rule;
+            delete data.ReplicationConfiguration.Rule;
+        }
         callback(err, data);
     });
 }
 
 function deleteBucketReplication(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:DeleteBucketReplication',
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -866,12 +923,13 @@ function deleteBucketReplication(params, callback) {
  *     @param  {String}  params.Key                 文件名称，必须
  *     @param  {String}  params.IfModifiedSince     当Object在指定时间后被修改，则返回对应Object元信息，否则返回304，非必须
  * @param  {Function}  callback                     回调函数，必须
- * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                          为指定 object 的元数据，如果设置了 IfModifiedSince ，且文件未修改，则返回一个对象，NotModified 属性为 true
  *     @return  {Boolean}  data.NotModified         是否在 IfModifiedSince 时间点之后未修改该 object，则为 true
  */
 function headObject(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:HeadObject',
         method: 'HEAD',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -889,20 +947,31 @@ function headObject(params, callback) {
             }
             return callback(err);
         }
+        if (data.headers && data.headers.etag) {
+            data.ETag = data.headers && data.headers.etag;
+        }
         callback(null, data);
     });
 }
 
 
 function listObjectVersions(params, callback) {
+    var reqParams = {};
+    reqParams['prefix'] = params['Prefix'] || '';
+    reqParams['delimiter'] = params['Delimiter'];
+    reqParams['key-marker'] = params['KeyMarker'];
+    reqParams['version-id-marker'] = params['VersionIdMarker'];
+    reqParams['max-keys'] = params['MaxKeys'];
+    reqParams['encoding-type'] = params['EncodingType'];
+
     submitRequest.call(this, {
+        Action: 'name/cos:GetBucketObjectVersions',
+        ResourceKey: reqParams['prefix'],
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
-        qs: {
-            prefix: params.Prefix
-        },
+        qs: reqParams,
         action: 'versions',
     }, function (err, data) {
         if (err) {
@@ -946,7 +1015,7 @@ function listObjectVersions(params, callback) {
  *     @param  {String}  params.ResponseContentDisposition  设置返回头部中的 Content-Disposition 参数，非必须
  *     @param  {String}  params.ResponseContentEncoding     设置返回头部中的 Content-Encoding 参数，非必须
  * @param  {Function}  callback                             回调函数，必须
- * @param  {Object}  err                                    请求失败的错误，如果请求成功，则为空。
+ * @param  {Object}  err                                    请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @param  {Object}  data                                   为对应的 object 数据，包括 body 和 headers
  */
 function getObject(params, callback) {
@@ -959,12 +1028,9 @@ function getObject(params, callback) {
     reqParams['response-content-disposition'] = params['ResponseContentDisposition'];
     reqParams['response-content-encoding'] = params['ResponseContentEncoding'];
 
-    var BodyType;
-
-    BodyType = util.isBrowser ? 'string' : 'buffer';
-
     // 如果用户自己传入了 output
     submitRequest.call(this, {
+        Action: 'name/cos:GetObject',
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -984,8 +1050,9 @@ function getObject(params, callback) {
             return callback(err);
         }
         var result = {};
-        if (BodyType === 'string') {
-            result.Body = data.body;
+        result.Body = data.body;
+        if (data.headers && data.headers.etag) {
+            result.ETag = data.headers && data.headers.etag;
         }
         util.extend(result, {
             statusCode: data.statusCode,
@@ -1018,51 +1085,55 @@ function getObject(params, callback) {
  *     @param  {String}  params.ServerSideEncryption               支持按照指定的加密算法进行服务端数据加密，格式 x-cos-server-side-encryption: "AES256"，非必须
  *     @param  {Function}  params.onProgress                        上传进度回调函数
  * @param  {Function}  callback                                     回调函数，必须
- * @return  {Object}  err                                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                                          为对应的 object 数据
  *     @return  {String}  data.ETag                                 为对应上传文件的 ETag 值
  */
 function putObject(params, callback) {
     var self = this;
-    var headers = params.Headers;
+    var FileSize = params.ContentLength;
+    var onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
 
-    var Body = params.Body;
-
-    if (Body && typeof Body === 'string') { // 在浏览器允许传入字符串作为内容 'hello'
-        headers['Content-Length'] = Body.length;
-    } else {
-        callback({error: 'params body format error, Only allow Buffer, Stream, Blob.'});
-        return;
-    }
-
-    submitRequest.call(this, {
-        TaskId: params.TaskId,
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        headers: headers,
-        body: Body,
-    }, function (err, data) {
-        if (err) {
-            return callback(err);
+    util.getBodyMd5(params.Body, function (md5) {
+        md5 && (params.Headers['Content-MD5'] = util.binaryBase64(md5));
+        if (params.ContentLength !== undefined) {
+            params.Headers['Content-Length'] = params.ContentLength;
         }
-        if (data && data.headers && data.headers['etag']) {
-            var url = getUrl({
-                protocol: self.options.Protocol,
-                domain: self.options.Domain,
-                bucket: params.Bucket,
-                region: params.Region,
-                object: params.Key,
-            });
-            return callback(null, {
-                Location: url,
-                ETag: data.headers['etag'],
-                statusCode: data.statusCode,
-                headers: data.headers,
-            });
-        }
-        callback(null, data);
+        submitRequest.call(self, {
+            Action: 'name/cos:PutObject',
+            TaskId: params.TaskId,
+            method: 'PUT',
+            Bucket: params.Bucket,
+            Region: params.Region,
+            Key: params.Key,
+            headers: params.Headers,
+            body: params.Body,
+            onProgress: onProgress,
+        }, function (err, data) {
+            if (err) {
+                onProgress(null, true);
+                return callback(err);
+            }
+            onProgress({loaded: FileSize, total: FileSize}, true);
+            if (data && data.headers && data.headers['etag']) {
+                var url = getUrl({
+                    ForcePathStyle: self.options.ForcePathStyle,
+                    protocol: self.options.Protocol,
+                    domain: self.options.Domain,
+                    bucket: params.Bucket,
+                    region: params.Region,
+                    object: params.Key,
+                });
+                url = url.substr(url.indexOf('://') + 3);
+                return callback(null, {
+                    Location: url,
+                    ETag: data.headers['etag'],
+                    statusCode: data.statusCode,
+                    headers: data.headers,
+                });
+            }
+            callback(null, data);
+        });
     });
 }
 
@@ -1075,7 +1146,7 @@ function putObject(params, callback) {
  *     @param  {FilePath}  params.FilePath                          要上传的文件路径
  *     @param  {Function}  params.onProgress                        上传进度回调函数
  * @param  {Function}  callback                                     回调函数，必须
- * @return  {Object}  err                                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                                          为对应的 object 数据
  *     @return  {String}  data.ETag                                 为对应上传文件的 ETag 值
  */
@@ -1107,6 +1178,7 @@ function postObject(params, callback) {
     var onProgress = util.throttleOnProgress.call(self, headers['Content-Length'], params.onProgress);
 
     submitRequest.call(this, {
+        Action: 'name/cos:PostObject',
         method: 'POST',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1121,11 +1193,13 @@ function postObject(params, callback) {
         }
         if (data) {
             var url = getUrl({
+                ForcePathStyle: self.options.ForcePathStyle,
                 protocol: self.options.Protocol,
                 domain: self.options.Domain,
                 bucket: params.Bucket,
                 region: params.Region,
                 object: params.Key,
+                isLocation: true,
             });
             return callback(null, {
                 Location: url,
@@ -1143,11 +1217,12 @@ function postObject(params, callback) {
  *     @param  {String}  params.Region          地域名称，必须
  *     @param  {String}  params.Key             object名称，必须
  * @param  {Function}  callback                 回调函数，必须
- * @param  {Object}  err                        请求失败的错误，如果请求成功，则为空。
+ * @param  {Object}  err                        请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @param  {Object}  data                       删除操作成功之后返回的数据
  */
 function deleteObject(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:DeleteObject',
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1179,13 +1254,14 @@ function deleteObject(params, callback) {
  *     @param  {String}  params.Region              地域名称，必须
  *     @param  {String}  params.Key                 object名称，必须
  * @param  {Function}  callback                     回调函数，必须
- * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                          返回的数据
  *     @return  {Object}  data.AccessControlPolicy  权限列表
  */
 function getObjectAcl(params, callback) {
 
     submitRequest.call(this, {
+        Action: 'name/cos:GetObjectACL',
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1221,7 +1297,7 @@ function getObjectAcl(params, callback) {
  *     @param  {String}  params.Region  地域名称，必须
  *     @param  {String}  params.Key     object名称，必须
  * @param  {Function}  callback         回调函数，必须
- * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回的数据
  */
 function putObjectAcl(params, callback) {
@@ -1249,6 +1325,7 @@ function putObjectAcl(params, callback) {
     });
 
     submitRequest.call(this, {
+        Action: 'name/cos:PutObjectACL',
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1274,7 +1351,7 @@ function putObjectAcl(params, callback) {
  *     @param  {String}  params.Region  地域名称，必须
  *     @param  {String}  params.Key     object名称，必须
  * @param  {Function}  callback         回调函数，必须
- * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回的数据
  */
 function optionsObject(params, callback) {
@@ -1285,6 +1362,7 @@ function optionsObject(params, callback) {
     headers['Access-Control-Request-Headers'] = params['AccessControlRequestHeaders'];
 
     submitRequest.call(this, {
+        Action: 'name/cos:OptionsObject',
         method: 'OPTIONS',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1342,7 +1420,29 @@ function optionsObject(params, callback) {
  *     @param  {String}  x-cos-meta-*                   允许用户自定义的头部信息，将作为 Object 元数据返回。大小限制2K。
  */
 function putObjectCopy(params, callback) {
+    var CopySource = params.CopySource || '';
+    var m = CopySource.match(/^([^.]+-\d+)\.cos(v6)?\.([^.]+)\.[^/]+\/(.+)$/);
+    if (!m) {
+        callback({error: 'CopySource format error'});
+        return;
+    }
+
+    var SourceBucket = m[1];
+    var SourceRegion = m[3];
+    var SourceKey = decodeURIComponent(m[4]);
+
     submitRequest.call(this, {
+        Scope: [{
+            action: 'name/cos:GetObject',
+            bucket: SourceBucket,
+            region: SourceRegion,
+            prefix: SourceKey,
+        }, {
+            action: 'name/cos:PutObject',
+            bucket: params.Bucket,
+            region: params.Region,
+            prefix: params.Key,
+        }],
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1363,7 +1463,30 @@ function putObjectCopy(params, callback) {
 }
 
 function uploadPartCopy(params, callback) {
+
+    var CopySource = params.CopySource || '';
+    var m = CopySource.match(/^([^.]+-\d+)\.cos(v6)?\.([^.]+)\.[^/]+\/(.+)$/);
+    if (!m) {
+        callback({error: 'CopySource format error'});
+        return;
+    }
+
+    var SourceBucket = m[1];
+    var SourceRegion = m[3];
+    var SourceKey = decodeURIComponent(m[4]);
+
     submitRequest.call(this, {
+        Scope: [{
+            action: 'name/cos:GetObject',
+            bucket: SourceBucket,
+            region: SourceRegion,
+            prefix: SourceKey,
+        }, {
+            action: 'name/cos:PutObject',
+            bucket: params.Bucket,
+            region: params.Region,
+            prefix: params.Key,
+        }],
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1388,8 +1511,9 @@ function uploadPartCopy(params, callback) {
 }
 
 function deleteMultipleObject(params, callback) {
-    var Objects = params.Objects || {};
+    var Objects = params.Objects || [];
     var Quiet = params.Quiet;
+    Objects = util.isArray(Objects) ? Objects : [Objects];
 
     var xml = util.json2xml({Delete: {Object: Objects, Quiet: Quiet || false}});
 
@@ -1397,7 +1521,17 @@ function deleteMultipleObject(params, callback) {
     headers['Content-Type'] = 'application/xml';
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
+    var Scope = util.map(Objects, function (v) {
+        return {
+            action: 'name/cos:DeleteObject',
+            bucket: params.Bucket,
+            region: params.Region,
+            prefix: v.Key,
+        };
+    });
+
     submitRequest.call(this, {
+        Scope: Scope,
         method: 'POST',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1429,7 +1563,7 @@ function deleteMultipleObject(params, callback) {
 function restoreObject(params, callback) {
     var headers = params.Headers;
     if (!params['RestoreRequest']) {
-        callback({error: 'lack of param RestoreRequest'});
+        callback({error: 'missing param RestoreRequest'});
         return;
     }
 
@@ -1440,6 +1574,7 @@ function restoreObject(params, callback) {
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
     submitRequest.call(this, {
+        Action: 'name/cos:RestoreObject',
         method: 'POST',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1476,11 +1611,12 @@ function restoreObject(params, callback) {
  *     @param  {String}  params.StorageClass                    设置Object的存储级别，枚举值：Standard，Standard_IA，Nearline，非必须
  *     @param  {String}  params.ServerSideEncryption           支持按照指定的加密算法进行服务端数据加密，格式 x-cos-server-side-encryption: "AES256"，非必须
  * @param  {Function}  callback                                 回调函数，必须
- * @return  {Object}  err                                       请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                                       请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                                      返回的数据
  */
 function multipartInit(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:InitiateMultipartUpload',
         method: 'POST',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1504,42 +1640,51 @@ function multipartInit(params, callback) {
 
 /**
  * 分块上传
- * @param  {Object}  params                             参数对象，必须
- *     @param  {String}  params.Bucket                  Bucket名称，必须
- *     @param  {String}  params.Region                  地域名称，必须
- *     @param  {String}  params.Key                     object名称，必须
- * @param  {String}      params.ContentLength           RFC 2616 中定义的 HTTP 请求内容长度（字节），非必须
- * @param  {String}      params.Expect                  当使用 Expect: 100-continue 时，在收到服务端确认后，才会发送请求内容，非必须
- * @param  {String}      params.ServerSideEncryption    支持按照指定的加密算法进行服务端数据加密，格式 x-cos-server-side-encryption: "AES256"，非必须
- * @param  {String}      params.ContentSha1             RFC 3174 中定义的 160-bit 内容 SHA-1 算法校验值，非必须
- * @param  {Function}  callback                         回调函数，必须
- * @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。
- * @return  {Object}  data                              返回的数据
- *     @return  {Object}  data.ETag                     返回的文件分块 sha1 值
+ * @param  {Object}  params                                 参数对象，必须
+ *     @param  {String}  params.Bucket                      Bucket名称，必须
+ *     @param  {String}  params.Region                      地域名称，必须
+ *     @param  {String}  params.Key                         object名称，必须
+ *     @param  {String}  params.Body                        上传文件对象或字符串
+ *     @param  {String} params.ContentLength                RFC 2616 中定义的 HTTP 请求内容长度（字节），非必须
+ *     @param  {String} params.Expect                       当使用 Expect: 100-continue 时，在收到服务端确认后，才会发送请求内容，非必须
+ *     @param  {String} params.ServerSideEncryption         支持按照指定的加密算法进行服务端数据加密，格式 x-cos-server-side-encryption: "AES256"，非必须
+ *     @param  {String} params.ContentSha1                  RFC 3174 中定义的 160-bit 内容 SHA-1 算法校验值，非必须
+ * @param  {Function}  callback                             回调函数，必须
+ *     @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ *     @return  {Object}  data                              返回的数据
+ *     @return  {Object}  data.ETag                         返回的文件分块 sha1 值
  */
 function multipartUpload(params, callback) {
-    submitRequest.call(this, {
-        TaskId: params.TaskId,
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        qs: {
-            partNumber: params['PartNumber'],
-            uploadId: params['UploadId'],
-        },
-        headers: params.Headers,
-        onProgress: params.onProgress,
-        body: params.Body || null
-    }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
-        data['headers'] = data['headers'] || {};
-        callback(null, {
-            ETag: data['headers']['etag'] || '',
-            statusCode: data.statusCode,
-            headers: data.headers,
+
+    var self = this;
+    util.getFileSize('multipartUpload', params, function () {
+        util.getBodyMd5(params.Body, function (md5) {
+            md5 && (params.Headers['Content-MD5'] = util.binaryBase64(md5));
+            submitRequest.call(self, {
+                Action: 'name/cos:UploadPart',
+                TaskId: params.TaskId,
+                method: 'PUT',
+                Bucket: params.Bucket,
+                Region: params.Region,
+                Key: params.Key,
+                qs: {
+                    partNumber: params['PartNumber'],
+                    uploadId: params['UploadId'],
+                },
+                headers: params.Headers,
+                onProgress: params.onProgress,
+                body: params.Body || null
+            }, function (err, data) {
+                if (err) {
+                    return callback(err);
+                }
+                data['headers'] = data['headers'] || {};
+                callback(null, {
+                    ETag: data['headers']['etag'] || '',
+                    statusCode: data.statusCode,
+                    headers: data.headers,
+                });
+            });
         });
     });
 
@@ -1555,7 +1700,7 @@ function multipartUpload(params, callback) {
  *     @param  {String}  params.Parts[i].PartNumber     块编号，必须
  *     @param  {String}  params.Parts[i].ETag           分块的 sha1 校验值
  * @param  {Function}  callback                         回调函数，必须
- * @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                              返回的数据
  *     @return  {Object}  data.CompleteMultipartUpload  完成分块上传后的文件信息，包括Location, Bucket, Key 和 ETag
  */
@@ -1580,6 +1725,7 @@ function multipartComplete(params, callback) {
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
     submitRequest.call(this, {
+        Action: 'name/cos:CompleteMultipartUpload',
         method: 'POST',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1594,6 +1740,7 @@ function multipartComplete(params, callback) {
             return callback(err);
         }
         var url = getUrl({
+            ForcePathStyle: self.options.ForcePathStyle,
             protocol: self.options.Protocol,
             domain: self.options.Domain,
             bucket: params.Bucket,
@@ -1623,7 +1770,7 @@ function multipartComplete(params, callback) {
  *     @param  {String}  params.KeyMarker                   与upload-id-marker一起使用 </Br>当upload-id-marker未被指定时，ObjectName字母顺序大于key-marker的条目将被列出 </Br>当upload-id-marker被指定时，ObjectName字母顺序大于key-marker的条目被列出，ObjectName字母顺序等于key-marker同时UploadId大于upload-id-marker的条目将被列出，非必须
  *     @param  {String}  params.UploadIdMarker              与key-marker一起使用 </Br>当key-marker未被指定时，upload-id-marker将被忽略 </Br>当key-marker被指定时，ObjectName字母顺序大于key-marker的条目被列出，ObjectName字母顺序等于key-marker同时UploadId大于upload-id-marker的条目将被列出，非必须
  * @param  {Function}  callback                             回调函数，必须
- * @return  {Object}  err                                   请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                                  返回的数据
  *     @return  {Object}  data.ListMultipartUploadsResult   分块上传任务信息
  */
@@ -1632,7 +1779,7 @@ function multipartList(params, callback) {
 
     reqParams['delimiter'] = params['Delimiter'];
     reqParams['encoding-type'] = params['EncodingType'];
-    reqParams['prefix'] = params['Prefix'];
+    reqParams['prefix'] = params['Prefix'] || '';
 
     reqParams['max-uploads'] = params['MaxUploads'];
 
@@ -1642,6 +1789,8 @@ function multipartList(params, callback) {
     reqParams = util.clearKey(reqParams);
 
     submitRequest.call(this, {
+        Action: 'name/cos:ListMultipartUploads',
+        ResourceKey: reqParams['prefix'],
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1684,7 +1833,7 @@ function multipartList(params, callback) {
  *     @param  {String}  params.MaxParts                    单次返回最大的条目数量，默认1000，非必须
  *     @param  {String}  params.PartNumberMarker            默认以UTF-8二进制顺序列出条目，所有列出条目从marker开始，非必须
  * @param  {Function}  callback                             回调函数，必须
- * @return  {Object}  err                                   请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                                  返回的数据
  *     @return  {Object}  data.ListMultipartUploadsResult   分块信息
  */
@@ -1697,6 +1846,7 @@ function multipartListPart(params, callback) {
     reqParams['part-number-marker'] = params['PartNumberMarker'];
 
     submitRequest.call(this, {
+        Action: 'name/cos:ListParts',
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1729,7 +1879,7 @@ function multipartListPart(params, callback) {
  *     @param  {String}  params.Key         object名称，必须
  *     @param  {String}  params.UploadId    标示本次分块上传的ID，必须
  * @param  {Function}  callback             回调函数，必须
- *     @return  {Object}    err             请求失败的错误，如果请求成功，则为空。
+ *     @return  {Object}    err             请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  *     @return  {Object}    data            返回的数据
  */
 function multipartAbort(params, callback) {
@@ -1737,6 +1887,7 @@ function multipartAbort(params, callback) {
 
     reqParams['uploadId'] = params['UploadId'];
     submitRequest.call(this, {
+        Action: 'name/cos:AbortMultipartUpload',
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1763,6 +1914,7 @@ function multipartAbort(params, callback) {
  * @return  {String}  data              返回签名字符串
  */
 function getAuth(params) {
+    var self = this;
     return util.getAuth({
         SecretId: params.SecretId || this.options.SecretId || '',
         SecretKey: params.SecretKey || this.options.SecretKey || '',
@@ -1771,6 +1923,7 @@ function getAuth(params) {
         Query: params.Query,
         Headers: params.Headers,
         Expires: params.Expires,
+        SystemClockOffset: self.options.SystemClockOffset,
     });
 }
 
@@ -1783,13 +1936,14 @@ function getAuth(params) {
  *     @param  {String}  params.Method      请求的方法，可选
  *     @param  {String}  params.Expires     签名超时时间，单位秒，可选
  * @param  {Function}  callback             回调函数，必须
- *     @return  {Object}    err             请求失败的错误，如果请求成功，则为空。
+ *     @return  {Object}    err             请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  *     @return  {Object}    data            返回的数据
  */
 function getObjectUrl(params, callback) {
     var self = this;
     var url = getUrl({
-        protocol: self.options.Protocol,
+        ForcePathStyle: self.options.ForcePathStyle,
+        protocol: params.Protocol || self.options.Protocol,
         domain: self.options.Domain,
         bucket: params.Bucket,
         region: params.Region,
@@ -1799,26 +1953,33 @@ function getObjectUrl(params, callback) {
         callback(null, {Url: url});
         return url;
     }
-    var authorization = getAuthorizationAsync.call(this, {
+    var AuthData = getAuthorizationAsync.call(this, {
+        Action: ((params.Method || '').toUpperCase() === 'PUT' ? 'name/cos:PutObject' : 'name/cos:GetObject'),
         Bucket: params.Bucket || '',
         Region: params.Region || '',
         Method: params.Method || 'get',
         Key: params.Key,
-    }, function (AuthData) {
+        Expires: params.Expires,
+    }, function (err, AuthData) {
         if (!callback) return;
-        var result = {
-            Url: url + '?sign=' + encodeURIComponent(AuthData.Authorization),
-        };
-        AuthData.XCosSecurityToken && (result.XCosSecurityToken = AuthData.XCosSecurityToken);
-        AuthData.ClientIP && (result.ClientIP = AuthData.ClientIP);
-        AuthData.ClientUA && (result.ClientUA = AuthData.ClientUA);
-        AuthData.Token && (result.Token = AuthData.Token);
+        if (err) {
+            callback(err);
+            return;
+        }
+        var signUrl = url;
+        signUrl += '?' + (AuthData.Authorization.indexOf('q-signature') > -1 ?
+            AuthData.Authorization : 'sign=' + encodeURIComponent(AuthData.Authorization));
+        AuthData.XCosSecurityToken && (signUrl += '&x-cos-security-token=' + AuthData.XCosSecurityToken);
+        AuthData.ClientIP && (signUrl += '&clientIP=' + AuthData.ClientIP);
+        AuthData.ClientUA && (signUrl += '&clientUA=' + AuthData.ClientUA);
+        AuthData.Token && (signUrl += '&token=' + AuthData.Token);
         setTimeout(function () {
-            callback(null, result);
+            callback(null, {Url: signUrl});
         });
     });
-    if (authorization) {
-        return url + '?sign=' + encodeURIComponent(authorization);
+    if (AuthData) {
+        return url + '?' + AuthData.Authorization +
+            (AuthData.XCosSecurityToken ? '&x-cos-security-token=' + AuthData.XCosSecurityToken : '');
     } else {
         return url;
     }
@@ -1895,28 +2056,42 @@ function getUrl(params) {
     var domain = params.domain;
     var region = params.region;
     var object = params.object;
-    var protocol = params.protocol || 'https:';
+    var protocol = 'https:';
     if (!domain) {
         if (['cn-south', 'cn-south-2', 'cn-north', 'cn-east', 'cn-southwest', 'sg'].indexOf(region) > -1) {
-            domain = '{{Bucket}}-{{AppId}}.{{Region}}.myqcloud.com';
+            domain = '{Region}.myqcloud.com';
         } else {
-            domain = '{{Bucket}}-{{AppId}}.cos.{{Region}}.myqcloud.com';
+            domain = 'cos.{Region}.myqcloud.com';
+        }
+        if (!params.ForcePathStyle) {
+            domain = '{Bucket}.' + domain;
         }
     }
     domain = domain.replace(/\{\{AppId\}\}/ig, appId)
         .replace(/\{\{Bucket\}\}/ig, shortBucket)
         .replace(/\{\{Region\}\}/ig, region)
         .replace(/\{\{.*?\}\}/ig, '');
+    domain = domain.replace(/\{AppId\}/ig, appId)
+        .replace(/\{BucketName\}/ig, shortBucket)
+        .replace(/\{Bucket\}/ig, longBucket)
+        .replace(/\{Region\}/ig, region)
+        .replace(/\{.*?\}/ig, '');
     if (!/^[a-zA-Z]+:\/\//.test(domain)) {
         domain = protocol + '//' + domain;
     }
+
+    // 去掉域名最后的斜杆
     if (domain.slice(-1) === '/') {
         domain = domain.slice(0, -1);
     }
     var url = domain;
 
+    if (params.ForcePathStyle) {
+        url += '/' + longBucket;
+    }
+    url += '/';
     if (object) {
-        url += '/' + encodeURIComponent(object).replace(/%2F/g, '/');
+        url += util.camSafeUrlEncode(object).replace(/%2F/g, '/');
     }
 
     if (params.isLocation) {
@@ -1927,112 +2102,12 @@ function getUrl(params) {
 
 // 异步获取签名
 function getAuthorizationAsync(params, callback) {
-    var self = this;
-    var Bucket = params.Bucket || '';
-    var Region = params.Region || '';
-    self._StsMap = self._StsMap || {};
-    var StsData = self._StsMap[Bucket + '.' + Region] || {};
 
-    var calcAuthByTmpKey = function () {
-        var Authorization = util.getAuth({
-            SecretId: StsData.TmpSecretId,
-            SecretKey: StsData.TmpSecretKey,
-            Method: params.Method,
-            Key: params.Key || '',
-            Query: params.Query,
-            Headers: params.Headers,
-        });
-        var AuthData = {
-            Authorization: Authorization,
-            XCosSecurityToken: StsData.XCosSecurityToken || '',
-            Token: StsData.Token || '',
-            ClientIP: StsData.ClientIP || '',
-            ClientUA: StsData.ClientUA || '',
-        };
-        callback && callback(AuthData);
-    };
-
-    // 先判断是否有临时密钥
-    if (StsData.ExpiredTime && StsData.ExpiredTime - (Date.now() / 1000 > 60)) { // 如果缓存的临时密钥有效，并还有超过60秒有效期就直接使用
-        calcAuthByTmpKey();
-    } else if (self.options.getAuthorization) { // 外部计算签名或获取临时密钥
-        self.options.getAuthorization.call(self, {
-            Bucket: Bucket,
-            Region: Region,
-            Method: params.Method,
-            Key: params.Key || '',
-            Query: params.Query,
-            Headers: params.Headers,
-        }, function (AuthData) {
-            if (typeof AuthData === 'string') {
-                AuthData = {Authorization: AuthData};
-            }
-            if (AuthData.TmpSecretId &&
-                AuthData.TmpSecretKey &&
-                AuthData.XCosSecurityToken &&
-                AuthData.ExpiredTime) {
-                StsData = self._StsMap[Bucket + '.' + Region] = AuthData;
-                calcAuthByTmpKey();
-            } else {
-                callback && callback(AuthData);
-            }
-        });
-    } else if (self.options.getSTS) { // 外部获取临时密钥
-        self.options.getSTS.call(self, {
-            Bucket: Bucket,
-            Region: Region,
-        }, function (data) {
-            StsData = self._StsMap[Bucket + '.' + Region] = data || {};
-            StsData.TmpSecretId = StsData.SecretId;
-            StsData.TmpSecretKey = StsData.SecretKey;
-            calcAuthByTmpKey();
-        });
-    } else { // 内部计算获取签名
-        var Authorization = util.getAuth({
-            SecretId: params.SecretId || self.options.SecretId,
-            SecretKey: params.SecretKey || self.options.SecretKey,
-            Method: params.Method,
-            Key: params.Key || '',
-            Query: params.Query,
-            Headers: params.Headers,
-        });
-        callback && callback({Authorization: Authorization});
-        return Authorization;
-    }
-    return '';
-}
-
-// 获取签名并发起请求
-function submitRequest(params, callback) {
-    var self = this;
-
-    // 处理 headers
-    !params.headers && (params.headers = {});
-
-    // 处理 query
-    !params.qs && (params.qs = {});
-    params.VersionId && (params.qs.versionId = params.VersionId);
-    params.qs = util.clearKey(params.qs);
-
-    // 清理 undefined 和 null 字段
-    params.headers && (params.headers = util.clearKey(params.headers));
-    params.qs && (params.qs = util.clearKey(params.qs));
-
-    var Query = util.clone(params.qs);
-    params.action && (Query[params.action] = '');
-
-    getAuthorizationAsync.call(self, {
-        Bucket: params.Bucket || '',
-        Region: params.Region || '',
-        Method: params.method,
-        Key: params.filePath && params.method === 'POST' ? '' : params.Key,
-        Query: Query,
-        Headers: params.headers,
-    }, function (AuthData) {
+    var cb = function (AuthData) {
 
         // 检查签名格式
-        var auth = AuthData.Authorization;
         var formatAllow = false;
+        var auth = AuthData.Authorization;
         if (auth) {
             if (auth.indexOf(' ') > -1) {
                 formatAllow = false;
@@ -2055,14 +2130,223 @@ function submitRequest(params, callback) {
                 } catch (e) {}
             }
         }
-        if (!formatAllow) {
-            callback('authorization error');
-            return;
+        if (formatAllow) {
+            callback && callback(null, AuthData);
+        } else {
+            callback && callback('authorization error');
         }
+    };
 
-        params.AuthData = AuthData;
-        _submitRequest.call(self, params, callback);
-    });
+    var self = this;
+    var Bucket = params.Bucket || '';
+    var Region = params.Region || '';
+
+    // PathName
+    var KeyName = params.Action === 'name/cos:PostObject' || !params.Key ? '' : params.Key;
+    if (self.options.ForcePathStyle && Bucket) {
+        KeyName = Bucket + '/' + KeyName;
+    }
+    var Pathname = '/' + KeyName;
+
+    // Action、ResourceKey
+    var StsData = {};
+    var Scope = params.Scope;
+    if (!Scope) {
+        var Action = params.Action || '';
+        var ResourceKey = params.ResourceKey || params.Key || '';
+        Scope = params.Scope || [{
+            action: Action,
+            bucket: Bucket,
+            region: Region,
+            prefix: ResourceKey,
+        }];
+    }
+    var ScopeKey  = util.md5(JSON.stringify(Scope));
+
+    // STS
+    self._StsCache = self._StsCache ||[];
+    (function () {
+        var i, AuthData;
+        for (i = self._StsCache.length - 1; i >= 0; i--) {
+            AuthData = self._StsCache[i];
+            var compareTime = Math.round(util.getSkewTime(self.options.SystemClockOffset) / 1000) + 30;
+            if (AuthData.StartTime && compareTime < AuthData.StartTime || compareTime >= AuthData.ExpiredTime) {
+                self._StsCache.splice(i, 1);
+                continue;
+            }
+            if (!AuthData.ScopeLimit || AuthData.ScopeLimit && AuthData.ScopeKey === ScopeKey) {
+                StsData = AuthData;
+                break;
+            }
+        }
+    })();
+
+    var calcAuthByTmpKey = function () {
+        var Authorization = util.getAuth({
+            SecretId: StsData.TmpSecretId,
+            SecretKey: StsData.TmpSecretKey,
+            Method: params.Method,
+            Pathname: Pathname,
+            Query: params.Query,
+            Headers: params.Headers,
+            SystemClockOffset: self.options.SystemClockOffset,
+        });
+        var AuthData = {
+            Authorization: Authorization,
+            XCosSecurityToken: StsData.XCosSecurityToken || '',
+            Token: StsData.Token || '',
+            ClientIP: StsData.ClientIP || '',
+            ClientUA: StsData.ClientUA || '',
+        };
+        cb(AuthData);
+    };
+
+    // 先判断是否有临时密钥
+    if (StsData.ExpiredTime && StsData.ExpiredTime - (util.getSkewTime(self.options.SystemClockOffset) / 1000) > 60) { // 如果缓存的临时密钥有效，并还有超过60秒有效期就直接使用
+        calcAuthByTmpKey();
+    } else if (self.options.getAuthorization) { // 外部计算签名或获取临时密钥
+        self.options.getAuthorization.call(self, {
+            Bucket: Bucket,
+            Region: Region,
+            Method: params.Method,
+            Key: KeyName,
+            PathName: Pathname,
+            Query: params.Query,
+            Headers: params.Headers,
+            Scope: Scope,
+        }, function (AuthData) {
+            if (typeof AuthData === 'string') {
+                AuthData = {Authorization: AuthData};
+            }
+            if (AuthData.TmpSecretId &&
+                AuthData.TmpSecretKey &&
+                AuthData.XCosSecurityToken &&
+                AuthData.ExpiredTime) {
+                StsData = AuthData || {};
+                StsData.Scope = Scope;
+                StsData.ScopeKey = ScopeKey;
+                self._StsCache.push(StsData);
+                calcAuthByTmpKey();
+            } else {
+                cb(AuthData);
+            }
+        });
+    } else if (self.options.getSTS) { // 外部获取临时密钥
+        self.options.getSTS.call(self, {
+            Bucket: Bucket,
+            Region: Region,
+        }, function (data) {
+            StsData = data || {};
+            StsData.Scope = Scope;
+            StsData.ScopeKey = ScopeKey;
+            StsData.TmpSecretId = StsData.SecretId;
+            StsData.TmpSecretKey = StsData.SecretKey;
+            self._StsCache.push(StsData);
+            calcAuthByTmpKey();
+        });
+    } else { // 内部计算获取签名
+        return (function () {
+            var Authorization = util.getAuth({
+                SecretId: params.SecretId || self.options.SecretId,
+                SecretKey: params.SecretKey || self.options.SecretKey,
+                Method: params.Method,
+                Key: PathName,
+                Query: params.Query,
+                Headers: params.Headers,
+                Expires: params.Expires,
+                SystemClockOffset: self.options.SystemClockOffset,
+            });
+            var AuthData = {
+                Authorization: Authorization,
+                XCosSecurityToken: self.options.XCosSecurityToken,
+            };
+            cb(AuthData);
+            return AuthData;
+        })();
+    }
+    return '';
+}
+
+// 调整时间偏差
+function allowRetry(err) {
+    var allowRetry = false;
+    var isTimeError = false;
+    var serverDate = (err.headers && (err.headers.date || err.headers.Date)) || '';
+    try {
+        var errorCode = err.error.Code;
+        var errorMessage = err.error.Message;
+        if (errorCode === 'RequestTimeTooSkewed' ||
+            (errorCode === 'AccessDenied' && errorMessage === 'Request has expired')) {
+            isTimeError = true;
+        }
+    } catch (e) {
+    }
+    if (err) {
+        if (isTimeError && serverDate) {
+            var serverTime = Date.parse(serverDate);
+            if (this.options.CorrectClockSkew && Math.abs(util.getSkewTime(this.options.SystemClockOffset) - serverTime) >= 30000) {
+                console.error('error: Local time is too skewed.');
+                this.options.SystemClockOffset = serverTime - Date.now();
+                allowRetry = true;
+            }
+        } else if (Math.round(err.statusCode / 100) === 5) {
+            allowRetry = true;
+        }
+    }
+    return allowRetry;
+}
+
+// 获取签名并发起请求
+function submitRequest(params, callback) {
+    var self = this;
+
+    // 处理 headers
+    !params.headers && (params.headers = {});
+
+    // 处理 query
+    !params.qs && (params.qs = {});
+    params.VersionId && (params.qs.versionId = params.VersionId);
+    params.qs = util.clearKey(params.qs);
+
+    // 清理 undefined 和 null 字段
+    params.headers && (params.headers = util.clearKey(params.headers));
+    params.qs && (params.qs = util.clearKey(params.qs));
+
+    var Query = util.clone(params.qs);
+    params.action && (Query[params.action] = '');
+
+    var next = function (tryIndex) {
+        var oldClockOffset = self.options.SystemClockOffset;
+        getAuthorizationAsync.call(self, {
+            Bucket: params.Bucket || '',
+            Region: params.Region || '',
+            Method: params.method,
+            Key: params.Key,
+            Query: Query,
+            Headers: params.headers,
+            Action: params.Action,
+            ResourceKey: params.ResourceKey,
+            Scope: params.Scope,
+        }, function (err, AuthData) {
+            params.AuthData = AuthData;
+            _submitRequest.call(self, params, function (err, data) {
+                if (err && tryIndex < 2 && (oldClockOffset !== self.options.SystemClockOffset || allowRetry.call(self, err))) {
+                    if (params.headers) {
+                        delete params.headers.Authorization;
+                        delete params.headers['token'];
+                        delete params.headers['clientIP'];
+                        delete params.headers['clientUA'];
+                        delete params.headers['x-cos-security-token'];
+                    }
+                    next(tryIndex + 1);
+                } else {
+                    callback(err, data);
+                }
+            });
+        });
+    };
+    next(0);
+
 }
 
 // 发起请求
@@ -2082,6 +2366,7 @@ function _submitRequest(params, callback) {
 
     // url
     url = url || getUrl({
+        ForcePathStyle: self.options.ForcePathStyle,
         protocol: self.options.Protocol,
         domain: self.options.Domain,
         bucket: bucket,
@@ -2089,7 +2374,7 @@ function _submitRequest(params, callback) {
         object: object,
     });
     if (params.action) {
-        url  = url + (object ? '' : '/') + '?' + params.action;
+        url = url + '?' + params.action;
     }
 
     var opt = {
@@ -2122,6 +2407,7 @@ function _submitRequest(params, callback) {
         };
     }
 
+    self.options.ForcePathStyle && (opt.pathStyle = self.options.ForcePathStyle);
     var sender = REQUEST(opt, function (err, response, body) {
 
         // 返回内容添加 状态码 和 headers
@@ -2206,6 +2492,7 @@ var API_MAP = {
     deleteBucketTagging: deleteBucketTagging,
     getBucketPolicy: getBucketPolicy,
     putBucketPolicy: putBucketPolicy,
+    deleteBucketPolicy: deleteBucketPolicy,
     getBucketLifecycle: getBucketLifecycle,
     putBucketLifecycle: putBucketLifecycle,
     deleteBucketLifecycle: deleteBucketLifecycle,
@@ -2226,21 +2513,26 @@ var API_MAP = {
     putObjectAcl: putObjectAcl,
     optionsObject: optionsObject,
     putObjectCopy: putObjectCopy,
-    restoreObject: restoreObject,
     deleteMultipleObject: deleteMultipleObject,
+    restoreObject: restoreObject,
 
     // 分块上传相关方法
     uploadPartCopy: uploadPartCopy,
     multipartInit: multipartInit,
+    multipartUpload: multipartUpload,
     multipartComplete: multipartComplete,
     multipartList: multipartList,
-
+    multipartListPart: multipartListPart,
+    multipartAbort: multipartAbort,
 
     // 工具方法
     getObjectUrl: getObjectUrl,
     getAuth: getAuth,
 };
 
-util.each(API_MAP, function (fn, apiName) {
-    exports[apiName] = util.apiWrapper(apiName, fn);
-});
+module.exports.init = function (COS, task) {
+    task.transferToTaskMethod(API_MAP, 'postObject');
+    util.each(API_MAP, function (fn, apiName) {
+        COS.prototype[apiName] = util.apiWrapper(apiName, fn);
+    });
+};

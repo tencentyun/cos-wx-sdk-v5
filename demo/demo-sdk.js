@@ -7,11 +7,13 @@ var config = {
 var TaskId;
 
 
+// 签名回调
 var getAuthorization = function(options, callback) {
+
     // 方法一、后端通过获取临时密钥给到前端，前端计算签名
     wx.request({
         method: 'GET',
-        url: 'https://example.com/cos-js-sdk-v5/server/sts.php', // 服务端签名，参考 server 目录下的两个签名例子
+        url: 'https://example.com/sts.php', // 服务端签名，参考 server 目录下的两个签名例子
         dataType: 'json',
         success: function(result) {
             var data = result.data;
@@ -25,30 +27,65 @@ var getAuthorization = function(options, callback) {
     });
 
 
-    // // 方法二、后端通过获取临时密钥，并计算好签名给到前端
+    // // 方法二、【细粒度控制权限】后端通过获取临时密钥给到前端，前端只有相同请求才重用临时密钥，后端可以通过 Scope 细粒度控制权限
     // wx.request({
-    //   url: 'https://example.com/server/sts-auth.php',
-    //   data: {
-    //     method: options.Method,
-    //     pathname: options.Key,
-    //   },
-    //   dataType: 'json',
-    //   success: function(result) {
-    //     console.log(result);
-    //     var data = result.data;
-    //     callback({
-    //       Authorization: data.Authorization,
-    //       XCosSecurityToken: data.XCosSecurityToken, // 如果是临时密钥计算出来的签名，需要提供 XCosSecurityToken
-    //     });
-    //   }
+    //     method: 'POST',
+    //     url: 'http://127.0.0.1:3000/sts-scope', // 服务端签名，参考 server 目录下的两个签名例子
+    //     data: options.Scope,
+    //     dataType: 'json',
+    //     success: function(result) {
+    //         var data = result.data;
+    //         var credentials = data.credentials;
+    //         callback({
+    //             TmpSecretId: credentials.tmpSecretId,
+    //             TmpSecretKey: credentials.tmpSecretKey,
+    //             XCosSecurityToken: credentials.sessionToken,
+    //             ExpiredTime: data.expiredTime,
+    //             ScopeLimit: true, // 设为 true 可限制密钥只在相同请求可重用，默认不限制一直可重用，细粒度控制权限需要设为 true
+    //         });
+    //     }
     // });
 
-    // // 方法三、前端使用固定密钥计算签名（适用于前端调试）
+
+    // // 方法三、后端使用固定密钥计算签名，返回给前端，auth.php，注意：这种有安全风险，后端需要通过 method、pathname 控制好权限，比如不允许 put / 等，这里暂不提供
+    // wx.request({
+    //     method: 'POST',
+    //     url: 'https://example.com/sts-auth.php, // 服务端签名，参考 server 目录下的两个签名例子
+    //     data: {
+    //         method: options.Method,
+    //         pathname: options.Pathname,
+    //         query: options.Query,
+    //         headers: options.Headers,
+    //     },
+    //     dataType: 'json',
+    //     success: function(result) {
+    //         callback({
+    //             Authorization: result.data,
+    //             // XCosSecurityToken: sessionToken, // 如果使用临时密钥，需要传 sessionToken
+    //         });
+    //     }
+    // });
+
+
+    // // 方法四、前端使用固定密钥计算签名（仅适用于前端调试）
     // var authorization = COS.getAuthorization({
     //     SecretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     //     SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     //     Method: options.Method,
-    //     Key: options.Key,
+    //     Pathname: options.Pathname,
+    //     Query: options.Query,
+    //     Headers: options.Headers,
+    //     Expires: 60,
+    // });
+    // callback(authorization);
+
+
+    // // 方法四、前端使用固定密钥计算签名（仅适用于前端调试）
+    // var authorization = COS.getAuthorization({
+    //     SecretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    //     SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    //     Method: options.Method,
+    //     Pathname: options.Pathname,
     //     Query: options.Query,
     //     Headers: options.Headers,
     //     Expires: 60,
@@ -57,6 +94,8 @@ var getAuthorization = function(options, callback) {
 };
 
 var cos = new COS({
+    // path style 指正式请求时，Bucket 是在 path 里，这样用途相同园区多个 bucket 只需要配置一个园区域名
+    ForcePathStyle: true,
     getAuthorization: getAuthorization,
 });
 
@@ -86,16 +125,6 @@ var requestCallback = function(err, data) {
 
 // 展示的所有接口
 var dao = {
-    getAuth: function() {
-        var key = '1mb.zip';
-        getAuthorization({
-            Method: 'get',
-            Key: key
-        }, function(auth) {
-            // 注意：这里的 Bucket 格式是 test-1250000000
-            console.log('http://' + config.Bucket + '.cos.' + config.Region + '.myqcloud.com' + '/' + key + '?sign=' + encodeURIComponent(auth));
-        });
-    },
     getObjectUrl: function() {
         var url = cos.getObjectUrl({
             Bucket: config.Bucket, // Bucket 格式：test-1250000000
@@ -115,8 +144,8 @@ var dao = {
     // 简单 Bucket 操作
     putBucket: function() {
         cos.putBucket({
-            Bucket: 'testnew-' + config.Bucket.substr(config.Bucket.lastIndexOf('-') + 1),
-            Region: 'ap-guangzhou'
+            Bucket: config.Bucket,
+            Region: config.Region,
         }, requestCallback);
     },
     getBucket: function() {
@@ -133,8 +162,8 @@ var dao = {
     },
     deleteBucket: function() {
         cos.deleteBucket({
-            Bucket: 'testnew-' + config.Bucket.substr(config.Bucket.lastIndexOf('-') + 1),
-            Region: 'ap-guangzhou'
+            Bucket: config.Bucket,
+            Region: config.Region
         }, requestCallback);
     },
     getBucketACL: function() {
@@ -207,6 +236,12 @@ var dao = {
     },
     getBucketPolicy: function() {
         cos.getBucketPolicy({
+            Bucket: config.Bucket,
+            Region: config.Region
+        }, requestCallback);
+    },
+    deleteBucketPolicy: function() {
+        cos.deleteBucketPolicy({
             Bucket: config.Bucket,
             Region: config.Region
         }, requestCallback);
@@ -337,11 +372,13 @@ var dao = {
             sizeType: ['original'], // 可以指定是原图还是压缩图，默认二者都有
             sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有
             success: function(res) {
+                var file = res.tempFiles[0];
                 cos.postObject({
                     Bucket: config.Bucket,
                     Region: config.Region,
-                    Key: '1.png',
-                    FilePath: res.tempFilePaths[0],
+                    Key: '1/2/3/1/1.png',
+                    FilePath: file.path,
+                    FileSize: file.size,
                     TaskReady: function(taskId) {
                         TaskId = taskId
                     },

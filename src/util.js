@@ -5,8 +5,6 @@ var CryptoJS = require('../lib/crypto');
 var xml2json = require('../lib/xml2json');
 var json2xml = require('../lib/json2xml');
 var base64 = require('../lib/base64');
-
-var atob = base64.atob;
 var btoa = base64.btoa;
 
 function camSafeUrlEncode(str) {
@@ -25,13 +23,12 @@ var getAuth = function (opt) {
     var SecretId = opt.SecretId;
     var SecretKey = opt.SecretKey;
     var method = (opt.method || opt.Method || 'get').toLowerCase();
-    var pathname = opt.pathname || opt.Key || '/';
     var queryParams = clone(opt.Query || opt.params || {});
     var headers = clone(opt.Headers || opt.headers || {});
-    pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
+    var pathname = opt.Pathname || '/' + (opt.Key || '');
 
-    if (!SecretId) return console.error('lack of param SecretId');
-    if (!SecretKey) return console.error('lack of param SecretKey');
+    if (!SecretId) return console.error('missing param SecretId');
+    if (!SecretKey) return console.error('missing param SecretKey');
 
     var getObjectKeys = function (obj) {
         var list = [];
@@ -40,7 +37,11 @@ var getAuth = function (opt) {
                 list.push(key);
             }
         }
-        return list.sort();
+        return list.sort(function (a, b) {
+            a = a.toLowerCase();
+            b = b.toLowerCase();
+            return a === b ? 0 : (a > b ? 1 : -1);
+        });
     };
 
     var obj2str = function (obj) {
@@ -53,13 +54,13 @@ var getAuth = function (opt) {
             key = key.toLowerCase();
             key = camSafeUrlEncode(key);
             val = camSafeUrlEncode(val) || '';
-            list.push(key + '=' +  val)
+            list.push(key + '=' + val)
         }
         return list.join('&');
     };
 
     // 签名有效起止时间
-    var now = parseInt(new Date().getTime() / 1000) - 1;
+    var now = Math.round(getSkewTime(opt.SystemClockOffset) / 1000) - 1;
     var exp = now;
 
     var Expires = opt.Expires || opt.expires;
@@ -105,11 +106,15 @@ var getAuth = function (opt) {
 
 };
 
+var noop = function () {
+
+};
+
 // 清除对象里值为的 undefined 或 null 的属性
 var clearKey = function (obj) {
     var retObj = {};
     for (var key in obj) {
-        if (obj[key] !== undefined && obj[key] !== null) {
+        if (obj.hasOwnProperty(key) && obj[key] !== undefined && obj[key] !== null) {
             retObj[key] = obj[key];
         }
     }
@@ -145,35 +150,31 @@ var readAsBinaryString = function (blob, callback) {
     readFun.call(fr, blob);
 };
 
-// 获取文件 sha1 值
-var getFileSHA = function (blob, callback) {
+// 获取文件 md5 值
+var getFileMd5 = function (blob, callback) {
     readAsBinaryString(blob, function (content) {
-        var hash = CryptoJS.SHA1(content).toString();
+        var hash = md5(content, true);
         callback(null, hash);
     });
 };
 
-// 获取文件 md5 值
-var getFileMd5 = function (blob, callback) {
-    readAsBinaryString(blob, function (content) {
-        var hash = md5(content);
-        callback(null, hash);
-    });
-};
 function clone(obj) {
     return map(obj, function (v) {
         return typeof v === 'object' ? clone(v) : v;
     });
 }
+
 function extend(target, source) {
     each(source, function (val, key) {
         target[key] = source[key];
     });
     return target;
 }
+
 function isArray(arr) {
     return arr instanceof Array;
 }
+
 function isInArray(arr, item) {
     var flag = false;
     for (var i = 0; i < arr.length; i++) {
@@ -184,6 +185,7 @@ function isInArray(arr, item) {
     }
     return flag;
 }
+
 function each(obj, fn) {
     for (var i in obj) {
         if (obj.hasOwnProperty(i)) {
@@ -191,6 +193,7 @@ function each(obj, fn) {
         }
     }
 }
+
 function map(obj, fn) {
     var o = isArray(obj) ? [] : {};
     for (var i in obj) {
@@ -200,6 +203,7 @@ function map(obj, fn) {
     }
     return o;
 }
+
 function filter(obj, fn) {
     var iaArr = isArray(obj);
     var o = iaArr ? [] : {};
@@ -216,6 +220,7 @@ function filter(obj, fn) {
     }
     return o;
 }
+
 var binaryBase64 = function (str) {
     var i, len, char, res = '';
     for (i = 0, len = str.length / 2; i < len; i++) {
@@ -231,32 +236,28 @@ var uuid = function () {
     return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
 };
 
-var checkParams = function (apiName, params) {
-    var bucket = params.Bucket;
-    var region = params.Region;
-    var object = params.Key;
+var hasMissingParams = function (apiName, params) {
+    var Bucket = params.Bucket;
+    var Region = params.Region;
+    var Key = params.Key;
     if (apiName.indexOf('Bucket') > -1 || apiName === 'deleteMultipleObject' || apiName === 'multipartList' || apiName === 'listObjectVersions') {
-        return bucket && region;
+        if (!Bucket) return 'Bucket';
+        if (!Region) return 'Region';
+    } else if (apiName.indexOf('Object') > -1 || apiName.indexOf('multipart') > -1 || apiName === 'sliceUploadFile' || apiName === 'abortUploadTask') {
+        if (!Bucket) return 'Bucket';
+        if (!Region) return 'Region';
+        if (!Key) return 'Key';
     }
-    if (apiName.indexOf('Object') > -1 || apiName.indexOf('multipart') > -1 || apiName === 'sliceUploadFile' || apiName === 'abortUploadTask') {
-        return bucket && region && object;
-    }
-    return true;
+    return false;
 };
 
-var apiWrapper = function (apiName, apiFn) {
-    return function (params, callback) {
+var formatParams = function (apiName, params) {
 
-        // 处理参数
-        if (typeof params === 'function') {
-            callback = params;
-            params = {};
-        }
+    // 复制参数对象
+    params = extend({}, params);
 
-        // 复制参数对象
-        params = extend({}, params);
-
-        // 统一处理 Headers
+    // 统一处理 Headers
+    if (apiName !== 'getAuth' && apiName !== 'getV4Auth' && apiName !== 'getObjectUrl') {
         var Headers = params.Headers || {};
         if (params && typeof params === 'object') {
             (function () {
@@ -289,7 +290,6 @@ var apiWrapper = function (apiName, apiFn) {
             Headers['x-cos-copy-source-If-Unmodified-Since'] = params['CopySourceIfUnmodifiedSince'];
             Headers['x-cos-copy-source-If-Match'] = params['CopySourceIfMatch'];
             Headers['x-cos-copy-source-If-None-Match'] = params['CopySourceIfNoneMatch'];
-            Headers['x-cos-server-side-encryption'] = params['ServerSideEncryption'];
             Headers['x-cos-acl'] = params['ACL'];
             Headers['x-cos-grant-read'] = params['GrantRead'];
             Headers['x-cos-grant-write'] = params['GrantWrite'];
@@ -297,8 +297,33 @@ var apiWrapper = function (apiName, apiFn) {
             Headers['x-cos-grant-read-acp'] = params['GrantReadAcp'];
             Headers['x-cos-grant-write-acp'] = params['GrantWriteAcp'];
             Headers['x-cos-storage-class'] = params['StorageClass'];
+            // SSE-C
+            Headers['x-cos-server-side-encryption-customer-algorithm'] = params['SSECustomerAlgorithm'];
+            Headers['x-cos-server-side-encryption-customer-key'] = params['SSECustomerKey'];
+            Headers['x-cos-server-side-encryption-customer-key-MD5'] = params['SSECustomerKeyMD5'];
+            // SSE-COS、SSE-KMS
+            Headers['x-cos-server-side-encryption'] = params['ServerSideEncryption'];
+            Headers['x-cos-server-side-encryption-cos-kms-key-id'] = params['SSEKMSKeyId'];
+            Headers['x-cos-server-side-encryption-context'] = params['SSEContext'];
+
             params.Headers = clearKey(Headers);
         }
+    }
+
+    return params;
+};
+
+var apiWrapper = function (apiName, apiFn) {
+    return function (params, callback) {
+
+        // 处理参数
+        if (typeof params === 'function') {
+            callback = params;
+            params = {};
+        }
+
+        // 整理参数格式
+        params = formatParams(apiName, params);
 
         // 代理回调函数
         var formatResult = function (result) {
@@ -314,23 +339,28 @@ var apiWrapper = function (apiName, apiFn) {
 
         if (apiName !== 'getService' && apiName !== 'abortUploadTask') {
             // 判断参数是否完整
-            if (!checkParams(apiName, params)) {
-                _callback({error: 'lack of required params'});
+            var missingResult;
+            if (missingResult = hasMissingParams(apiName, params)) {
+                _callback({error: 'missing param ' + missingResult});
                 return;
             }
             // 判断 region 格式
-            if (params.Region && params.Region.indexOf('-') === -1 && params.Region !== 'yfb') {
-                _callback({error: 'Region format error, find help here: https://cloud.tencent.com/document/product/436/6224'});
-                return;
-            }
-            // 判断 region 格式
-            if (params.Region && params.Region.indexOf('cos.') > -1) {
-                _callback({error: 'Region should not be start with "cos."'});
-                return;
+            if (params.Region) {
+                if (params.Region.indexOf('cos.') > -1) {
+                    _callback({error: 'param Region should not be start with "cos."'});
+                    return;
+                } else if (!/^([a-z\d-]+)$/.test(params.Region)) {
+                    _callback({error: 'Region format error.'});
+                    return;
+                }
+                // 判断 region 格式
+                if (!this.options.CompatibilityMode && params.Region.indexOf('-') === -1 && params.Region !== 'yfb' && params.Region !== 'default') {
+                    console.warn('warning: param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224');
+                }
             }
             // 兼容不带 AppId 的 Bucket
             if (params.Bucket) {
-                if (!/^(.+)-(\d+)$/.test(params.Bucket)) {
+                if (!/^([a-z\d-]+)-(\d+)$/.test(params.Bucket)) {
                     if (params.AppId) {
                         params.Bucket = params.Bucket + '-' + params.AppId;
                     } else if (this.options.AppId) {
@@ -344,10 +374,6 @@ var apiWrapper = function (apiName, apiFn) {
                     console.warn('warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g Bucket:"test-1250000000" ).');
                     delete params.AppId;
                 }
-            }
-            // 兼容带有斜杠开头的 Key
-            if (params.Key && params.Key.substr(0, 1) === '/') {
-                params.Key = params.Key.substr(1);
             }
         }
         var res = apiFn.call(this, params, _callback);
@@ -364,6 +390,7 @@ var throttleOnProgress = function (total, onProgress) {
     var time0 = Date.now();
     var time1;
     var timer;
+
     function update() {
         timer = 0;
         if (onProgress && (typeof onProgress === 'function')) {
@@ -383,6 +410,7 @@ var throttleOnProgress = function (total, onProgress) {
             }
         }
     }
+
     return function (info, immediately) {
         if (info) {
             size1 = info.loaded;
@@ -398,9 +426,29 @@ var throttleOnProgress = function (total, onProgress) {
     };
 };
 
+var getFileSize = function (api, params, callback) {
+    var size;
+    if (typeof params.Body === 'string') {
+        params.Body = new Blob([params.Body]);
+    }
+    if ((params.Body && (params.Body instanceof Blob || params.Body.toString() === '[object File]' || params.Body.toString() === '[object Blob]'))) {
+        size = params.Body.size;
+    } else {
+        callback({error: 'params body format error, Only allow File|Blob|String.'});
+        return;
+    }
+    params.ContentLength = size;
+    callback(null, size);
+};
+
+var getSkewTime = function (offset) {
+    return Date.now() + (offset || 0);
+};
+
 var util = {
+    noop: noop,
+    formatParams: formatParams,
     apiWrapper: apiWrapper,
-    getAuth: getAuth,
     xml2json: xml2json,
     json2xml: json2xml,
     md5: md5,
@@ -415,8 +463,39 @@ var util = {
     filter: filter,
     clone: clone,
     uuid: uuid,
+    camSafeUrlEncode: camSafeUrlEncode,
     throttleOnProgress: throttleOnProgress,
-    isBrowser: !!global.document,
+    getFileSize: getFileSize,
+    getSkewTime: getSkewTime,
+    getAuth: getAuth,
+    isBrowser: true,
+};
+
+util.localStorage = global.localStorage;
+util.fileSlice = function (file, start, end) {
+    if (file.slice) {
+        return file.slice(start, end);
+    } else if (file.mozSlice) {
+        return file.mozSlice(start, end);
+    } else if (file.webkitSlice) {
+        return file.webkitSlice(start, end);
+    }
+};
+util.getFileUUID = function (file, ChunkSize) {
+    // 如果信息不完整，不获取
+    if (file.name && file.size && file.lastModifiedDate && ChunkSize) {
+        return util.md5([file.name, file.size, file.lastModifiedDate, ChunkSize].join('::'));
+    } else {
+        return null;
+    }
+};
+util.getBodyMd5 = function (Body, callback) {
+    callback = callback || noop;
+    if (typeof Body === 'string') {
+        callback(util.md5(Body, true));
+    } else {
+        callback();
+    }
 };
 
 module.exports = util;

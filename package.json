@@ -1,11 +1,12 @@
 {
   "name": "cos-wx-sdk-v5",
-  "version": "0.6.0",
-  "description": "wx-sdk-v5 for [腾讯云对象存储服务](http://wiki.qcloud.com/wiki/COS%E4%BA%A7%E5%93%81%E4%BB%8B%E7%BB%8D)",
+  "version": "0.7.0",
+  "description": "小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/document/product/436)",
   "main": "demo/lib/cos-wx-sdk-v5.js",
   "scripts": {
-    "dev": "SET NODE_ENV=development&& webpack -w",
-    "build": "SET NODE_ENV=production&& webpack"
+    "dev": "SET NODE_ENV=development&& node build.js",
+    "build": "SET NODE_ENV=production&& node build.js",
+    "sts.js": "node server/sts.js"
   },
   "repository": {
     "type": "git",
@@ -14,6 +15,12 @@
   "author": "carsonxu",
   "license": "ISC",
   "devDependencies": {
+    "body-parser": "^1.18.3",
+    "express": "^4.16.4",
+    "qcloud-cos-sts": "^2.0.6",
     "webpack": "^2.6.1"
+  },
+  "dependencies": {
+    "xmldom": "^0.1.27"
   }
 }
