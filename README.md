@@ -6,7 +6,7 @@
 
 1. 到 (COS对象存储控制台)[https://console.cloud.tencent.com/cos4] 创建存储桶，得到 Bucket（存储桶名称） 和 Region（地域名称）
 2. 到 (控制台密钥管理)[https://console.cloud.tencent.com/capi] 获取您的项目 SecretId 和 SecretKey
-    
+
 ### 二、计算签名
 
 由于签名计算放在前端会暴露 SecretId 和 SecretKey，我们把签名计算过程放在后端实现，前段通过 ajax 向后端获取签名结果，正式部署时请再后端加一层自己网站本身的权限检验。
