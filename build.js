@@ -22,7 +22,7 @@ var replaceDevCode = function (list) {
         newContent = newContent.replace(/https:\/\/\w+\.com\/[\w\-]+\/server\//, 'https://example.com/');
         newContent = newContent.replace(/test-125\d{7}/, 'test-1250000000');
         newContent = newContent.replace(/wx-125\d{7}/, 'test-1250000000');
-        newContent = newContent.replace(/"appid": "wx\w+"/, '"appid": "wx................"');
+        newContent = newContent.replace(/"appid": "wx\w+"/, '"appid": "wx0000000000000000"');
         if (newContent !== content) {
             console.log('replace ' + filePath);
             fs.writeFileSync(filePath, newContent);
