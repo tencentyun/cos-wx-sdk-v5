@@ -1,8 +1,5 @@
 var COS = require('./lib/cos-wx-sdk-v5');
-var config = {
-    Bucket: 'test-1250000000',
-    Region: 'ap-guangzhou'
-};
+var config = require('./config');
 
 var TaskId;
 
@@ -13,7 +10,7 @@ var getAuthorization = function(options, callback) {
     // 方法一、后端通过获取临时密钥给到前端，前端计算签名
     wx.request({
         method: 'GET',
-        url: 'https://example.com/sts.php', // 服务端签名，参考 server 目录下的两个签名例子
+        url: config.serverPrefix + 'sts.php', // 服务端签名，参考 server 目录下的两个签名例子
         dataType: 'json',
         success: function(result) {
             var data = result.data;
@@ -78,24 +75,11 @@ var getAuthorization = function(options, callback) {
     //     Expires: 60,
     // });
     // callback(authorization);
-
-
-    // // 方法四、前端使用固定密钥计算签名（仅适用于前端调试）
-    // var authorization = COS.getAuthorization({
-    //     SecretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    //     SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    //     Method: options.Method,
-    //     Pathname: options.Pathname,
-    //     Query: options.Query,
-    //     Headers: options.Headers,
-    //     Expires: 60,
-    // });
-    // callback(authorization);
 };
 
 var cos = new COS({
     // path style 指正式请求时，Bucket 是在 path 里，这样用途相同园区多个 bucket 只需要配置一个园区域名
-    ForcePathStyle: true,
+    // ForcePathStyle: true,
     getAuthorization: getAuthorization,
 });
 

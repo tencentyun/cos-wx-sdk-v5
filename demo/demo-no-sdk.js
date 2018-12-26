@@ -1,11 +1,10 @@
 var CosAuth = require('./lib/cos-auth');
+var config = require('./config');
 
 var uploadFile = function () {
     // 请求用到的参数
-    var Bucket = 'test-1250000000';
-    var Region = 'ap-guangzhou';
-    var prefix = 'https://cos.' + Region + '.myqcloud.com/' + Bucket + '/'; // 后缀式
-    // var prefix = 'https://' + Bucket + '.cos.' + Region + '.myqcloud.com/';
+    // var prefix = 'https://cos.' + config.Region + '.myqcloud.com/' + config.Bucket + '/'; // 这个是后缀式，签名也要指定 Pathname: '/' + config.Bucket + '/'
+    var prefix = 'https://' + config.Bucket + '.cos.' + config.Region + '.myqcloud.com/';
 
 
     // 对更多字符编码的 url encode 格式
@@ -27,7 +26,7 @@ var uploadFile = function () {
         }
         wx.request({
             method: 'GET',
-            url: 'https://example.com/sts.php', // 服务端签名，参考 server 目录下的两个签名例子
+            url: config.serverPrefix + 'sts.php', // 服务端签名，参考 server 目录下的两个签名例子
             dataType: 'json',
             success: function (result) {
                 var data = result.data;
@@ -63,7 +62,7 @@ var uploadFile = function () {
     // 上传文件
     var uploadFile = function (filePath) {
         var Key = filePath.substr(filePath.lastIndexOf('/') + 1); // 这里指定上传的文件名
-        getAuthorization({Method: 'POST', Pathname: '/' + Bucket + '/'}, function (AuthData) {
+        getAuthorization({Method: 'POST', Pathname: '/'}, function (AuthData) {
             var requestTask = wx.uploadFile({
                 url: prefix,
                 name: 'file',
@@ -101,7 +100,7 @@ var uploadFile = function () {
         sizeType: ['original'], // 可以指定是原图还是压缩图，这里默认用原图
         sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有
         success: function (res) {
-            uploadFile(res.tempFilePaths[0]);
+            uploadFile(res.tempFiles[0].path);
         }
     })
 };

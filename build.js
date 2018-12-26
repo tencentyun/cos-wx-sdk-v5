@@ -60,8 +60,7 @@ var config = {
 
 if (process.env.NODE_ENV === 'production') {
     replaceDevCode([
-        'demo/demo-sdk.js',
-        'demo/demo-no-sdk.js',
+        'demo/config.js',
         'demo/project.config.json',
         'demo-album/config.js',
         'demo-album/project.config.json',
