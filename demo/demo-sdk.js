@@ -360,7 +360,7 @@ var dao = {
                 cos.postObject({
                     Bucket: config.Bucket,
                     Region: config.Region,
-                    Key: '1/2/3/1/1.png',
+                    Key: '1.png',
                     FilePath: file.path,
                     FileSize: file.size,
                     TaskReady: function(taskId) {

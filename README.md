@@ -26,7 +26,7 @@ var cos = new COS({
     getAuthorization: function (options, callback) {
         // 异步获取签名
         wx.request({
-            url: 'https://example.com/server/sts.php', // 步骤二提供的签名接口
+            url: 'https://example.com/sts.php', // 步骤二提供的签名接口
             data: {
                 Method: options.Method,
                 Key: options.Key
@@ -51,13 +51,13 @@ wx.chooseImage({
     sizeType: ['original'], // 可以指定是原图还是压缩图，默认用原图
     sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有
     success: function (res) {
-        var filepath = res.tempFilePaths[0];
+        var filePath = res.tempFiles[0].path;
         var filename = filePath.substr(filePath.lastIndexOf('/') + 1);
         cos.postObject({
             Bucket: Bucket,
             Region: Region,
             Key: filename,
-            FilePath: filepath,
+            FilePath: filePath,
             onProgress: function (info) {
                 console.log(JSON.stringify(info));
             }

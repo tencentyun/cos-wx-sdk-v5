@@ -65,6 +65,7 @@ if (process.env.NODE_ENV === 'production') {
         'demo-album/config.js',
         'demo-album/project.config.json',
     ]);
+    config.watch = false;
     config.output.filename = 'cos-wx-sdk-v5.js';
     config.plugins = (config.plugins || []).concat([
         new webpack.DefinePlugin({

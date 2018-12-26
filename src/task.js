@@ -172,6 +172,7 @@ var initTask = function (cos) {
             if (!cos._isRunningTask(task.id)) return;
             task.state === 'checking' && (task.state = 'uploading');
             task.loaded = info.loaded;
+            task.size = info.total;
             task.speed = info.speed;
             task.percent = info.percent;
             onProgress && onProgress(info);
