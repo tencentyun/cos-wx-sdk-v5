@@ -1,7 +1,7 @@
 {
   "name": "cos-wx-sdk-v5",
   "version": "0.7.0",
-  "description": "小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/document/product/436)",
+  "description": "小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)",
   "main": "demo/lib/cos-wx-sdk-v5.js",
   "scripts": {
     "dev": "SET NODE_ENV=development&& node build.js",
