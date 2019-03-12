@@ -91,10 +91,10 @@ function abortUploadTaskArray(params, callback) {
     var resultList = new Array(AbortArray.length);
     Async.eachLimit(AbortArray, AsyncLimit, function (AbortItem, callback) {
         var eachIndex = index;
-        if (Key && Key != AbortItem.Key) {
-            return callback(null, {
-                KeyNotMatch: true
-            });
+        if (Key && Key !== AbortItem.Key) {
+            resultList[eachIndex] = {error: {KeyNotMatch: true}};
+            callback(null);
+            return;
         }
         var UploadId = AbortItem.UploadId || AbortItem.UploadID;
 
@@ -226,10 +226,10 @@ function sliceCopyFile(params, callback) {
                 Region: Region,
                 Key: Key,
                 CopySource: CopySource,
-                UploadId:UploadData.UploadId,
-                PartNumber:PartNumber,
-                CopySourceRange:CopySourceRange,
-                onProgress:function (data) {
+                UploadId: UploadData.UploadId,
+                PartNumber: PartNumber,
+                CopySourceRange: CopySourceRange,
+                onProgress: function (data) {
                     FinishSize += data.loaded - preAddSize;
                     preAddSize = data.loaded;
                     onProgress({loaded: FinishSize, total: FileSize});
@@ -254,7 +254,7 @@ function sliceCopyFile(params, callback) {
         });
     });
 
-    ep.on('get_file_size_finish',function () {
+    ep.on('get_file_size_finish', function (SourceHeaders) {
         // 控制分片大小
         (function () {
             var SIZE = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1024 * 2, 1024 * 4, 1024 * 5];
@@ -282,10 +282,19 @@ function sliceCopyFile(params, callback) {
             params.PartList = list;
         })();
 
+        var TargetHeader;
+        if (params.Headers['x-cos-metadata-directive'] === 'Replaced') {
+            TargetHeader = params.Headers;
+        } else {
+            TargetHeader = SourceHeaders;
+        }
+        TargetHeader['x-cos-storage-class'] = params.Headers['x-cos-storage-class'] || SourceHeaders['x-cos-storage-class'];
+        TargetHeader = util.clearKey(TargetHeader);
         self.multipartInit({
             Bucket: Bucket,
             Region: Region,
             Key: Key,
+            Headers: TargetHeader,
         },function (err,data) {
             if (err) {
                 return callback(err);
@@ -320,6 +329,9 @@ function sliceCopyFile(params, callback) {
 
         // 开始上传
         if (FileSize <= CopySliceSize) {
+            if (!params.Headers['x-cos-metadata-directive']) {
+                params.Headers['x-cos-metadata-directive'] = 'Copy';
+            }
             self.putObjectCopy(params, function (err, data) {
                 if (err) {
                     onProgress(null, true);
@@ -329,7 +341,22 @@ function sliceCopyFile(params, callback) {
                 callback(err, data);
             });
         } else {
-            ep.emit('get_file_size_finish');
+            var resHeaders = data.headers;
+            var SourceHeaders = {
+                'Cache-Control': resHeaders['cache-control'],
+                'Content-Disposition': resHeaders['content-disposition'],
+                'Content-Encoding': resHeaders['content-encoding'],
+                'Content-Type': resHeaders['content-type'],
+                'Expires': resHeaders['expires'],
+                'x-cos-storage-class': resHeaders['x-cos-storage-class'],
+            };
+            util.each(resHeaders, function (v, k) {
+                var metaPrefix = 'x-cos-meta-';
+                if (k.indexOf(metaPrefix) === 0 && k.length > metaPrefix.length) {
+                    SourceHeaders[k] = v;
+                }
+            });
+            ep.emit('get_file_size_finish', SourceHeaders);
         }
     });
 }
