@@ -11,6 +11,8 @@
 	"libVersion": "1.6.0",
 	"appid": "wx0000000000000000",
 	"projectname": "cos5",
+	"simulatorType": "wechat",
+	"simulatorPluginLibVersion": {},
 	"condition": {
 		"search": {
 			"current": -1,

@@ -1,5 +1,5 @@
 module.exports = {
-    serverPrefix: 'https://example.com/',
+    stsUrl: 'https://example.com/sts.php',
     Bucket: 'test-1250000000',
     Region: 'ap-guangzhou',
 };

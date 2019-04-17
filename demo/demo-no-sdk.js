@@ -26,7 +26,7 @@ var uploadFile = function () {
         }
         wx.request({
             method: 'GET',
-            url: config.serverPrefix + 'sts.php', // 服务端签名，参考 server 目录下的两个签名例子
+            url: config.stsUrl, // 服务端签名，参考 server 目录下的两个签名例子
             dataType: 'json',
             success: function (result) {
                 var data = result.data;

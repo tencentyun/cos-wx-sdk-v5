@@ -2196,7 +2196,7 @@ function getAuthorizationAsync(params, callback) {
             Pathname: Pathname,
             Query: params.Query,
             Headers: headers,
-            UseRawKey: self.options.UseRawKey,
+            Expires: params.Expires,
             SystemClockOffset: self.options.SystemClockOffset,
         });
         var AuthData = {
