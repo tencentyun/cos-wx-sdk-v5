@@ -21,7 +21,7 @@ var uploadFile = function () {
     var stsCache;
     var getCredentials = function (callback) {
         if (stsCache && Date.now() / 1000 + 30 < stsCache.expiredTime) {
-            callback();
+            callback(stsCache.credentials);
             return;
         }
         wx.request({
