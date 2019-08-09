@@ -19,14 +19,18 @@ function getService(params, callback) {
     var protocol = 'https:';
     var domain = this.options.ServiceDomain;
     var appId = params.AppId || this.options.appId;
+    var region = params.Region;
     if (domain) {
-        domain = domain.replace(/\{\{AppId\}\}/ig, appId || '').replace(/\{\{.*?\}\}/ig, '');
+      domain = domain.replace(/\{\{AppId\}\}/ig, appId || '')
+                     .replace(/\{\{Region\}\}/ig, region || '').replace(/\{\{.*?\}\}/ig, '');
         if (!/^[a-zA-Z]+:\/\//.test(domain)) {
             domain = protocol + '//' + domain;
         }
         if (domain.slice(-1) === '/') {
             domain = domain.slice(0, -1);
         }
+    } else if(region){
+        domain = protocol + '//cos.'+ region + '.myqcloud.com';
     } else {
         domain = protocol + '//service.cos.myqcloud.com';
     }
@@ -42,8 +46,10 @@ function getService(params, callback) {
         var buckets = (data && data.ListAllMyBucketsResult && data.ListAllMyBucketsResult.Buckets
             && data.ListAllMyBucketsResult.Buckets.Bucket) || [];
         buckets = util.isArray(buckets) ? buckets : [buckets];
+        var owner = (data && data.ListAllMyBucketsResult && data.ListAllMyBucketsResult.Owner) || {};
         callback(null, {
             Buckets: buckets,
+            Owner: owner,
             statusCode: data.statusCode,
             headers: data.headers,
         });

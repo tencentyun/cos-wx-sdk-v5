@@ -12,6 +12,7 @@ var defaultOptions = {
     XCosSecurityToken: '', // 使用临时密钥需要注意自行刷新 Token
     FileParallelLimit: 3,
     ChunkParallelLimit: 3,
+    ChunkRetryTimes: 3,
     ChunkSize: 1024 * 1024,
     SliceSize: 1024 * 1024,
     CopyChunkParallelLimit: 20,

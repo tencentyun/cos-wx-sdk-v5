@@ -4,8 +4,8 @@
   "description": "小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)",
   "main": "demo/lib/cos-wx-sdk-v5.js",
   "scripts": {
-    "dev": "SET NODE_ENV=development&& node build.js",
-    "build": "SET NODE_ENV=production&& node build.js",
+    "dev": "cross-env NODE_ENV=development&& node build.js",
+    "build": "cross-env NODE_ENV=production&& node build.js",
     "sts.js": "node server/sts.js"
   },
   "repository": {
@@ -16,8 +16,9 @@
   "license": "ISC",
   "devDependencies": {
     "body-parser": "^1.18.3",
+    "cross-env": "^5.2.0",
     "express": "^4.16.4",
-    "qcloud-cos-sts": "^2.0.6",
+    "qcloud-cos-sts": "^3.0.0",
     "webpack": "^2.6.1"
   },
   "dependencies": {
