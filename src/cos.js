@@ -10,6 +10,7 @@ var defaultOptions = {
     SecretId: '',
     SecretKey: '',
     XCosSecurityToken: '', // 使用临时密钥需要注意自行刷新 Token
+    ChunkRetryTimes: 2,
     FileParallelLimit: 3,
     ChunkParallelLimit: 3,
     ChunkRetryTimes: 3,
@@ -53,6 +54,6 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.7.3';
+COS.version = '0.7.4';
 
 module.exports = COS;
