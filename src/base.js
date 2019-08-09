@@ -21,7 +21,7 @@ function getService(params, callback) {
     var appId = params.AppId || this.options.appId;
     var region = params.Region;
     if (domain) {
-      domain = domain.replace(/\{\{AppId\}\}/ig, appId || '')
+        domain = domain.replace(/\{\{AppId\}\}/ig, appId || '')
                      .replace(/\{\{Region\}\}/ig, region || '').replace(/\{\{.*?\}\}/ig, '');
         if (!/^[a-zA-Z]+:\/\//.test(domain)) {
             domain = protocol + '//' + domain;
@@ -698,7 +698,7 @@ function deleteBucketTagging(params, callback) {
 function putBucketLifecycle(params, callback) {
 
     var LifecycleConfiguration = params['LifecycleConfiguration'] || {};
-    var Rules = LifecycleConfiguration.Rules || [];
+    var Rules = LifecycleConfiguration.Rules || params.Rules || [];
     Rules = util.clone(Rules);
     var xml = util.json2xml({LifecycleConfiguration: {Rule: Rules}});
 
