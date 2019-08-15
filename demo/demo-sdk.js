@@ -121,7 +121,7 @@ var requestCallback = function(err, data) {
 var dao = {
     getObjectUrl: function() {
         var url = cos.getObjectUrl({
-            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Bucket: config.Bucket,
             Region: config.Region,
             Key: '1mb.zip',
             Expires: 60,
@@ -276,6 +276,225 @@ var dao = {
             Region: config.Region
         }, requestCallback);
     },
+    putBucketLifecycle: function () {
+        cos.putBucketLifecycle({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            LifecycleConfiguration: {
+                Rules: [{
+                    "ID": "1",
+                    "Status": "Enabled",
+                    "Filter": {},
+                    "Transition": {
+                        "Days": "30",
+                        "StorageClass": "STANDARD_IA"
+                    }
+                }, {
+                    "ID": "2",
+                    "Status": "Enabled",
+                    "Filter": {
+                        "Prefix": "dir/"
+                    },
+                    "Transition": {
+                        "Days": "180",
+                        "StorageClass": "ARCHIVE"
+                    }
+                }, {
+                    "ID": "3",
+                    "Status": "Enabled",
+                    "Filter": {},
+                    "Expiration": {
+                        "Days": "180"
+                    }
+                }, {
+                    "ID": "4",
+                    "Status": "Enabled",
+                    "Filter": {},
+                    "AbortIncompleteMultipartUpload": {
+                        "DaysAfterInitiation": "30"
+                    }
+                }],
+            }
+        }, function (err, data) {
+            console.log(err || data);
+        });
+    },
+    getBucketLifecycle: function () {
+        cos.getBucketLifecycle({
+            Bucket: config.Bucket,
+            Region: config.Region
+        }, function (err, data) {
+            console.log(err || data);
+        });
+    },
+    deleteBucketLifecycle: function () {
+        cos.deleteBucketLifecycle({
+            Bucket: config.Bucket,
+            Region: config.Region
+        }, function (err, data) {
+            console.log(err || data);
+        });
+    },
+    putBucketVersioning: function () {
+        cos.putBucketVersioning({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            VersioningConfiguration: {
+                Status: "Enabled"
+            }
+        }, function (err, data) {
+            console.log(err || data);
+        });
+    },
+    getBucketVersioning: function () {
+        cos.getBucketVersioning({
+            Bucket: config.Bucket,
+            Region: config.Region
+        }, function (err, data) {
+            console.log(err || data);
+        });
+    },
+    listObjectVersions: function () {
+        cos.listObjectVersions({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            // Prefix: "",
+            // Delimiter: '/'
+        }, function (err, data) {
+            console.log(err || JSON.stringify(data, null, '    '));
+        });
+    },
+    putBucketReplication: function () {
+        var AppId = config.Bucket.substr(config.Bucket.lastIndexOf('-') + 1);
+        cos.putBucketReplication({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            ReplicationConfiguration: {
+                Role: "qcs::cam::uin/10001:uin/10001",
+                Rules: [{
+                    ID: "1",
+                    Status: "Enabled",
+                    Prefix: "sync/",
+                    Destination: {
+                        Bucket: "qcs:id/0:cos:ap-chengdu:appid/" + AppId + ":backup",
+                        // StorageClass: "Standard",
+                    }
+                }]
+            }
+        }, function (err, data) {
+            console.log(err || data);
+        });
+    },
+    getBucketReplication: function () {
+        cos.getBucketReplication({
+            Bucket: config.Bucket,
+            Region: config.Region
+        }, function (err, data) {
+            console.log(err || data);
+        });
+    },
+    deleteBucketReplication: function () {
+        cos.deleteBucketReplication({
+            Bucket: config.Bucket,
+            Region: config.Region
+        }, function (err, data) {
+            console.log(err || data);
+        });
+    },
+    putBucketWebsite: function () {
+        cos.putBucketWebsite({
+            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Region: config.Region,
+            WebsiteConfiguration: {
+                IndexDocument: {
+                    Suffix: "index.html"
+                },
+                RedirectAllRequestsTo: {
+                    Protocol: "https"
+                },
+                ErrorDocument: {
+                    Key: "error.html"
+                },
+                // RoutingRules: [{
+                //     Condition: {
+                //         HttpErrorCodeReturnedEquals: "404"
+                //     },
+                //     Redirect: {
+                //         Protocol: "https",
+                //         ReplaceKeyWith: "404.html"
+                //     }
+                // }, {
+                //     Condition: {
+                //         KeyPrefixEquals: "docs/"
+                //     },
+                //     Redirect: {
+                //         Protocol: "https",
+                //         ReplaceKeyPrefixWith: "documents/"
+                //     }
+                // }, {
+                //     Condition: {
+                //         KeyPrefixEquals: "img/"
+                //     },
+                //     Redirect: {
+                //         Protocol: "https",
+                //         ReplaceKeyWith: "picture.jpg"
+                //     }
+                // }]
+            }
+        }, function (err, data) {
+            console.log(err || data);
+        });
+    },
+    getBucketWebsite: function () {
+        cos.getBucketWebsite({
+            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Region: config.Region
+        },function(err, data){
+            console.log(err || data);
+        });
+    },
+    deleteBucketWebsite: function () {
+        cos.deleteBucketWebsite({
+            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Region: config.Region
+        },function(err, data){
+            console.log(err || data);
+        });
+    },
+    putBucketDomain: function () {
+        cos.putBucketDomain({
+            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Region: config.Region,
+            DomainRule:[{
+                Status: "DISABLED",
+                Name: "www.testDomain1.com",
+                Type: "REST"
+            },
+            {
+                Status: "DISABLED",
+                Name: "www.testDomain2.com",
+                Type: "WEBSITE"
+            }]
+        },function(err, data){
+            console.log(err || data);
+        });
+    },
+    getBucketDomain: function () {
+        cos.getBucketDomain({
+            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Region: config.Region
+        },function(err, data){
+            console.log(err || data);
+        });
+    },
+    deleteBucketDomain: function () {
+        cos.deleteBucketDomain({
+            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Region: config.Region
+        },function(err, data){
+            console.log(err || data);
+        });
+    },
     // Object
     putObject: function() {
         cos.putObject({
@@ -315,7 +534,7 @@ var dao = {
     },
     putObjectACL: function() {
         cos.putObjectAcl({
-            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Bucket: config.Bucket,
             Region: config.Region,
             Key: '1.txt',
             // GrantFullControl: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"',
@@ -340,7 +559,7 @@ var dao = {
     },
     deleteMultipleObject: function() {
         cos.deleteMultipleObject({
-            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Bucket: config.Bucket,
             Region: config.Region,
             Objects: [{
                     Key: '1.txt'
@@ -353,7 +572,7 @@ var dao = {
     },
     putObjectCopy: function() {
         cos.putObjectCopy({
-            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Bucket: config.Bucket,
             Region: config.Region,
             Key: '1.copy.txt',
             CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/1.txt',
@@ -431,7 +650,7 @@ var dao = {
     abortUploadTask: function() {
         cos.abortUploadTask({
             Bucket: config.Bucket,
-            /* 必须 */ // Bucket 格式：test-1250000000
+            /* 必须 */
             Region: config.Region,
             /* 必须 */
             // 格式1，删除单个上传任务
@@ -453,7 +672,7 @@ var dao = {
         var sourcePath = config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + sourceName;
 
         cos.sliceCopyFile({
-            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Bucket: config.Bucket,
             Region: config.Region,
             Key: Key,
             CopySource: sourcePath,
