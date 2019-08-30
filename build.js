@@ -86,6 +86,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 webpack(config, function (err, stats) {
+    // 每次运行 npm run build，将 sourcePath 代码复制一份放入 targetPath
     var sourcePath = path.resolve(__dirname, './demo/lib/cos-wx-sdk-v5.js');
     var targetPath = path.resolve(__dirname, './demo-album/lib/cos-wx-sdk-v5.js');
     fs.createReadStream(sourcePath).pipe(fs.createWriteStream(targetPath));
