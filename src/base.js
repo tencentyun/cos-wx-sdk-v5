@@ -953,8 +953,9 @@ function headObject(params, callback) {
             }
             return callback(err);
         }
-        if (data.headers && data.headers.ETag) {
-            data.ETag = data.headers && data.headers.ETag;
+        if (data.headers) {
+            var headers = data.headers;
+            data.ETag = headers.etag || headers.Etag || headers.ETag || '';
         }
         callback(null, data);
     });
@@ -1057,8 +1058,10 @@ function getObject(params, callback) {
         }
         var result = {};
         result.Body = data.body;
-        if (data.headers && data.headers.ETag) {
-            result.ETag = data.headers && data.headers.ETag;
+
+        if (data && data.headers) {
+            var headers = data.headers;
+            result.ETag = headers.etag || headers.Etag || headers.ETag || '';
         }
         util.extend(result, {
             statusCode: data.statusCode,
@@ -1121,7 +1124,11 @@ function putObject(params, callback) {
                 return callback(err);
             }
             onProgress({loaded: FileSize, total: FileSize}, true);
-            if (data && data.headers && data.headers['ETag']) {
+
+            if (data && data.headers ) {
+                var headers = data.headers;
+                var ETag = headers.etag || headers.Etag || headers.ETag || '';
+
                 var url = getUrl({
                     ForcePathStyle: self.options.ForcePathStyle,
                     protocol: self.options.Protocol,
@@ -1133,9 +1140,9 @@ function putObject(params, callback) {
                 url = url.substr(url.indexOf('://') + 3);
                 return callback(null, {
                     Location: url,
-                    ETag: data.headers['ETag'],
+                    ETag: ETag,
                     statusCode: data.statusCode,
-                    headers: data.headers,
+                    headers: headers,
                 });
             }
             callback(null, data);
@@ -1197,7 +1204,10 @@ function postObject(params, callback) {
         if (err) {
             return callback(err);
         }
-        if (data && data.headers && data.headers['ETag']) {
+        if (data && data.headers) {
+            var headers = data.headers;
+            var ETag = headers.etag || headers.Etag || headers.ETag || '';
+
             var url = getUrl({
                 ForcePathStyle: self.options.ForcePathStyle,
                 protocol: self.options.Protocol,
@@ -1211,8 +1221,8 @@ function postObject(params, callback) {
             return callback(null, {
                 Location: url,
                 statusCode: data.statusCode,
-                headers: data.headers,
-                ETag: data.headers['ETag'],
+                headers: headers,
+                ETag: ETag,
             });
         }
         callback(null, data);
@@ -1687,12 +1697,12 @@ function multipartUpload(params, callback) {
                 if (err) {
                     return callback(err);
                 }
-                data['headers'] = data['headers'] || {};
-                callback(null, {
-                    ETag: data['headers']['ETag'] || '',
-                    statusCode: data.statusCode,
-                    headers: data.headers,
-                });
+                if(data && data.headers){
+                    var headers = data.headers;
+                    data.ETag = headers.etag || headers.Etag || headers.ETag || '';
+                }
+
+                callback(null, data);
             });
         });
     });
