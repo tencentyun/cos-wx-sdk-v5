@@ -23,6 +23,12 @@ var replaceDevCode = function (list) {
         newContent = newContent.replace(/test-125\d{7}/, 'test-1250000000');
         newContent = newContent.replace(/wx-125\d{7}/, 'test-1250000000');
         newContent = newContent.replace(/"appid": "wx\w+"/, '"appid": "wx0000000000000000"');
+
+        // 替换 config.js 的内容
+        newContent = newContent.replace(/stsUrl: '[\w\-\/\:\.]+'/, 'stsUrl: \'https://example.com/sts.php\'');
+        newContent = newContent.replace(/Bucket: '[\w\-]+'/, 'Bucket: \'test-1250000000\'');
+        newContent = newContent.replace(/Region: '[\w\-]+'/, 'Region: \'ap-guangzhou\'');
+        newContent = newContent.replace(/AccountId: '\w+'/, 'AccountId: \'000000000\'');
         if (newContent !== content) {
             console.log('replace ' + filePath);
             fs.writeFileSync(filePath, newContent);

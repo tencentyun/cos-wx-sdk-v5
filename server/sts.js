@@ -5,12 +5,12 @@ var express = require('express');
 
 // 配置参数
 var config = {
-    secretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    secretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    proxy: '',
+    secretId: process.env.SecretId,
+    secretKey: process.env.SecretKey,
+    proxy: process.env.Proxy,
     durationSeconds: 1800,
-    bucket: 'test-1250000000',
-    region: 'ap-guangzhou',
+    bucket: process.env.Bucket,
+    region: process.env.Region,
     allowPrefix: '_ALLOW_DIR_/*',
     // 简单上传和分片，需要以下的权限，其他权限列表请看 https://cloud.tencent.com/document/product/436/14048
     allowActions: [
@@ -56,7 +56,7 @@ app.all('/sts', function (req, res, next) {
             'effect': 'allow',
             'principal': {'qcs': ['*']},
             'resource': [
-                'qcs::cos:ap-guangzhou:uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName + '/' + config.allowPrefix,
+                'qcs::cos:' + config.region + ':uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName + '/' + config.allowPrefix,
             ],
         }],
     };
@@ -67,7 +67,7 @@ app.all('/sts', function (req, res, next) {
         proxy: config.proxy,
         durationSeconds: config.durationSeconds,
         policy: policy,
-        region:'ap-guangzhou'
+        region: config.region
     }, function (err, tempKeys) {
         var result = JSON.stringify(err || tempKeys) || '';
         result.startTime = startTime;

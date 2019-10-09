@@ -276,6 +276,77 @@ var dao = {
             Region: config.Region
         }, requestCallback);
     },
+    putBucketLogging: function () {
+        cos.putBucketLogging({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            BucketLoggingStatus: {
+                LoggingEnabled: {
+                    TargetBucket: config.Bucket,
+                    TargetPrefix: 'bucket-logging-prefix/'
+                }
+            }
+        }, requestCallback);
+    },
+    getBucketLogging: function () {
+        cos.getBucketLogging({
+            Bucket: config.Bucket,
+            Region: config.Region
+        }, requestCallback);
+    },
+    putBucketInventory: function () {
+        cos.putBucketInventory({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Id: 'inventory_test',
+            InventoryConfiguration: {
+                Id: 'inventory_test',
+                IsEnabled: 'true',
+                Destination: {
+                    COSBucketDestination: {
+                        Format: 'CSV',
+                        AccountId: config.AccountId,
+                        Bucket: 'qcs::cos:' + config.Region + '::' + config.Bucket,
+                        Prefix: 'inventory_prefix_1',
+                        Encryption: {
+                            SSECOS: ''
+                        }
+                    }
+                },
+                Schedule: {
+                    Frequency: 'Daily'
+                },
+                Filter: {
+                    Prefix: 'myPrefix'
+                },
+                IncludedObjectVersions: 'All',
+                OptionalFields: [
+                    'Size'
+                ]
+            }
+        }, requestCallback);
+    },
+    getBucketInventory: function () {
+        cos.getBucketInventory({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Id: 'inventory_test'
+        }, requestCallback);
+    },
+    listBucketInventory: function () {
+        cos.listBucketInventory({
+            Bucket: config.Bucket,
+            Region: config.Region
+        }, requestCallback);
+    },
+    deleteBucketInventory: function () {
+        cos.deleteBucketInventory({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Id: 'inventory_test'
+        }, requestCallback);
+    },
+
     // Object
     putObject: function() {
         cos.putObject({
