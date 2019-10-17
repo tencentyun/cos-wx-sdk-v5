@@ -3179,7 +3179,7 @@ var API_MAP = {
     getBucketLogging: getBucketLogging,
     putBucketInventory: putBucketInventory,         // BucketInventory
     getBucketInventory: getBucketInventory,
-    listBucketInventory: listBucketInventory,
+    // listBucketInventory: listBucketInventory,
     deleteBucketInventory: deleteBucketInventory,
 
     // Object 相关方法

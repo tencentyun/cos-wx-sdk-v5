@@ -552,12 +552,12 @@ var dao = {
             Id: 'inventory_test'
         }, requestCallback);
     },
-    listBucketInventory: function () {
-        cos.listBucketInventory({
-            Bucket: config.Bucket,
-            Region: config.Region
-        }, requestCallback);
-    },
+    // listBucketInventory: function () {
+    //     cos.listBucketInventory({
+    //         Bucket: config.Bucket,
+    //         Region: config.Region
+    //     }, requestCallback);
+    // },
     deleteBucketInventory: function () {
         cos.deleteBucketInventory({
             Bucket: config.Bucket,
