@@ -5,7 +5,6 @@ var CryptoJS = require('../lib/crypto');
 var xml2json = require('../lib/xml2json');
 var json2xml = require('../lib/json2xml');
 var base64 = require('../lib/base64');
-var btoa = base64.btoa;
 
 function camSafeUrlEncode(str) {
     return encodeURIComponent(str)
@@ -227,7 +226,7 @@ var binaryBase64 = function (str) {
         char = parseInt(str[i * 2] + str[i * 2 + 1], 16);
         res += String.fromCharCode(char);
     }
-    return btoa(res);
+    return base64.btoa(res);
 };
 var uuid = function () {
     var S4 = function () {

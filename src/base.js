@@ -1,5 +1,6 @@
 'use strict';
 var REQUEST = require('../lib/request');
+var base64 = require('../lib/base64');
 var util = require('./util');
 
 
@@ -2126,7 +2127,7 @@ function getAuthorizationAsync(params, callback) {
                 formatAllow = true;
             } else {
                 try {
-                    auth = atob(auth);
+                    auth = base64.atob(auth);
                     if (auth.indexOf('a=') > -1 &&
                         auth.indexOf('k=') > -1 &&
                         auth.indexOf('t=') > -1 &&
