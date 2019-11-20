@@ -13,6 +13,7 @@ var defaultOptions = {
     ChunkRetryTimes: 2,
     FileParallelLimit: 3,
     ChunkParallelLimit: 3,
+    ChunkRetryTimes: 3,
     ChunkSize: 1024 * 1024,
     SliceSize: 1024 * 1024,
     CopyChunkParallelLimit: 20,
@@ -53,6 +54,6 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.7.5';
+COS.version = '0.7.7';
 
 module.exports = COS;

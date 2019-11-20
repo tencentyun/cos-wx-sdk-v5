@@ -20,14 +20,18 @@ function getService(params, callback) {
     var protocol = 'https:';
     var domain = this.options.ServiceDomain;
     var appId = params.AppId || this.options.appId;
+    var region = params.Region;
     if (domain) {
-        domain = domain.replace(/\{\{AppId\}\}/ig, appId || '').replace(/\{\{.*?\}\}/ig, '');
+        domain = domain.replace(/\{\{AppId\}\}/ig, appId || '')
+                     .replace(/\{\{Region\}\}/ig, region || '').replace(/\{\{.*?\}\}/ig, '');
         if (!/^[a-zA-Z]+:\/\//.test(domain)) {
             domain = protocol + '//' + domain;
         }
         if (domain.slice(-1) === '/') {
             domain = domain.slice(0, -1);
         }
+    } else if(region){
+        domain = protocol + '//cos.'+ region + '.myqcloud.com';
     } else {
         domain = protocol + '//service.cos.myqcloud.com';
     }
@@ -43,8 +47,10 @@ function getService(params, callback) {
         var buckets = (data && data.ListAllMyBucketsResult && data.ListAllMyBucketsResult.Buckets
             && data.ListAllMyBucketsResult.Buckets.Bucket) || [];
         buckets = util.isArray(buckets) ? buckets : [buckets];
+        var owner = (data && data.ListAllMyBucketsResult && data.ListAllMyBucketsResult.Owner) || {};
         callback(null, {
             Buckets: buckets,
+            Owner: owner,
             statusCode: data.statusCode,
             headers: data.headers,
         });
@@ -693,7 +699,7 @@ function deleteBucketTagging(params, callback) {
 function putBucketLifecycle(params, callback) {
 
     var LifecycleConfiguration = params['LifecycleConfiguration'] || {};
-    var Rules = LifecycleConfiguration.Rules || [];
+    var Rules = LifecycleConfiguration.Rules || params.Rules || [];
     Rules = util.clone(Rules);
     var xml = util.json2xml({LifecycleConfiguration: {Rule: Rules}});
 
@@ -948,8 +954,9 @@ function headObject(params, callback) {
             }
             return callback(err);
         }
-        if (data.headers && data.headers.etag) {
-            data.ETag = data.headers && data.headers.etag;
+        if (data.headers) {
+            var headers = data.headers;
+            data.ETag = headers.etag || headers.Etag || headers.ETag || '';
         }
         callback(null, data);
     });
@@ -1052,8 +1059,10 @@ function getObject(params, callback) {
         }
         var result = {};
         result.Body = data.body;
-        if (data.headers && data.headers.etag) {
-            result.ETag = data.headers && data.headers.etag;
+
+        if (data && data.headers) {
+            var headers = data.headers;
+            result.ETag = headers.etag || headers.Etag || headers.ETag || '';
         }
         util.extend(result, {
             statusCode: data.statusCode,
@@ -1116,7 +1125,11 @@ function putObject(params, callback) {
                 return callback(err);
             }
             onProgress({loaded: FileSize, total: FileSize}, true);
-            if (data && data.headers && data.headers['etag']) {
+
+            if (data && data.headers ) {
+                var headers = data.headers;
+                var ETag = headers.etag || headers.Etag || headers.ETag || '';
+
                 var url = getUrl({
                     ForcePathStyle: self.options.ForcePathStyle,
                     protocol: self.options.Protocol,
@@ -1128,9 +1141,9 @@ function putObject(params, callback) {
                 url = url.substr(url.indexOf('://') + 3);
                 return callback(null, {
                     Location: url,
-                    ETag: data.headers['etag'],
+                    ETag: ETag,
                     statusCode: data.statusCode,
-                    headers: data.headers,
+                    headers: headers,
                 });
             }
             callback(null, data);
@@ -1192,7 +1205,10 @@ function postObject(params, callback) {
         if (err) {
             return callback(err);
         }
-        if (data) {
+        if (data && data.headers) {
+            var headers = data.headers;
+            var ETag = headers.etag || headers.Etag || headers.ETag || '';
+
             var url = getUrl({
                 ForcePathStyle: self.options.ForcePathStyle,
                 protocol: self.options.Protocol,
@@ -1202,9 +1218,12 @@ function postObject(params, callback) {
                 object: params.Key,
                 isLocation: true,
             });
+
             return callback(null, {
                 Location: url,
                 statusCode: data.statusCode,
+                headers: headers,
+                ETag: ETag,
             });
         }
         callback(null, data);
@@ -1406,8 +1425,8 @@ function optionsObject(params, callback) {
  *     @param  {String}  MetadataDirective              是否拷贝元数据，枚举值：Copy, Replaced，默认值Copy。假如标记为Copy，忽略Header中的用户元数据信息直接复制；假如标记为Replaced，按Header信息修改元数据。当目标路径和原路径一致，即用户试图修改元数据时，必须为Replaced
  *     @param  {String}  CopySourceIfModifiedSince      当Object在指定时间后被修改，则执行操作，否则返回412。可与x-cos-copy-source-If-None-Match一起使用，与其他条件联合使用返回冲突。
  *     @param  {String}  CopySourceIfUnmodifiedSince    当Object在指定时间后未被修改，则执行操作，否则返回412。可与x-cos-copy-source-If-Match一起使用，与其他条件联合使用返回冲突。
- *     @param  {String}  CopySourceIfMatch              当Object的Etag和给定一致时，则执行操作，否则返回412。可与x-cos-copy-source-If-Unmodified-Since一起使用，与其他条件联合使用返回冲突。
- *     @param  {String}  CopySourceIfNoneMatch          当Object的Etag和给定不一致时，则执行操作，否则返回412。可与x-cos-copy-source-If-Modified-Since一起使用，与其他条件联合使用返回冲突。
+ *     @param  {String}  CopySourceIfMatch              当Object的ETag和给定一致时，则执行操作，否则返回412。可与x-cos-copy-source-If-Unmodified-Since一起使用，与其他条件联合使用返回冲突。
+ *     @param  {String}  CopySourceIfNoneMatch          当Object的ETag和给定不一致时，则执行操作，否则返回412。可与x-cos-copy-source-If-Modified-Since一起使用，与其他条件联合使用返回冲突。
  *     @param  {String}  StorageClass                   存储级别，枚举值：存储级别，枚举值：Standard, Standard_IA，Archive；默认值：Standard
  *     @param  {String}  CacheControl                   指定所有缓存机制在整个请求/响应链中必须服从的指令。
  *     @param  {String}  ContentDisposition             MIME 协议的扩展，MIME 协议指示 MIME 用户代理如何显示附加的文件
@@ -1679,12 +1698,12 @@ function multipartUpload(params, callback) {
                 if (err) {
                     return callback(err);
                 }
-                data['headers'] = data['headers'] || {};
-                callback(null, {
-                    ETag: data['headers']['etag'] || '',
-                    statusCode: data.statusCode,
-                    headers: data.headers,
-                });
+                if(data && data.headers){
+                    var headers = data.headers;
+                    data.ETag = headers.etag || headers.Etag || headers.ETag || '';
+                }
+
+                callback(null, data);
             });
         });
     });

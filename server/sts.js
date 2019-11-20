@@ -67,6 +67,7 @@ app.all('/sts', function (req, res, next) {
         proxy: config.proxy,
         durationSeconds: config.durationSeconds,
         policy: policy,
+        region:'ap-guangzhou'
     }, function (err, tempKeys) {
         var result = JSON.stringify(err || tempKeys) || '';
         result.startTime = startTime;
