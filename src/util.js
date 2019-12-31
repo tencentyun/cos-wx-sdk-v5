@@ -390,6 +390,8 @@ var apiWrapper = function (apiName, apiFn) {
 };
 
 var throttleOnProgress = function (total, onProgress) {
+
+    if (!onProgress || typeof onProgress !== 'function') return noop;
     var self = this;
     var size0 = 0;
     var size1 = 0;
@@ -398,22 +400,21 @@ var throttleOnProgress = function (total, onProgress) {
     var timer;
 
     function update() {
+        clearTimeout(timer);
         timer = 0;
-        if (onProgress && (typeof onProgress === 'function')) {
-            time1 = Date.now();
-            var speed = Math.max(0, Math.round((size1 - size0) / ((time1 - time0) / 1000) * 100) / 100);
-            var percent;
-            if (size1 === 0 && total === 0) {
-                percent = 1;
-            } else {
-                percent = Math.round(size1 / total * 100) / 100 || 0;
-            }
-            time0 = time1;
-            size0 = size1;
-            try {
-                onProgress({loaded: size1, total: total, speed: speed, percent: percent});
-            } catch (e) {
-            }
+        time1 = Date.now();
+        var speed = Math.max(0, Math.round((size1 - size0) / ((time1 - time0) / 1000) * 100) / 100);
+        var percent;
+        if (size1 === 0 && total === 0) {
+            percent = 1;
+        } else {
+            percent = Math.round(size1 / total * 100) / 100 || 0;
+        }
+        time0 = time1;
+        size0 = size1;
+        try {
+            onProgress({loaded: size1, total: total, speed: speed, percent: percent});
+        } catch (e) {
         }
     }
 
@@ -422,8 +423,7 @@ var throttleOnProgress = function (total, onProgress) {
             size1 = info.loaded;
             total = info.total;
         }
-        if (immediately) {
-            clearTimeout(timer);
+        if (Date.now() - time0 > self.options.ProgressInterval || immediately) {
             update();
         } else {
             if (timer) return;
