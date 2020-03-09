@@ -16,13 +16,14 @@ var getAuthorization = function(options, callback) {
         dataType: 'json',
         success: function(result) {
             var data = result.data;
-            var credentials = data.credentials;
+            var credentials = data && data.credentials;
+            if (!data || !credentials) return console.error('credentials invalid');
             callback({
                 TmpSecretId: credentials.tmpSecretId,
                 TmpSecretKey: credentials.tmpSecretKey,
                 XCosSecurityToken: credentials.sessionToken,
-                StartTime: data.startTime, // 密钥申请时服务器时间，签名用的开始时间，避免客户端时间偏差导致报错
-                ExpiredTime: data.expiredTime, // SDK 在 ExpiredTime 时间前，不会再次调用 getAuthorization
+                StartTime: data.startTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
+                ExpiredTime: data.expiredTime, // 时间戳，单位秒，如：1580000900
             });
         }
     });
@@ -37,13 +38,14 @@ var getAuthorization = function(options, callback) {
     //     dataType: 'json',
     //     success: function(result) {
     //         var data = result.data;
-    //         var credentials = data.credentials;
+    //         var credentials = data && data.credentials;
+    //         if (!data || !credentials) return console.error('credentials invalid');
     //         callback({
     //             TmpSecretId: credentials.tmpSecretId,
     //             TmpSecretKey: credentials.tmpSecretKey,
     //             XCosSecurityToken: credentials.sessionToken,
-    //             StartTime: data.startTime, // 密钥申请时服务器时间，签名用的开始时间，避免客户端时间偏差导致报错
-    //             ExpiredTime: data.expiredTime,
+    //             StartTime: data.startTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
+    //             ExpiredTime: data.expiredTime, // 时间戳，单位秒，如：1580000900
     //             ScopeLimit: true, // 细粒度控制权限需要设为 true，会限制密钥只在相同请求时重复使用
     //         });
     //     }
@@ -64,9 +66,11 @@ var getAuthorization = function(options, callback) {
     //     },
     //     dataType: 'json',
     //     success: function(result) {
+    //         var data = result.data;
+    //         if (!data || !data.authorization) return console.error('authorization invalid');
     //         callback({
-    //             Authorization: result.data,
-    //             // XCosSecurityToken: sessionToken, // 如果使用临时密钥，需要传 sessionToken
+    //             Authorization: data.authorization,
+    //             // XCosSecurityToken: data.sessionToken, // 如果使用临时密钥，需要传 sessionToken
     //         });
     //     }
     // });
