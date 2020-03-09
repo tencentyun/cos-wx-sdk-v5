@@ -2209,6 +2209,7 @@ function getAuthorizationAsync(params, callback) {
     })();
 
     var calcAuthByTmpKey = function () {
+        var KeyTime = StsData.StartTime && StsData.ExpiredTime ? StsData.StartTime + ';' + StsData.ExpiredTime : '';
         var Authorization = util.getAuth({
             SecretId: StsData.TmpSecretId,
             SecretKey: StsData.TmpSecretKey,
@@ -2218,6 +2219,7 @@ function getAuthorizationAsync(params, callback) {
             Headers: headers,
             Expires: params.Expires,
             SystemClockOffset: self.options.SystemClockOffset,
+            KeyTime: KeyTime
         });
         var AuthData = {
             Authorization: Authorization,

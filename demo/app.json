@@ -7,5 +7,6 @@
     "navigationBarBackgroundColor": "#fff",
     "navigationBarTitleText": "COS 小程序 SDK DEMO",
     "navigationBarTextStyle": "black"
-  }
+  },
+  "sitemapLocation": "sitemap.json"
 }

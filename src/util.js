@@ -21,6 +21,7 @@ var getAuth = function (opt) {
 
     var SecretId = opt.SecretId;
     var SecretKey = opt.SecretKey;
+    var KeyTime = opt.KeyTime;
     var method = (opt.method || opt.Method || 'get').toLowerCase();
     var queryParams = clone(opt.Query || opt.params || {});
     var headers = clone(opt.Headers || opt.headers || {});
@@ -72,8 +73,8 @@ var getAuth = function (opt) {
     // 要用到的 Authorization 参数列表
     var qSignAlgorithm = 'sha1';
     var qAk = SecretId;
-    var qSignTime = now + ';' + exp;
-    var qKeyTime = now + ';' + exp;
+    var qSignTime = KeyTime || now + ';' + exp;
+    var qKeyTime = KeyTime || now + ';' + exp;
     var qHeaderList = getObjectKeys(headers).join(';').toLowerCase();
     var qUrlParamList = getObjectKeys(queryParams).join(';').toLowerCase();
 
@@ -183,6 +184,10 @@ function isInArray(arr, item) {
         }
     }
     return flag;
+}
+
+function makeArray(arr) {
+    return isArray(arr) ? arr : [arr];
 }
 
 function each(obj, fn) {
@@ -464,6 +469,7 @@ var util = {
     extend: extend,
     isArray: isArray,
     isInArray: isInArray,
+    makeArray: makeArray,
     each: each,
     map: map,
     filter: filter,
