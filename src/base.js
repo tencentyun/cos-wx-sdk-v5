@@ -1167,6 +1167,11 @@ function putObject(params, callback) {
 function postObject(params, callback) {
     var self = this;
     var headers = {};
+    var filePath = params.FilePath;
+    if (!filePath) {
+        callback({error: 'missing param FilePath'});
+        return;
+    }
 
     headers['Cache-Control'] = params['CacheControl'];
     headers['Content-Disposition'] = params['ContentDisposition'];
@@ -1182,7 +1187,6 @@ function postObject(params, callback) {
     headers['x-cos-grant-full-control'] = params['GrantFullControl'];
     headers['x-cos-storage-class'] = params['StorageClass'];
 
-    var filePath = params.FilePath;
     for (var key in params) {
         if (key.indexOf('x-cos-meta-') > -1) {
             headers[key] = params[key];
