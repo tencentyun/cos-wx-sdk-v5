@@ -156,7 +156,6 @@ Page({
                     }, function (err, data) {
                         if (data) {
                             let albumList = self.data.albumList;
-                            debugger;
                             albumList.unshift('https://' + data.Location);
                             self.setData({ albumList });
                             self.renderAlbumList();

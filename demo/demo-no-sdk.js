@@ -6,7 +6,6 @@ var uploadFile = function () {
     // var prefix = 'https://cos.' + config.Region + '.myqcloud.com/' + config.Bucket + '/'; // 这个是后缀式，签名也要指定 Pathname: '/' + config.Bucket + '/'
     var prefix = 'https://' + config.Bucket + '.cos.' + config.Region + '.myqcloud.com/';
 
-
     // 对更多字符编码的 url encode 格式
     var camSafeUrlEncode = function (str) {
         return encodeURIComponent(str)

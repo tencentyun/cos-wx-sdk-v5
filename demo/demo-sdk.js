@@ -1,4 +1,5 @@
 var COS = require('./lib/cos-wx-sdk-v5');
+var wxfs = wx.getFileSystemManager();
 var config = require('./config');
 
 var TaskId;
@@ -99,6 +100,7 @@ var cos = new COS({
     getAuthorization: getAuthorization,
 });
 
+
 // 回调统一处理函数
 var requestCallback = function(err, data) {
     console.log(err || data);
@@ -123,8 +125,125 @@ var requestCallback = function(err, data) {
     }
 };
 
-// 展示的所有接口
+var mylog = function (msg) {
+    wx.showToast({
+        title: msg,
+        icon: 'success',
+        duration: 3000
+    });
+};
 var dao = {
+    '分片上传': function() {
+        var sliceUploadFile = function (file) {
+            var key = file.name;
+            cos.sliceUploadFile({
+                Bucket: config.Bucket,
+                Region: config.Region,
+                Key: key,
+                FilePath: file.path,
+                FileSize: file.size,
+                onTaskReady: function(taskId) {
+                    TaskId = taskId
+                },
+                onHashProgress: function(info) {
+                    console.log('check hash', JSON.stringify(info));
+                },
+                onProgress: function(info) {
+                    console.log(JSON.stringify(info));
+                }
+            }, requestCallback);
+        };
+        wx.chooseMessageFile({
+            count: 10,
+            type: 'all',
+            success: function(res) {
+                sliceUploadFile(res.tempFiles[0]);
+            }
+        });
+        // wx.chooseVideo({
+        //     sourceType: ['album','camera'],
+        //     maxDuration: 60,
+        //     camera: 'back',
+        //     success(res) {
+        //         var name = res.tempFilePath.replace(/^.*?([^/]{32}\.\w+)$/, '$1');
+        //         sliceUploadFile({
+        //             name: name,
+        //             path: res.tempFilePath,
+        //             size: res.size,
+        //         });
+        //     },
+        //     fail(err) {
+        //         console.log(err);
+        //     }
+        // })
+    },
+    // 上传文件适用于单请求上传大文件
+    'postObject 简单上传': function() {
+        wx.chooseImage({
+            count: 1, // 默认9
+            sizeType: ['original'], // 可以指定是原图还是压缩图，默认二者都有
+            sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有
+            success: function(res) {
+                var file = res.tempFiles[0];
+                cos.postObject({
+                    Bucket: config.Bucket,
+                    Region: config.Region,
+                    Key: '1.png',
+                    FilePath: file.path,
+                    onTaskReady: function(taskId) {
+                        TaskId = taskId
+                    },
+                    onProgress: function(info) {
+                        console.log(JSON.stringify(info));
+                    }
+                }, requestCallback);
+            }
+        })
+    },
+    'putObject 简单上传文件': function(type) {
+        wx.chooseMessageFile({
+            count: 10,
+            type: 'all',
+            success: function(res) {
+                var file = res.tempFiles[0];
+                wxfs.readFile({
+                    filePath: file.path,
+                    success: function (res) {
+                        cos.putObject({
+                            Bucket: config.Bucket,
+                            Region: config.Region,
+                            Key: file.name,
+                            Body: res.data, // 在小程序里，putObject 接口只允许传字符串的内容，不支持 TaskReady 和 onProgress，上传请使用 cos.postObject 接口
+                        }, requestCallback);
+                    },
+                    fail: err => console.error(err),
+                });
+            },
+            fail: err => console.error(err),
+        });
+    },
+    'putObject 上传字符串': function(type) {
+        cos.putObject({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: '1.txt',
+            Body: 'hello world' // 在小程序里，putObject 接口只允许传字符串的内容，不支持 TaskReady 和 onProgress，上传请使用 cos.postObject 接口
+        }, requestCallback);
+    },
+    // 上传文件
+    'putObject base64 转 ArrayBuffer 上传': function() {
+        var base64Url = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAABRFBMVEUAAAAAo/8Ao/8Ao/8Ao/8ApP8Aov8Ao/8Abv8Abv8AyNwAyNwAo/8Ao/8Ao/8Abv8Ao/8AivgAo/8AyNwAbv8Abv8AydwApf8Abf8Ao/8AbP8Ao/8AyNwAydwAbv8AydwApP8Ao/8AyNwAo/8AyNwAydsAyNwAxd8Aov8AyNwAytsAo/8Abv8AyNwAbv8Av+MAo/8AytsAo/8Abv8AyNwAo/8Abv8AqfkAbv8Aov8Abv8AyNwAov8Abv8Ao/8Abv8Ao/8AydwAo/8Ao/8Ate8Ay9oAvOcAof8AveAAyNwAyNwAo/8AyNwAy9kAo/8AyNwAyNwAo/8AqP8Aaf8AyNwAbv0Abv8Abv8AaP8Ao/8Ao/8Ao/8Ao/8Abv8AyNwAgvcAaP8A0dkAo/8AyNwAav8Abv8Ao/8Abv8AyNwAy9sAvOUAtePdkYxjAAAAZnRSTlMAw/co8uAuJAn8+/Tt29R8DAX77+nZz87Jv6CTh3lxTklAPjouJRsL5tjAuLiyr62roaCakYp0XVtOQTMyLiohICAcGRP49vTv5+PJurawq6mnnJuYl4+OiIB7eXVvX15QSDgqHxNcw3l6AAABe0lEQVQ4y82P11oCQQxGIy5FUJpKk6aAhV6k92LvvXedDfj+92ZkYQHxnnMxu3/OfJMEJo6y++baXf5XVw22GVGcsRmq431mQZRYyIzRGgdXi+HwIv86NDBKisrRAtU1hSj9pkZ9jpo/9YKbRsmNNKCHDXI00BxfMMirKNpMcjQ5Lm4/YZArUXyBYUwg40nsdr5jb3LBe25VWpNeKa1GENsEnq52C80z1uW48estiKjb19G54QdCrScnKAU69U3KJ4jzrsBawDWPuOcBqMyRvlcb1Y+zjMUBVsivAKe4gXgEKiVjSh9wlunGMmwiOqFL3RI0cj+nkgp3jC1BELVFkGiZSuvkp3tZZWZ2sKCuDj185PXqfmwI7AAOUctHkJoOeXg3sxA4ES+l7CVvrYHMEmNp8GtR+wycPG0+1RrwWQUzl4CvgQmPP5Ddofl8tWkJVT7J+BIAaxEktrYZoRAUfXgOGYHfcOqw3WF/EdLccz5cMfvUCPb4QwUmhB8+v12HZPCkbgAAAABJRU5ErkJggg==';
+        var m = (/data:image\/(\w+);base64,(.*)/.exec(base64Url) || []);
+        var format = m[1];
+        var bodyData = m[2];
+        var fileBuf = wx.base64ToArrayBuffer(bodyData);
+        cos.putObject({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: '1.' + format,
+            Body: fileBuf,
+        }, requestCallback);
+    },
     getObjectUrl: function() {
         var url = cos.getObjectUrl({
             Bucket: config.Bucket, // Bucket 格式：test-1250000000
@@ -283,14 +402,6 @@ var dao = {
         }, requestCallback);
     },
     // Object
-    putObject: function() {
-        cos.putObject({
-            Bucket: config.Bucket,
-            Region: config.Region,
-            Key: '1.txt',
-            Body: 'hello world' // 在小程序里，putObject 接口只允许传字符串的内容，不支持 TaskReady 和 onProgress，上传请使用 cos.postObject 接口
-        }, requestCallback);
-    },
     getObject: function() {
         cos.getObject({
             Bucket: config.Bucket,
@@ -364,62 +475,6 @@ var dao = {
             Key: '1.copy.txt',
             CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/1.txt',
         }, requestCallback);
-    },
-    // 上传文件
-    postObject: function() {
-        wx.chooseImage({
-            count: 1, // 默认9
-            sizeType: ['original'], // 可以指定是原图还是压缩图，默认二者都有
-            sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有
-            success: function(res) {
-                var file = res.tempFiles[0];
-                cos.postObject({
-                    Bucket: config.Bucket,
-                    Region: config.Region,
-                    Key: '1.png',
-                    FilePath: file.path,
-                    FileSize: file.size,
-                    TaskReady: function(taskId) {
-                        TaskId = taskId
-                    },
-                    onProgress: function(info) {
-                        console.log(JSON.stringify(info));
-                    }
-                }, requestCallback);
-            }
-        })
-    },
-    // 上传文件
-    postObjectByBase64Url: function() {
-        var base64Url = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAABRFBMVEUAAAAAo/8Ao/8Ao/8Ao/8ApP8Aov8Ao/8Abv8Abv8AyNwAyNwAo/8Ao/8Ao/8Abv8Ao/8AivgAo/8AyNwAbv8Abv8AydwApf8Abf8Ao/8AbP8Ao/8AyNwAydwAbv8AydwApP8Ao/8AyNwAo/8AyNwAydsAyNwAxd8Aov8AyNwAytsAo/8Abv8AyNwAbv8Av+MAo/8AytsAo/8Abv8AyNwAo/8Abv8AqfkAbv8Aov8Abv8AyNwAov8Abv8Ao/8Abv8Ao/8AydwAo/8Ao/8Ate8Ay9oAvOcAof8AveAAyNwAyNwAo/8AyNwAy9kAo/8AyNwAyNwAo/8AqP8Aaf8AyNwAbv0Abv8Abv8AaP8Ao/8Ao/8Ao/8Ao/8Abv8AyNwAgvcAaP8A0dkAo/8AyNwAav8Abv8Ao/8Abv8AyNwAy9sAvOUAtePdkYxjAAAAZnRSTlMAw/co8uAuJAn8+/Tt29R8DAX77+nZz87Jv6CTh3lxTklAPjouJRsL5tjAuLiyr62roaCakYp0XVtOQTMyLiohICAcGRP49vTv5+PJurawq6mnnJuYl4+OiIB7eXVvX15QSDgqHxNcw3l6AAABe0lEQVQ4y82P11oCQQxGIy5FUJpKk6aAhV6k92LvvXedDfj+92ZkYQHxnnMxu3/OfJMEJo6y++baXf5XVw22GVGcsRmq431mQZRYyIzRGgdXi+HwIv86NDBKisrRAtU1hSj9pkZ9jpo/9YKbRsmNNKCHDXI00BxfMMirKNpMcjQ5Lm4/YZArUXyBYUwg40nsdr5jb3LBe25VWpNeKa1GENsEnq52C80z1uW48estiKjb19G54QdCrScnKAU69U3KJ4jzrsBawDWPuOcBqMyRvlcb1Y+zjMUBVsivAKe4gXgEKiVjSh9wlunGMmwiOqFL3RI0cj+nkgp3jC1BELVFkGiZSuvkp3tZZWZ2sKCuDj185PXqfmwI7AAOUctHkJoOeXg3sxA4ES+l7CVvrYHMEmNp8GtR+wycPG0+1RrwWQUzl4CvgQmPP5Ddofl8tWkJVT7J+BIAaxEktrYZoRAUfXgOGYHfcOqw3WF/EdLccz5cMfvUCPb4QwUmhB8+v12HZPCkbgAAAABJRU5ErkJggg==';
-        var fsm = wx.getFileSystemManager();
-        var base64src = function (base64data, cb) {
-            var [, format, bodyData] = /data:image\/(\w+);base64,(.*)/.exec(base64data) || [];
-            if (!format) {
-                return (new Error('ERROR_BASE64SRC_PARSE'));
-            }
-            var filePath = `${wx.env.USER_DATA_PATH}/base64.${format}`;
-            var buffer = wx.base64ToArrayBuffer(bodyData);
-            fsm.writeFile({
-                filePath,
-                data: buffer,
-                encoding: 'binary',
-                success() {
-                    cb(filePath);
-                },
-                fail() {
-                    return (new Error('ERROR_BASE64SRC_WRITE'));
-                },
-            });
-        };
-        base64src(base64Url, function (filePath) {
-            cos.postObject({
-                Bucket: config.Bucket,
-                Region: config.Region,
-                Key: '1.png',
-                FilePath: filePath,
-            }, requestCallback);
-        });
     },
     restoreObject: function() {
         cos.restoreObject({
