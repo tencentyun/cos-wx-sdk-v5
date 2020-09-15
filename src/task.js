@@ -1,3 +1,4 @@
+var session = require('./session');
 var util = require('./util');
 
 var originApiMap = {};
@@ -39,58 +40,75 @@ var initTask = function (cos) {
         return t;
     };
 
-    var emitListUpdate = function () {
-        cos.emit('list-update', {list: util.map(queue, formatTask)});
-    };
+    var emitListUpdate = (function () {
+        var timer;
+        var emit = function () {
+            timer = 0;
+            cos.emit('task-list-update', {list: util.map(queue, formatTask)});
+            cos.emit('list-update', {list: util.map(queue, formatTask)});
+        };
+        return function () {
+            if (!timer) timer = setTimeout(emit);
+        }
+    })();
 
     var clearQueue = function () {
-        if (queue.length > cos.options.UploadQueueSize) {
-            var i;
-            for (i = 0;
-                 i < queue.length &&
-                 queue.length > cos.options.UploadQueueSize && // 大于队列才处理
-                 i < nextUploadIndex; // 小于当前操作的 index 才处理
-                 i++) {
-                if (!queue[i] || queue[i].state !== 'waiting') {
-                    queue.splice(i, 1);
-                    nextUploadIndex--;
-                }
+        if (queue.length <= cos.options.UploadQueueSize) return;
+        for (var i = 0;
+             i < nextUploadIndex && // 小于当前操作的 index 才清理
+             i < queue.length && // 大于队列才清理
+             queue.length > cos.options.UploadQueueSize // 如果还太多，才继续清理
+            ;) {
+            var isActive = queue[i].state === 'waiting' || queue[i].state === 'checking' || queue[i].state === 'uploading';
+            if (!queue[i] || !isActive) {
+                tasks[queue[i].id] && (delete tasks[queue[i].id]);
+                queue.splice(i, 1);
+                nextUploadIndex--;
+            } else {
+                i++;
             }
         }
+        emitListUpdate();
     };
 
     var startNextTask = function () {
-        if (nextUploadIndex < queue.length &&
-            uploadingFileCount < cos.options.FileParallelLimit) {
-            var task = queue[nextUploadIndex];
-            if (task.state === 'waiting') {
-                uploadingFileCount++;
-                task.state = 'checking';
-                var apiParams = util.formatParams(task.api, task.params);
-                originApiMap[task.api].call(cos, apiParams, function (err, data) {
-                    if (!cos._isRunningTask(task.id)) return;
-                    if (task.state === 'checking' || task.state === 'uploading') {
-                        task.state = err ? 'error' : 'success';
-                        err && (task.error = err);
-                        uploadingFileCount--;
-                        emitListUpdate();
-                        startNextTask(cos);
-                        task.callback && task.callback(err, data);
-                        if (task.state === 'success') {
-                            if (task.params) {
-                                delete task.params.Body;
-                                delete task.params;
-                            }
-                            delete task.callback;
-                        }
-                    }
-                    clearQueue();
-                });
+        // 检查是否允许增加执行进程
+        if (uploadingFileCount >= cos.options.FileParallelLimit) return;
+        // 跳过不可执行的任务
+        while (queue[nextUploadIndex] && queue[nextUploadIndex].state !== 'waiting') nextUploadIndex++;
+        // 检查是否已遍历结束
+        if (nextUploadIndex >= queue.length) return;
+        // 上传该遍历到的任务
+        var task = queue[nextUploadIndex];
+        nextUploadIndex++;
+        uploadingFileCount++;
+        task.state = 'checking';
+        task.params.onTaskStart && task.params.onTaskStart(formatTask(task));
+        !task.params.UploadData && (task.params.UploadData = {});
+        var apiParams = util.formatParams(task.api, task.params);
+        originApiMap[task.api].call(cos, apiParams, function (err, data) {
+            if (!cos._isRunningTask(task.id)) return;
+            if (task.state === 'checking' || task.state === 'uploading') {
+                task.state = err ? 'error' : 'success';
+                err && (task.error = err);
+                uploadingFileCount--;
                 emitListUpdate();
+                startNextTask();
+                task.callback && task.callback(err, data);
+                if (task.state === 'success') {
+                    if (task.params) {
+                        delete task.params.UploadData;
+                        delete task.params.Body;
+                        delete task.params;
+                    }
+                    delete task.callback;
+                }
             }
-            nextUploadIndex++;
-            startNextTask(cos);
-        }
+            clearQueue();
+        });
+        emitListUpdate();
+        // 异步执行下一个任务
+        setTimeout(startNextTask);
     };
 
     var killTask = function (id, switchToState) {
@@ -107,13 +125,18 @@ var initTask = function (cos) {
             }
             task.state = switchToState;
             cos.emit('inner-kill-task', {TaskId: id, toState: switchToState});
+            try {
+                var UploadId = task && task.params && task.params.UploadData.UploadId
+            } catch(e) {}
+            if (switchToState === 'canceled' && UploadId) session.removeUsing(UploadId)
             emitListUpdate();
             if (running) {
                 uploadingFileCount--;
-                startNextTask(cos);
+                startNextTask();
             }
             if (switchToState === 'canceled') {
                 if (task.params) {
+                    delete task.params.UploadData;
                     delete task.params.Body;
                     delete task.params;
                 }
@@ -132,13 +155,16 @@ var initTask = function (cos) {
 
     cos._addTask = function (api, params, callback, ignoreAddEvent) {
 
+        // 如果小程序版本不支持获取文件分片内容，统一转到 postObject 接口上传
+        if (api === 'sliceUploadFile' && !util.canFileSlice) api = 'postObject';
+
         // 复制参数对象
         params = util.formatParams(api, params);
 
         // 生成 id
         var id = util.uuid();
         params.TaskId = id;
-        params.TaskReady && params.TaskReady(id);
+        params.onTaskReady && params.onTaskReady(id);
 
         var task = {
             // env
@@ -179,15 +205,21 @@ var initTask = function (cos) {
             emitListUpdate();
         };
 
-        (function () {
+        // 异步获取 filesize
+        util.getFileSize(api, params, function (err, size) {
+            // 开始处理上传
+            if (err) { // 如果获取大小出错，不加入队列
+                callback(err);
+                return;
+            }
             // 获取完文件大小再把任务加入队列
             tasks[id] = task;
             queue.push(task);
-            task.size = params.FileSize;
+            task.size = size;
             !ignoreAddEvent && emitListUpdate();
-            startNextTask(cos);
+            startNextTask();
             clearQueue();
-        })();
+        });
         return id;
     };
     cos._isRunningTask = function (id) {
@@ -198,10 +230,10 @@ var initTask = function (cos) {
         return util.map(queue, formatTask);
     };
     cos.cancelTask = function (id) {
-        killTask(id, 'canceled')
+        killTask(id, 'canceled');
     };
     cos.pauseTask = function (id) {
-        killTask(id, 'paused')
+        killTask(id, 'paused');
     };
     cos.restartTask = function (id) {
         var task = tasks[id];
@@ -211,6 +243,9 @@ var initTask = function (cos) {
             nextUploadIndex = Math.min(nextUploadIndex, task.index);
             startNextTask();
         }
+    };
+    cos.isUploadRunning = function () {
+        return uploadingFileCount || nextUploadIndex < queue.length;
     };
 
 };

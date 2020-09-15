@@ -5,6 +5,8 @@ var CryptoJS = require('../lib/crypto');
 var xml2json = require('../lib/xml2json');
 var json2xml = require('../lib/json2xml');
 var base64 = require('../lib/base64');
+var btoa = base64.btoa;
+var wxfs = wx.getFileSystemManager();
 
 function camSafeUrlEncode(str) {
     return encodeURIComponent(str)
@@ -25,7 +27,15 @@ var getAuth = function (opt) {
     var method = (opt.method || opt.Method || 'get').toLowerCase();
     var queryParams = clone(opt.Query || opt.params || {});
     var headers = clone(opt.Headers || opt.headers || {});
-    var pathname = opt.Pathname || '/' + (opt.Key || '');
+
+    var Key = opt.Key || '';
+    var pathname;
+    if (opt.UseRawKey) {
+        pathname = opt.Pathname || opt.pathname || '/' + Key;
+    } else {
+        pathname = opt.Pathname || opt.pathname || Key;
+        pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
+    }
 
     if (!SecretId) return console.error('missing param SecretId');
     if (!SecretKey) return console.error('missing param SecretKey');
@@ -121,41 +131,44 @@ var clearKey = function (obj) {
     return retObj;
 };
 
-var readAsBinaryString = function (blob, callback) {
-    var readFun;
-    var fr = new FileReader();
-    if (FileReader.prototype.readAsBinaryString) {
-        readFun = FileReader.prototype.readAsBinaryString;
-        fr.onload = function () {
-            callback(this.result);
-        };
-    } else if (FileReader.prototype.readAsArrayBuffer) { // 在 ie11 添加 readAsBinaryString 兼容
-        readFun = function (fileData) {
-            var binary = "";
-            var pt = this;
-            var reader = new FileReader();
-            reader.onload = function (e) {
-                var bytes = new Uint8Array(reader.result);
-                var length = bytes.byteLength;
-                for (var i = 0; i < length; i++) {
-                    binary += String.fromCharCode(bytes[i]);
-                }
-                callback(binary);
-            };
-            reader.readAsArrayBuffer(fileData);
-        };
+// 获取文件分片
+var fileSlice = function (FilePath, start, end, callback) {
+    if (FilePath) {
+        wxfs.readFile({
+            filePath: FilePath,
+            position: start,
+            length: end - start,
+            success: function (res) {
+                callback(res.data);
+            },
+            fail: function () {
+                callback(null);
+            },
+        });
     } else {
-        console.error('FileReader not support readAsBinaryString');
+        callback(null);
     }
-    readFun.call(fr, blob);
+};
+
+// 获取文件内容的 MD5
+var getBodyMd5 = function (UploadCheckContentMd5, Body, callback) {
+    callback = callback || noop;
+    if (UploadCheckContentMd5) {
+        if (Body && Body instanceof ArrayBuffer) {
+            util.getFileMd5(Body, function (err, md5) {
+                callback(md5);
+            }, onProgress);
+        } else {
+            callback();
+        }
+    } else {
+        callback();
+    }
 };
 
 // 获取文件 md5 值
-var getFileMd5 = function (blob, callback) {
-    readAsBinaryString(blob, function (content) {
-        var hash = md5(content, true);
-        callback(null, hash);
-    });
+var getFileMd5 = function (body) {
+    return md5(body);
 };
 
 function clone(obj) {
@@ -231,7 +244,7 @@ var binaryBase64 = function (str) {
         char = parseInt(str[i * 2] + str[i * 2 + 1], 16);
         res += String.fromCharCode(char);
     }
-    return base64.btoa(res);
+    return btoa(res);
 };
 var uuid = function () {
     var S4 = function () {
@@ -350,8 +363,8 @@ var apiWrapper = function (apiName, apiFn) {
 
         if (apiName !== 'getService' && apiName !== 'abortUploadTask') {
             // 判断参数是否完整
-            var missingResult;
-            if (missingResult = hasMissingParams(apiName, params)) {
+            var missingResult = hasMissingParams(apiName, params)
+            if (missingResult) {
                 _callback({error: 'missing param ' + missingResult});
                 return;
             }
@@ -386,6 +399,10 @@ var apiWrapper = function (apiName, apiFn) {
                     delete params.AppId;
                 }
             }
+            // 如果 Key 是 / 开头，强制去掉第一个 /
+            if (params.Key && params.Key.substr(0, 1) === '/') {
+                params.Key = params.Key.substr(1);
+            }
         }
         var res = apiFn.call(this, params, _callback);
         if (apiName === 'getAuth' || apiName === 'getObjectUrl') {
@@ -395,8 +412,6 @@ var apiWrapper = function (apiName, apiFn) {
 };
 
 var throttleOnProgress = function (total, onProgress) {
-
-    if (!onProgress || typeof onProgress !== 'function') return noop;
     var self = this;
     var size0 = 0;
     var size1 = 0;
@@ -405,21 +420,22 @@ var throttleOnProgress = function (total, onProgress) {
     var timer;
 
     function update() {
-        clearTimeout(timer);
         timer = 0;
-        time1 = Date.now();
-        var speed = Math.max(0, Math.round((size1 - size0) / ((time1 - time0) / 1000) * 100) / 100);
-        var percent;
-        if (size1 === 0 && total === 0) {
-            percent = 1;
-        } else {
-            percent = Math.round(size1 / total * 100) / 100 || 0;
-        }
-        time0 = time1;
-        size0 = size1;
-        try {
-            onProgress({loaded: size1, total: total, speed: speed, percent: percent});
-        } catch (e) {
+        if (onProgress && (typeof onProgress === 'function')) {
+            time1 = Date.now();
+            var speed = Math.max(0, Math.round((size1 - size0) / ((time1 - time0) / 1000) * 100) / 100);
+            var percent;
+            if (size1 === 0 && total === 0) {
+                percent = 1;
+            } else {
+                percent = Math.floor(size1 / total * 100) / 100 || 0;
+            }
+            time0 = time1;
+            size0 = size1;
+            try {
+                onProgress({loaded: size1, total: total, speed: speed, percent: percent});
+            } catch (e) {
+            }
         }
     }
 
@@ -428,7 +444,8 @@ var throttleOnProgress = function (total, onProgress) {
             size1 = info.loaded;
             total = info.total;
         }
-        if (Date.now() - time0 > self.options.ProgressInterval || immediately) {
+        if (immediately) {
+            clearTimeout(timer);
             update();
         } else {
             if (timer) return;
@@ -437,24 +454,68 @@ var throttleOnProgress = function (total, onProgress) {
     };
 };
 
+
 var getFileSize = function (api, params, callback) {
-    var size;
-    if (typeof params.Body === 'string') {
-        params.Body = new Blob([params.Body], {type: 'text/plain'});
-    }
-    if ((params.Body && (params.Body instanceof Blob || params.Body.toString() === '[object File]' || params.Body.toString() === '[object Blob]'))) {
-        size = params.Body.size;
-    } else {
-        callback({error: 'params body format error, Only allow File|Blob|String.'});
+    if (api === 'postObject') {
+        callback();
         return;
     }
-    params.ContentLength = size;
-    callback(null, size);
+    if (params.FilePath) {
+        wxfs.stat({
+            path: params.FilePath,
+            success: function (res) {
+                var stats = res.stats;
+                params.FileStat = stats;
+                params.FileStat.FilePath = params.FilePath;
+                var size = stats.isDirectory() ? 0 : stats.size;
+                params.ContentLength = size = size || 0;
+                callback(null, size);
+            },
+            fail: function (err) {
+                callback(err);
+            },
+        })
+    } else {
+        callback({error: 'missing param FilePath'});
+    }
 };
 
 var getSkewTime = function (offset) {
     return Date.now() + (offset || 0);
 };
+
+var compareVersion = function (v1, v2) {
+    v1 = v1.split('.')
+    v2 = v2.split('.')
+    const len = Math.max(v1.length, v2.length)
+
+    while (v1.length < len) {
+        v1.push('0')
+    }
+    while (v2.length < len) {
+        v2.push('0')
+    }
+
+    for (let i = 0; i < len; i++) {
+        const num1 = parseInt(v1[i])
+        const num2 = parseInt(v2[i])
+
+        if (num1 > num2) {
+            return 1
+        } else if (num1 < num2) {
+            return -1
+        }
+    }
+
+    return 0
+};
+
+var canFileSlice = (function () {
+    var systemInfo = wx.getSystemInfoSync();
+    var support = compareVersion(systemInfo.SDKVersion, '2.10.0') >= 0 &&
+        compareVersion(systemInfo.version, '7.0.11') >= 0;
+    return support;
+})();
 
 var util = {
     noop: noop,
@@ -464,6 +525,8 @@ var util = {
     json2xml: json2xml,
     md5: md5,
     clearKey: clearKey,
+    fileSlice: fileSlice,
+    getBodyMd5: getBodyMd5,
     getFileMd5: getFileMd5,
     binaryBase64: binaryBase64,
     extend: extend,
@@ -480,37 +543,8 @@ var util = {
     getFileSize: getFileSize,
     getSkewTime: getSkewTime,
     getAuth: getAuth,
-    isBrowser: true,
-};
-
-util.fileSlice = function (file, start, end) {
-    if (file.slice) {
-        return file.slice(start, end);
-    } else if (file.mozSlice) {
-        return file.mozSlice(start, end);
-    } else if (file.webkitSlice) {
-        return file.webkitSlice(start, end);
-    }
-};
-util.getFileUUID = function (file, ChunkSize) {
-    // 如果信息不完整，不获取
-    if (file.name && file.size && file.lastModifiedDate && ChunkSize) {
-        return util.md5([file.name, file.size, file.lastModifiedDate, ChunkSize].join('::'));
-    } else {
-        return null;
-    }
-};
-util.getBodyMd5 = function (UploadCheckContentMd5, Body, callback) {
-    callback = callback || noop;
-    if (UploadCheckContentMd5) {
-        if (typeof Body === 'string') {
-            callback(util.md5(Body, true));
-        } else {
-            callback();
-        }
-    } else {
-        callback();
-    }
+    compareVersion: compareVersion,
+    canFileSlice: canFileSlice,
 };
 
 module.exports = util;

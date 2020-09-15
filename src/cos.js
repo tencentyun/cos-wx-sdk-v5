@@ -13,7 +13,6 @@ var defaultOptions = {
     ChunkRetryTimes: 2,
     FileParallelLimit: 3,
     ChunkParallelLimit: 3,
-    ChunkRetryTimes: 3,
     ChunkSize: 1024 * 1024,
     SliceSize: 1024 * 1024,
     CopyChunkParallelLimit: 20,
@@ -27,8 +26,11 @@ var defaultOptions = {
     Protocol: '',
     CompatibilityMode: false,
     ForcePathStyle: false,
+    Timeout: 0, // 单位毫秒，0 代表不设置超时时间
     CorrectClockSkew: true,
     SystemClockOffset: 0, // 单位毫秒，ms
+    UploadCheckContentMd5: false,
+    UploadIdCacheLimit: 50,
 };
 
 // 对外暴露的类
@@ -54,6 +56,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.7.10';
+COS.version = '0.8.0';
+COS.util = util;
 
 module.exports = COS;

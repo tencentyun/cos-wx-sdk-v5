@@ -26,22 +26,19 @@ var cos = new COS({
     getAuthorization: function (options, callback) {
         // 异步获取签名
         wx.request({
-            url: 'https://example.com/sts.php', // 步骤二提供的签名接口
-            data: {
+            url: 'https://example.com/sts.php', // 步骤二提供的签名接口
+            data: {
                 Method: options.Method,
-                Key: options.Key
+                Key: options.Key
             },
             dataType: 'text',
             success: function (result) {
                 var data = result.data;
-                var credentials = data && data.credentials;
-                if (!data || !credentials) return console.error('credentials invalid');
                 callback({
-                    TmpSecretId: credentials.tmpSecretId,
-                    TmpSecretKey: credentials.tmpSecretKey,
-                    XCosSecurityToken: credentials.sessionToken,
-                    StartTime: data.startTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
-                    ExpiredTime: data.expiredTime, // 时间戳，单位秒，如：1580000900
+                    TmpSecretId: data.credentials && data.credentials.tmpSecretId,
+                    TmpSecretKey: data.credentials && data.credentials.tmpSecretKey,
+                    XCosSecurityToken: data.credentials && data.credentials.sessionToken,
+                    ExpiredTime: data.expiredTime,
                 });
             }
         });
