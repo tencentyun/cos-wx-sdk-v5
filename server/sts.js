@@ -23,19 +23,6 @@ var config = {
 var app = express();
 app.use(bodyParser.json());
 
-// 支持跨域访问
-app.all('*', function (req, res, next) {
-    res.header('Content-Type', 'application/json');
-    res.header('Access-Control-Allow-Origin', 'http://127.0.0.1:88');
-    res.header('Access-Control-Allow-Headers', 'origin,accept,content-type');
-    if (req.method.toUpperCase() === 'OPTIONS') {
-        res.end();
-    } else {
-        next();
-    }
-});
-
-
 // 格式一：临时密钥接口
 app.all('/sts', function (req, res, next) {
 
@@ -67,7 +54,6 @@ app.all('/sts', function (req, res, next) {
         proxy: config.proxy,
         durationSeconds: config.durationSeconds,
         policy: policy,
-        region:'ap-guangzhou'
     }, function (err, tempKeys) {
         var result = JSON.stringify(err || tempKeys) || '';
         result.startTime = startTime;
