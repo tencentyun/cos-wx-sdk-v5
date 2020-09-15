@@ -14,18 +14,17 @@
   },
   "author": "carsonxu",
   "license": "ISC",
+  "dependencies": {
+    "mime": "^2.4.6",
+    "xmldom": "^0.1.31"
+  },
   "devDependencies": {
     "@babel/core": "^7.11.6",
     "@babel/preset-env": "^7.11.5",
     "babel-loader": "^8.1.0",
     "express": "^4.17.1",
+    "qcloud-cos-sts": "^3.0.2",
     "uglifyjs-webpack-plugin": "^2.2.0",
     "webpack": "^4.44.1"
-  },
-  "dependencies": {
-    "mime": "^2.4.6",
-    "qcloud-cos-sts": "^3.0.2",
-    "save-dev": "0.0.1-security",
-    "xmldom": "^0.3.0"
   }
 }
