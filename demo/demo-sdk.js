@@ -133,6 +133,45 @@ var mylog = function (msg) {
     });
 };
 var dao = {
+    test: function () {
+        // 1. 选择文件
+        var startTest = function () {
+            wx.chooseVideo({
+                sourceType: ['album','camera'],
+                maxDuration: 60,
+                camera: 'back',
+                success(res) {
+                    console.log('tempFilePath:', res.tempFilePath);
+                    console.log('fileTotalSize:', res.size);
+                    fileSlice(res.tempFilePath, 0,64);
+                    fileSlice(res.tempFilePath, 100,64);
+                    fileSlice(res.tempFilePath, 0,1024 * 1024);
+                    fileSlice(res.tempFilePath, 100,1024 * 1024);
+                },
+                fail(err) {
+                    console.log(err);
+                }
+            });
+        };
+        // 2. 测试获取文件分片，并确认分片大小
+        var fileSlice = function (filePath, offset, chunkSize) {
+            var wxfs = wx.getFileSystemManager();
+            wxfs.readFile({
+                filePath: filePath,
+                position: 0,
+                length: chunkSize,
+                success: function (res) {
+                    var byteLength = res.data.byteLength;
+                    console.log('offset:', offset, 'chunkSize:', chunkSize, 'res.data.byteLength:', byteLength);
+                },
+                fail: function (err) {
+                    console.log('fileSlice fail:', err);
+                },
+            });
+        };
+        // 开始测试
+        startTest();
+    },
     '分片上传': function() {
         var sliceUploadFile = function (file) {
             var key = file.name;
@@ -142,6 +181,7 @@ var dao = {
                 Key: key,
                 FilePath: file.path,
                 FileSize: file.size,
+                CacheControl: 'max-age=7200',
                 onTaskReady: function(taskId) {
                     TaskId = taskId
                 },
@@ -539,5 +579,7 @@ var dao = {
         console.log('restart');
     },
 };
+
+// require('./test');
 
 module.exports = dao;

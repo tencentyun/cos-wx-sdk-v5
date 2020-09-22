@@ -6,19 +6,24 @@ var expires = 30 * 24 * 3600;
 var cache;
 var timer;
 
-var setItem = function (data) {
+var getCache = function () {
     try {
-        wx.setStorageSync(cacheKey, JSON.stringify(data))
+        var val = JSON.parse(wx.getStorageSync(cacheKey));
+    } catch (e) {
+    }
+    if (!val) val = [];
+    return val;
+};
+var setCache = function () {
+    try {
+        wx.setStorageSync(cacheKey, JSON.stringify(cache))
     } catch (e) {
     }
 };
 
 var init = function () {
-    if (cache) return
-    try {
-        cache = JSON.parse(wx.getStorageSync(cacheKey) || '[]') || [];
-    } catch (e) {
-    }
+    if (cache) return;
+    cache = getCache();
     // 清理太老旧的数据
     var changed = false;
     var now = Math.round(Date.now() / 1000);
@@ -29,14 +34,14 @@ var init = function () {
             changed = true;
         }
     }
-    changed && setItem(cache);
+    changed && setCache();
 };
 
 // 把缓存存到本地
 var save = function () {
     if (timer) return;
     timer = setTimeout(function () {
-        setItem(cache);
+        setCache();
         timer = null;
     }, 400);
 };

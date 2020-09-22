@@ -42,9 +42,7 @@ function getService(params, callback) {
         method: 'GET',
         headers: params.Headers,
     }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
         var buckets = (data && data.ListAllMyBucketsResult && data.ListAllMyBucketsResult.Buckets
             && data.ListAllMyBucketsResult.Buckets.Bucket) || [];
         buckets = util.isArray(buckets) ? buckets : [buckets];
@@ -92,9 +90,7 @@ function putBucket(params, callback) {
         headers: params.Headers,
         body: xml,
     }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
         var url = getUrl({
             protocol: self.options.Protocol,
             domain: self.options.Domain,
@@ -165,9 +161,7 @@ function getBucket(params, callback) {
         headers: params.Headers,
         qs: reqParams,
     }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
         var ListBucketResult = data.ListBucketResult || {};
         var Contents = ListBucketResult.Contents || [];
         var CommonPrefixes = ListBucketResult.CommonPrefixes || [];
@@ -263,9 +257,7 @@ function putBucketAcl(params, callback) {
         action: 'acl',
         body: xml,
     }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
         callback(null, {
             statusCode: data.statusCode,
             headers: data.headers,
@@ -293,9 +285,7 @@ function getBucketAcl(params, callback) {
         headers: params.Headers,
         action: 'acl',
     }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
         var AccessControlPolicy = data.AccessControlPolicy || {};
         var Owner = AccessControlPolicy.Owner || {};
         var Grant = AccessControlPolicy.AccessControlList.Grant || [];
@@ -354,9 +344,7 @@ function putBucketCors(params, callback) {
         action: 'cors',
         headers: headers,
     }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
         callback(null, {
             statusCode: data.statusCode,
             headers: data.headers,
@@ -465,9 +453,7 @@ function getBucketLocation(params, callback) {
         headers: params.Headers,
         action: 'location',
     }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
         callback(null, data);
     });
 }
@@ -1223,9 +1209,7 @@ function getBucketDomain(params, callback) {
         headers: params.Headers,
         action: 'domain',
     }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
 
         var DomainRule = [];
         try {
@@ -1331,9 +1315,7 @@ function getBucketOrigin(params, callback) {
         headers: params.Headers,
         action: 'origin',
     }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
 
         var OriginRule = [];
         try {
@@ -1438,9 +1420,8 @@ function getBucketLogging(params, callback) {
         headers: params.Headers,
         action: 'logging',
     }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
+        delete data.BucketLoggingStatus._xmlns;
         callback(null, {
             BucketLoggingStatus: data.BucketLoggingStatus,
             statusCode: data.statusCode,
@@ -1535,9 +1516,7 @@ function getBucketInventory(params, callback) {
             id: params['Id']
         }
     }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
 
         var InventoryConfiguration = data['InventoryConfiguration'];
         if (InventoryConfiguration && InventoryConfiguration.OptionalFields && InventoryConfiguration.OptionalFields.Field) {
@@ -1588,9 +1567,7 @@ function listBucketInventory(params, callback) {
             'continuation-token': params['ContinuationToken']
         }
     }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
         var ListInventoryConfigurationResult = data['ListInventoryConfigurationResult'];
         var InventoryConfigurations = ListInventoryConfigurationResult.InventoryConfiguration || [];
         InventoryConfigurations = util.isArray(InventoryConfigurations) ? InventoryConfigurations : [InventoryConfigurations];
@@ -1684,9 +1661,7 @@ function putBucketAccelerate(params, callback) {
         action: 'accelerate',
         headers: headers,
     }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
         callback(null, {
             statusCode: data.statusCode,
             headers: data.headers,
@@ -1744,10 +1719,7 @@ function headObject(params, callback) {
             }
             return callback(err);
         }
-        if (data.headers) {
-            var headers = data.headers;
-            data.ETag = headers.etag || headers.Etag || headers.ETag || '';
-        }
+        data.ETag = util.attr(data.headers, 'etag', '');
         callback(null, data);
     });
 }
@@ -1772,9 +1744,7 @@ function listObjectVersions(params, callback) {
         qs: reqParams,
         action: 'versions',
     }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
         var ListVersionsResult = data.ListVersionsResult || {};
         var DeleteMarkers = ListVersionsResult.DeleteMarker || [];
         DeleteMarkers = util.isArray(DeleteMarkers) ? DeleteMarkers : [DeleteMarkers];
@@ -1847,18 +1817,12 @@ function getObject(params, callback) {
             }
             return callback(err);
         }
-        var result = {};
-        result.Body = data.body;
-
-        if (data && data.headers) {
-            var headers = data.headers;
-            result.ETag = headers.etag || headers.Etag || headers.ETag || '';
-        }
-        util.extend(result, {
+        callback(null, {
+            Body: data.body,
+            ETag: util.attr(data.headers, 'etag', ''),
             statusCode: data.statusCode,
             headers: data.headers,
         });
-        callback(null, result);
     });
 
 }
@@ -1919,28 +1883,22 @@ function putObject(params, callback) {
                 return callback(err);
             }
             onProgress({loaded: FileSize, total: FileSize}, true);
-
-            if (data && data.headers ) {
-                var headers = data.headers;
-                var ETag = headers.etag || headers.Etag || headers.ETag || '';
-
-                var url = getUrl({
-                    ForcePathStyle: self.options.ForcePathStyle,
-                    protocol: self.options.Protocol,
-                    domain: self.options.Domain,
-                    bucket: params.Bucket,
-                    region: params.Region,
-                    object: params.Key,
-                });
-                url = url.substr(url.indexOf('://') + 3);
-                return callback(null, {
-                    Location: url,
-                    ETag: ETag,
-                    statusCode: data.statusCode,
-                    headers: headers,
-                });
-            }
-            callback(null, data);
+            var url = getUrl({
+                ForcePathStyle: self.options.ForcePathStyle,
+                protocol: self.options.Protocol,
+                domain: self.options.Domain,
+                bucket: params.Bucket,
+                region: params.Region,
+                object: params.Key,
+            });
+            url = url.substr(url.indexOf('://') + 3);
+            var result = {
+                Location: url,
+                ETag: util.attr(data.headers, 'etag', ''),
+                statusCode: data.statusCode,
+                headers: data.headers,
+            };
+            callback(null, result);
         });
     });
 }
@@ -2004,9 +1962,7 @@ function postObject(params, callback) {
         onProgress: onProgress,
     }, function (err, data) {
         onProgress(null, true);
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
         if (data && data.headers) {
             var headers = data.headers;
             var ETag = headers.etag || headers.Etag || headers.ETag || '';
@@ -2091,9 +2047,7 @@ function getObjectAcl(params, callback) {
         headers: params.Headers,
         action: 'acl',
     }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
         var AccessControlPolicy = data.AccessControlPolicy || {};
         var Owner = AccessControlPolicy.Owner || {};
         var Grant = AccessControlPolicy.AccessControlList && AccessControlPolicy.AccessControlList.Grant || [];
@@ -2156,9 +2110,7 @@ function putObjectAcl(params, callback) {
         headers: headers,
         body: xml,
     }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
         callback(null, {
             statusCode: data.statusCode,
             headers: data.headers,
@@ -2277,9 +2229,7 @@ function putObjectCopy(params, callback) {
         VersionId: params.VersionId,
         headers: params.Headers,
     }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
         var result = util.clone(data.CopyObjectResult || {});
         util.extend(result, {
             statusCode: data.statusCode,
@@ -2325,9 +2275,7 @@ function uploadPartCopy(params, callback) {
         },
         headers: params.Headers,
     }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
         var result = util.clone(data.CopyPartResult || {});
         util.extend(result, {
             statusCode: data.statusCode,
@@ -2366,9 +2314,7 @@ function deleteMultipleObject(params, callback) {
         action: 'delete',
         headers: headers,
     }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
         var DeleteResult = data.DeleteResult || {};
         var Deleted = DeleteResult.Deleted || [];
         var Errors = DeleteResult.Error || [];
@@ -2570,13 +2516,14 @@ function deleteObjectTagging(params, callback) {
  */
 function multipartInit(params, callback) {
 
+    var self = this;
     var headers = params.Headers;
 
     // 特殊处理 Cache-Control、Content-Type
     if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
     if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = mime.getType(params.Key) || 'application/octet-stream';
 
-    submitRequest.call(this, {
+    submitRequest.call(self, {
         Action: 'name/cos:InitiateMultipartUpload',
         method: 'POST',
         Bucket: params.Bucket,
@@ -2585,9 +2532,7 @@ function multipartInit(params, callback) {
         action: 'uploads',
         headers: params.Headers,
     }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
         data = util.clone(data || {});
         if (data && data.InitiateMultipartUploadResult) {
             return callback(null, util.extend(data.InitiateMultipartUploadResult, {
@@ -2636,14 +2581,12 @@ function multipartUpload(params, callback) {
                 onProgress: params.onProgress,
                 body: params.Body || null
             }, function (err, data) {
-                if (err) {
-                    return callback(err);
-                }
-                if(data && data.headers){
-                    var headers = data.headers;
-                    data.ETag = headers.etag || headers.Etag || headers.ETag || '';
-                }
-                callback(null, data);
+                if (err) return callback(err);
+                callback(null, {
+                    ETag: util.attr(data.headers, 'etag', {}),
+                    statusCode: data.statusCode,
+                    headers: data.headers,
+                });
             });
         });
     });
@@ -2696,9 +2639,7 @@ function multipartComplete(params, callback) {
         body: xml,
         headers: headers,
     }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
         var url = getUrl({
             ForcePathStyle: self.options.ForcePathStyle,
             protocol: self.options.Protocol,
@@ -2758,9 +2699,7 @@ function multipartList(params, callback) {
         qs: reqParams,
         action: 'uploads',
     }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
 
         if (data && data.ListMultipartUploadsResult) {
             var Upload = data.ListMultipartUploadsResult.Upload || [];
@@ -2814,9 +2753,7 @@ function multipartListPart(params, callback) {
         headers: params.Headers,
         qs: reqParams,
     }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
         var ListPartsResult = data.ListPartsResult || {};
         var Part = ListPartsResult.Part || [];
         Part = util.isArray(Part) ? Part : [Part];
@@ -2855,9 +2792,7 @@ function multipartAbort(params, callback) {
         headers: params.Headers,
         qs: reqParams,
     }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
         callback(null, {
             statusCode: data.statusCode,
             headers: data.headers,
@@ -3389,6 +3324,7 @@ function _submitRequest(params, callback) {
     self.options.ForcePathStyle && (opt.pathStyle = self.options.ForcePathStyle);
     self.emit('before-send', opt);
     var sender = REQUEST(opt, function (err, response, body) {
+        if (err === 'abort') return;
 
         // 返回内容添加 状态码 和 headers
         var hasReturned;
@@ -3398,12 +3334,8 @@ function _submitRequest(params, callback) {
             hasReturned = true;
             var attrs = {};
             response && response.statusCode && (attrs.statusCode = response.statusCode);
-            if (response && response.headers) {
-                attrs.headers = {};
-                util.each(response.headers, function (val, key) {
-                    attrs.headers[key.toLowerCase()] = val;
-                });
-            }
+            response && response.headers && (attrs.headers = response.headers);
+
             if (err) {
                 err = util.extend(err || {}, attrs);
                 callback(err, null);
@@ -3420,11 +3352,17 @@ function _submitRequest(params, callback) {
             return;
         }
 
+        // 不对 body 进行转换，body 直接挂载返回
         var jsonRes;
-        try {
-            jsonRes = util.xml2json(body) || {};
-        } catch (e) {
-            jsonRes = body || {};
+        if (rawBody) {
+            jsonRes = {};
+            jsonRes.body = body;
+        } else {
+            try {
+                jsonRes = body && body.indexOf('<') > -1 && body.indexOf('>') > -1 && util.xml2json(body) || {};
+            } catch (e) {
+                jsonRes = body || {};
+            }
         }
 
         // 请求返回码不为 200
@@ -3433,12 +3371,6 @@ function _submitRequest(params, callback) {
         if (!statusSuccess) {
             cb({error: jsonRes.Error || jsonRes});
             return;
-        }
-
-        // 不对 body 进行转换，body 直接挂载返回
-        if (rawBody) {
-            jsonRes = {};
-            jsonRes.body = body;
         }
 
         if (jsonRes.Error) {
@@ -3540,6 +3472,7 @@ var API_MAP = {
 
 module.exports.init = function (COS, task) {
     task.transferToTaskMethod(API_MAP, 'postObject');
+    task.transferToTaskMethod(API_MAP, 'putObject');
     util.each(API_MAP, function (fn, apiName) {
         COS.prototype[apiName] = util.apiWrapper(apiName, fn);
     });

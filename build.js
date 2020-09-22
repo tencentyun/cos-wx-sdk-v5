@@ -32,7 +32,6 @@ var replaceDevCode = function (list) {
 replaceVersion();
 
 var config = {
-    mode: 'development',
     watch: true,
     entry: path.resolve(__dirname, './index.js'),
     output: {
@@ -47,12 +46,6 @@ var config = {
             {
                 test: /\.m?js$/,
                 exclude: /(node_modules|bower_components)/,
-                use: {
-                    loader: 'babel-loader',
-                    options: {
-                        presets: ['@babel/preset-env']
-                    }
-                }
             }
         ]
     },
@@ -72,12 +65,27 @@ if (process.env.NODE_ENV === 'production') {
         'demo-album/config.js',
         'demo-album/project.config.json',
     ]);
-    config.mode = 'production';
     config.watch = false;
     config.output.filename = 'cos-wx-sdk-v5.js';
-    config.optimization = {
-        minimize: true,
-    };
+    config.plugins = (config.plugins || []).concat([
+        new webpack.DefinePlugin({
+            'process.env': {
+                NODE_ENV: '"production"'
+            }
+        }),
+        new webpack.optimize.UglifyJsPlugin({
+            sourceMap: true,
+            output: {
+                ascii_only: true,
+            },
+            compress: {
+                warnings: false,
+            },
+        }),
+        new webpack.LoaderOptionsPlugin({
+            minimize: true
+        }),
+    ]);
 }
 
 webpack(config, function (err, stats) {
