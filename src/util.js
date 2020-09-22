@@ -539,22 +539,6 @@ var canFileSlice = (function () {
     var support = compareVersion(systemInfo.SDKVersion, '2.10.0') >= 0 &&
         (compareVersion(systemInfo.version, '7.0.11') >= 0);
     var needWarning = !support && systemInfo.platform === "devtools";
-    if (!support) {
-        var tmpPath = wx.env.USER_DATA_PATH + '/tmp-cos-wx-sdk-v5-check-slice.txt';
-        var chunk = '';
-        try {
-            wxfs.writeFileSync(tmpPath, '123');
-        } catch (e) {
-            console.error(e)
-        }
-        try {
-            chunk = wxfs.readFileSync(tmpPath, 'utf-8', 1, 1);
-            wxfs.unlinkSync(tmpPath);
-        } catch (e) {
-            console.error(e)
-        }
-        support = chunk === '2';
-    }
     return function () {
         if (needWarning) console.warn('当前小程序版本小于 2.10.0，不支持分片上传，请更新软件。');
         needWarning = false;
