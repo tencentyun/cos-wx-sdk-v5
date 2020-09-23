@@ -1,7 +1,7 @@
 var COS = require('./lib/cos-wx-sdk-v5');
 var wxfs = wx.getFileSystemManager();
 var config = require('./config');
-config.Uin = '459452372';
+config.Uin = '10001';
 
 var util = {
     createFile: function (options, filePath) {

@@ -536,8 +536,7 @@ var compareVersion = function (v1, v2) {
 
 var canFileSlice = (function () {
     var systemInfo = wx.getSystemInfoSync();
-    var support = compareVersion(systemInfo.SDKVersion, '2.10.0') >= 0 &&
-        (compareVersion(systemInfo.version, '7.0.11') >= 0);
+    var support = compareVersion(systemInfo.SDKVersion, '2.10.0') >= 0;
     var needWarning = !support && systemInfo.platform === "devtools";
     return function () {
         if (needWarning) console.warn('当前小程序版本小于 2.10.0，不支持分片上传，请更新软件。');
