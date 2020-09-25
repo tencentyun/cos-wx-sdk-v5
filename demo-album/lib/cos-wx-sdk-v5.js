@@ -2333,7 +2333,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.0.2';
+COS.version = '1.0.3';
 
 module.exports = COS;
 
@@ -8840,6 +8840,7 @@ var request = function (params, callback) {
             url: url,
             method: method,
             name: 'file',
+            header: headers,
             filePath: filePath,
             formData: formData,
             timeout: params.timeout,
