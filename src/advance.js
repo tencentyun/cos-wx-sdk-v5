@@ -286,6 +286,7 @@ function getUploadIdAndPartList(params, callback) {
             Region: Region,
             Key: Key,
             Headers: util.clone(params.Headers),
+            Query: util.clone(params.Query),
             StorageClass: StorageClass,
         }, params);
         self.multipartInit(_params, function (err, data) {

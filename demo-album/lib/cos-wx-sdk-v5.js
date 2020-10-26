@@ -2333,7 +2333,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.0.3';
+COS.version = '1.0.4';
 
 module.exports = COS;
 
@@ -7077,7 +7077,7 @@ function listObjectVersions(params, callback) {
  * @param  {Object}  data                                   为对应的 object 数据，包括 body 和 headers
  */
 function getObject(params, callback) {
-    var reqParams = {};
+    var reqParams = params.Query || {};
 
     reqParams['response-content-type'] = params['ResponseContentType'];
     reqParams['response-content-language'] = params['ResponseContentLanguage'];
@@ -7165,6 +7165,7 @@ function putObject(params, callback) {
             Region: params.Region,
             Key: params.Key,
             headers: params.Headers,
+            qs: params.Query,
             body: params.Body,
             onProgress: onProgress,
         }, function (err, data) {
@@ -7248,6 +7249,7 @@ function postObject(params, callback) {
         Region: params.Region,
         Key: params.Key,
         headers: headers,
+        qs: params.Query,
         filePath: filePath,
         onProgress: onProgress,
     }, function (err, data) {
@@ -7821,6 +7823,7 @@ function multipartInit(params, callback) {
         Key: params.Key,
         action: 'uploads',
         headers: params.Headers,
+        qs: params.Query,
     }, function (err, data) {
         if (err) return callback(err);
         data = util.clone(data || {});
@@ -9303,6 +9306,7 @@ function getUploadIdAndPartList(params, callback) {
             Region: Region,
             Key: Key,
             Headers: util.clone(params.Headers),
+            Query: util.clone(params.Query),
             StorageClass: StorageClass,
         }, params);
         self.multipartInit(_params, function (err, data) {

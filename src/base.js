@@ -1787,7 +1787,7 @@ function listObjectVersions(params, callback) {
  * @param  {Object}  data                                   为对应的 object 数据，包括 body 和 headers
  */
 function getObject(params, callback) {
-    var reqParams = {};
+    var reqParams = params.Query || {};
 
     reqParams['response-content-type'] = params['ResponseContentType'];
     reqParams['response-content-language'] = params['ResponseContentLanguage'];
@@ -1875,6 +1875,7 @@ function putObject(params, callback) {
             Region: params.Region,
             Key: params.Key,
             headers: params.Headers,
+            qs: params.Query,
             body: params.Body,
             onProgress: onProgress,
         }, function (err, data) {
@@ -1958,6 +1959,7 @@ function postObject(params, callback) {
         Region: params.Region,
         Key: params.Key,
         headers: headers,
+        qs: params.Query,
         filePath: filePath,
         onProgress: onProgress,
     }, function (err, data) {
@@ -2531,6 +2533,7 @@ function multipartInit(params, callback) {
         Key: params.Key,
         action: 'uploads',
         headers: params.Headers,
+        qs: params.Query,
     }, function (err, data) {
         if (err) return callback(err);
         data = util.clone(data || {});

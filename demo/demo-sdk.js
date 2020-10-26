@@ -95,7 +95,7 @@ var getAuthorization = function(options, callback) {
 };
 
 var cos = new COS({
-    // path style 指正式请求时，Bucket 是在 path 里，这样用途相同园区多个 bucket 只需要配置一个园区域名
+    // path style 指正式请求时，Bucket 是在 path 里，这样用相同园区多个 bucket 只需要配置一个园区域名
     // ForcePathStyle: true,
     getAuthorization: getAuthorization,
 });
@@ -143,6 +143,12 @@ var dao = {
                 FilePath: file.path,
                 FileSize: file.size,
                 CacheControl: 'max-age=7200',
+                Headers: {
+                    aa: 123,
+                },
+                Query: {
+                    bb: 123,
+                },
                 onTaskReady: function(taskId) {
                     TaskId = taskId
                 },
@@ -192,7 +198,10 @@ var dao = {
                     Key: '1.png',
                     FilePath: file.path,
                     Headers: {
-                        test: 123,
+                        aa: 123,
+                    },
+                    Query: {
+                        bb: 123,
                     },
                     onTaskReady: function(taskId) {
                         TaskId = taskId
@@ -231,7 +240,13 @@ var dao = {
             Bucket: config.Bucket,
             Region: config.Region,
             Key: '1.txt',
-            Body: 'hello world' // 在小程序里，putObject 接口只允许传字符串的内容，不支持 TaskReady 和 onProgress，上传请使用 cos.postObject 接口
+            Body: 'hello world', // 在小程序里，putObject 接口只允许传字符串的内容，不支持 TaskReady 和 onProgress，上传请使用 cos.postObject 接口
+            Headers: {
+                aa: 123,
+            },
+            Query: {
+                bb: 123,
+            },
         }, requestCallback);
     },
     // 上传文件

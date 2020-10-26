@@ -19,7 +19,7 @@
     "uploadWithSourceMap": true,
     "compileHotReLoad": false,
     "useMultiFrameRuntime": false,
-    "useApiHook": false,
+    "useApiHook": true,
     "babelSetting": {
       "ignore": [],
       "disablePlugins": [],
@@ -33,21 +33,18 @@
   },
   "compileType": "miniprogram",
   "libVersion": "1.6.0",
-  "appid": "wx0000000000000000",
+  "appid": "wx824a4317ff5271ed",
   "projectname": "demo",
   "simulatorType": "wechat",
   "simulatorPluginLibVersion": {},
   "condition": {
     "search": {
-      "current": -1,
       "list": []
     },
     "conversation": {
-      "current": -1,
       "list": []
     },
     "miniprogram": {
-      "current": -1,
       "list": []
     }
   }
