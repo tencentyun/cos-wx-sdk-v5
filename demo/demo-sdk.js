@@ -197,12 +197,6 @@ var dao = {
                     Region: config.Region,
                     Key: '1.png',
                     FilePath: file.path,
-                    Headers: {
-                        aa: 123,
-                    },
-                    Query: {
-                        bb: 123,
-                    },
                     onTaskReady: function(taskId) {
                         TaskId = taskId
                     },
