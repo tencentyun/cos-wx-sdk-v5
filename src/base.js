@@ -1893,13 +1893,9 @@ function putObject(params, callback) {
                 object: params.Key,
             });
             url = url.substr(url.indexOf('://') + 3);
-            var result = {
-                Location: url,
-                ETag: util.attr(data.headers, 'etag', ''),
-                statusCode: data.statusCode,
-                headers: data.headers,
-            };
-            callback(null, result);
+            data.Location = url;
+            data.ETag = util.attr(data.headers, 'etag', '');
+            callback(null, data);
         });
     });
 }
