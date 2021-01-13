@@ -511,7 +511,7 @@ var getSkewTime = function (offset) {
 var compareVersion = function (v1, v2) {
     v1 = v1.split('.')
     v2 = v2.split('.')
-    const len = Math.max(v1.length, v2.length)
+    var len = Math.max(v1.length, v2.length)
 
     while (v1.length < len) {
         v1.push('0')
@@ -521,8 +521,8 @@ var compareVersion = function (v1, v2) {
     }
 
     for (var i = 0; i < len; i++) {
-        const num1 = parseInt(v1[i])
-        const num2 = parseInt(v2[i])
+        var num1 = parseInt(v1[i])
+        var num2 = parseInt(v2[i])
 
         if (num1 > num2) {
             return 1
