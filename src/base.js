@@ -1964,14 +1964,14 @@ function postObject(params, callback) {
         if (data && data.headers) {
             var headers = data.headers;
             var ETag = headers.etag || headers.Etag || headers.ETag || '';
-
+            var filename = filePath.substr(filePath.lastIndexOf('/') + 1);
             var url = getUrl({
                 ForcePathStyle: self.options.ForcePathStyle,
                 protocol: self.options.Protocol,
                 domain: self.options.Domain,
                 bucket: params.Bucket,
                 region: params.Region,
-                object: params.Key,
+                object: params.Key.replace(/\$\{filename\}/g, filename),
                 isLocation: true,
             });
 
