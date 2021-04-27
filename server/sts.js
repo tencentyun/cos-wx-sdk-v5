@@ -5,25 +5,26 @@ var express = require('express');
 
 // 配置参数
 var config = {
-    secretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    secretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    proxy: '',
+    secretId: process.env.SecretId,
+    secretKey: process.env.SecretKey,
+    proxy: process.env.Proxy,
     durationSeconds: 1800,
-    bucket: 'test-1250000000',
-    region: 'ap-guangzhou',
-    allowPrefix: '_ALLOW_DIR_/*',
+    bucket: process.env.Bucket,
+    region: process.env.Region,
+    allowPrefix: '*',
     // 简单上传和分片，需要以下的权限，其他权限列表请看 https://cloud.tencent.com/document/product/436/14048
     allowActions: [
         // 所有 action 请看文档 https://cloud.tencent.com/document/product/436/31923
         // 简单上传
-        'name/cos:PutObject',
-        'name/cos:PostObject',
-        // 分片上传
-        'name/cos:InitiateMultipartUpload',
-        'name/cos:ListMultipartUploads',
-        'name/cos:ListParts',
-        'name/cos:UploadPart',
-        'name/cos:CompleteMultipartUpload'
+        '*'
+        // 'name/cos:PutObject',
+        // 'name/cos:PostObject',
+        // // 分片上传
+        // 'name/cos:InitiateMultipartUpload',
+        // 'name/cos:ListMultipartUploads',
+        // 'name/cos:ListParts',
+        // 'name/cos:UploadPart',
+        // 'name/cos:CompleteMultipartUpload'
     ],
 };
 
