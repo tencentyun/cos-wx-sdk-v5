@@ -5,12 +5,14 @@ var express = require('express');
 
 // 配置参数
 var config = {
-    secretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    secretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    proxy: '',
+    secretId: process.env.SecretId,
+    secretKey: process.env.SecretKey,
+    proxy: process.env.Proxy,
     durationSeconds: 1800,
-    bucket: 'test-1250000000',
-    region: 'ap-guangzhou',
+    bucket: process.env.Bucket,
+    region: process.env.Region,
+    // 允许操作（上传）的对象前缀，可以根据自己网站的用户登录态判断允许上传的目录，例子： user1/* 或者 * 或者a.jpg
+    // 请注意当使用 * 时，可能存在安全风险，详情请参阅：https://cloud.tencent.com/document/product/436/40265
     allowPrefix: '_ALLOW_DIR_/*',
     // 简单上传和分片，需要以下的权限，其他权限列表请看 https://cloud.tencent.com/document/product/436/14048
     allowActions: [

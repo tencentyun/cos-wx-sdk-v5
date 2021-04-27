@@ -31,6 +31,7 @@ var defaultOptions = {
     SystemClockOffset: 0, // 单位毫秒，ms
     UploadCheckContentMd5: false,
     UploadIdCacheLimit: 50,
+    UseAccelerate: false,
 };
 
 // 对外暴露的类

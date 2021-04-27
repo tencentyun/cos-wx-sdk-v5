@@ -98,6 +98,8 @@ var cos = new COS({
     // path style 指正式请求时，Bucket 是在 path 里，这样用相同园区多个 bucket 只需要配置一个园区域名
     // ForcePathStyle: true,
     getAuthorization: getAuthorization,
+    // 是否使用全球加速域名。开启该配置后仅以下接口支持操作：putObject、getObject、headObject、optionsObject、multipartInit、multipartListPart、multipartUpload、multipartAbort、multipartComplete、multipartList、sliceUploadFile、uploadFiles
+    // UseAccelerate: true,
 });
 
 
@@ -133,6 +135,22 @@ var mylog = function (msg) {
     });
 };
 var dao = {
+    'request': function(){
+        // 对云上数据进行图片处理
+        cos.request({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: '1.png',
+            Method: 'POST',
+            Action: 'image_process',
+            Headers: {
+                // 通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
+                'Pic-Operations': '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/thumbnail/200x/"}]}'
+            },
+        }, (err, data) => {
+            console.log(err || data)
+        });
+    },
     '分片上传': function() {
         var sliceUploadFile = function (file) {
             var key = file.name;
@@ -221,6 +239,10 @@ var dao = {
                             Region: config.Region,
                             Key: file.name,
                             Body: res.data, // 在小程序里，putObject 接口只允许传字符串的内容，不支持 TaskReady 和 onProgress，上传请使用 cos.postObject 接口
+                            Headers: {
+                                // 万象持久化接口，上传时持久化。例子：通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
+                                // 'Pic-Operations': '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/thumbnail/200x/"}]}'
+                            },
                         }, requestCallback);
                     },
                     fail: err => console.error(err),
@@ -419,7 +441,9 @@ var dao = {
         cos.getObject({
             Bucket: config.Bucket,
             Region: config.Region,
-            Key: '1.txt'
+            Key: '1.png',
+            // 下载时使用图片处理
+            // QueryString: `imageMogr2/thumbnail/200x/`,
         }, requestCallback);
     },
     headObject: function() {
