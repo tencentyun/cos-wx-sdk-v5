@@ -151,6 +151,40 @@ var dao = {
             console.log(err || data)
         });
     },
+    'uploadFiles 批量上传': function() {
+        var uploadFiles = function(files) {
+            const fileList = files.map(function(file) {
+                return Object.assign(file, {
+                    FilePath: file.path,
+                    Bucket: 'wx-sdk-1300555317',
+                    Region: 'ap-chengdu',
+                    Key: file.name,
+                });
+            });
+            cos.uploadFiles({
+                files: fileList,
+                SliceSize: 1024 * 1024,
+                onProgress: function (info) {
+                    var percent = parseInt(info.percent * 10000) / 100;
+                    var speed = parseInt(info.speed / 1024 / 1024 * 100) / 100;
+                    console.log('进度：' + percent + '%; 速度：' + speed + 'Mb/s;');
+                },
+                onFileFinish: function (err, data, options) {
+                    console.log(options.Key + '上传' + (err ? '失败' : '完成'));
+                },
+            }, function (err, data) {
+                console.log(err || data);
+            });
+        }
+        wx.chooseMessageFile({
+            count: 10,
+            type: 'all',
+            success: function(res) {
+                uploadFiles(res.tempFiles);
+            }
+        });
+        
+    },
     '分片上传': function() {
         var sliceUploadFile = function (file) {
             var key = file.name;
