@@ -40,10 +40,10 @@ function sliceUploadFile(params, callback) {
 
     // 上传分块完成，开始 uploadSliceComplete 操作
     ep.on('upload_complete', function (UploadCompleteData) {
-      var _UploadCompleteData = util.extend({
-        UploadId: params.UploadData.UploadId || ''
-      }, UploadCompleteData);
-      callback(null, _UploadCompleteData);
+        var _UploadCompleteData = util.extend({
+          UploadId: params.UploadData.UploadId || ''
+        }, UploadCompleteData);
+        callback(null, _UploadCompleteData);
     });
 
     // 上传分块完成，开始 uploadSliceComplete 操作
