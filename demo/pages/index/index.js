@@ -4,14 +4,26 @@ var demoNoSdk = require('../../demo-no-sdk');
 
 var option = {
     data: {
-        list: []
+        listMap: {},
+        title: {
+            toolsDao: '工具函数',
+            bucketDao: '存储桶操作',
+            objectDao: '对象操作',
+            advanceObjectDao: '高级操作',
+            ciObjectDao: '数据万象示例',
+        },
     },
 };
 
 for (var key in demoSdk) {
     if (demoSdk.hasOwnProperty(key)) {
-        option.data.list.push(key);
-        option[key] = demoSdk[key];
+        var sublist = [];
+        var subDemoSdk = demoSdk[key];
+        for (var subkey in subDemoSdk){
+            sublist.push(subkey);
+            option[subkey] = subDemoSdk[subkey];
+        }
+        option.data.listMap[key] = sublist;
     }
 }
 
