@@ -2338,7 +2338,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.0.8';
+COS.version = '1.0.9';
 
 module.exports = COS;
 
@@ -9884,6 +9884,48 @@ function abortUploadTaskArray(params, callback) {
     });
 }
 
+// 高级上传
+function uploadFile(params, callback) {
+  var self = this;
+
+  // 判断多大的文件使用分片上传
+  var SliceSize = params.SliceSize === undefined ? self.options.SliceSize : params.SliceSize;
+
+  var taskList = [];
+  // util.each(params.files, function (fileParams, index) {
+  var FileSize = params.FileSize;
+  var fileInfo = {TaskId: ''};
+
+  // 整理 option，用于返回给回调
+  util.each(params, function (v, k) {
+      if (typeof v !== 'object' && typeof v !== 'function') {
+          fileInfo[k] = v;
+      }
+  });
+
+  // 处理文件 TaskReady
+  var _onTaskReady = params.onTaskReady;
+  params.onTaskReady = function (tid) {
+      fileInfo.TaskId = tid;
+      _onTaskReady && _onTaskReady(tid);
+  };
+
+  // 处理文件完成
+  var _onFileFinish = params.onFileFinish;
+  var onFileFinish = function (err, data) {
+      _onFileFinish && _onFileFinish(err, data, fileInfo);
+      callback && callback(err, data);
+  };
+
+  // 添加上传任务
+  var api = FileSize > SliceSize ? 'sliceUploadFile' : 'postObject';
+  taskList.push({
+      api: api,
+      params: params,
+      callback: onFileFinish,
+  });
+  self._addTasks(taskList);
+}
 
 // 批量上传文件
 function uploadFiles(params, callback) {
@@ -10217,6 +10259,7 @@ function copySliceItem(params, callback) {
 var API_MAP = {
     sliceUploadFile: sliceUploadFile,
     abortUploadTask: abortUploadTask,
+    uploadFile: uploadFile,
     uploadFiles: uploadFiles,
     sliceCopyFile: sliceCopyFile,
 };

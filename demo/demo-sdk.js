@@ -151,6 +151,67 @@ var dao = {
             console.log(err || data)
         });
     },
+    'uploadFile 高级上传': function() {
+        var uploadFile = function(file) {
+            cos.uploadFile({
+                Bucket: config.Bucket,
+                Region: config.Region,
+                Key: file.name,
+                FilePath: file.path,
+                SliceSize: 1024 * 1024 * 5, // 文件大于5mb自动使用分块上传
+                onProgress: function (info) {
+                    var percent = parseInt(info.percent * 10000) / 100;
+                    var speed = parseInt(info.speed / 1024 / 1024 * 100) / 100;
+                    console.log('进度：' + percent + '%; 速度：' + speed + 'Mb/s;');
+                },
+                onFileFinish: function (err, data, options) {
+                    console.log(options.Key + '上传' + (err ? '失败' : '完成'));
+                },
+            }, function (err, data) {
+                console.log(err || data);
+            });
+        }
+        wx.chooseMessageFile({
+            count: 10,
+            type: 'all',
+            success: function(res) {
+                uploadFile(res.tempFiles[0]);
+            }
+        });
+    },
+    'uploadFiles 批量上传': function() {
+        var uploadFiles = function(files) {
+            const fileList = files.map(function(file) {
+                return Object.assign(file, {
+                    Bucket: config.Bucket,
+                    Region: config.Region,
+                    Key: file.name,
+                    FilePath: file.path,
+                });
+            });
+            cos.uploadFiles({
+                files: fileList,
+                SliceSize: 1024 * 1024 * 5, // 文件大于5mb自动使用分块上传
+                onProgress: function (info) {
+                    var percent = parseInt(info.percent * 10000) / 100;
+                    var speed = parseInt(info.speed / 1024 / 1024 * 100) / 100;
+                    console.log('进度：' + percent + '%; 速度：' + speed + 'Mb/s;');
+                },
+                onFileFinish: function (err, data, options) {
+                    console.log(options.Key + '上传' + (err ? '失败' : '完成'));
+                },
+            }, function (err, data) {
+                console.log(err || data);
+            });
+        }
+        wx.chooseMessageFile({
+            count: 10,
+            type: 'all',
+            success: function(res) {
+                uploadFiles(res.tempFiles);
+            }
+        });
+    },
     '分片上传': function() {
         var sliceUploadFile = function (file) {
             var key = file.name;
