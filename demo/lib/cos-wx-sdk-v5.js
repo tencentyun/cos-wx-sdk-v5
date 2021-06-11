@@ -9892,7 +9892,7 @@ function uploadFile(params, callback) {
   var SliceSize = params.SliceSize === undefined ? self.options.SliceSize : params.SliceSize;
 
   var taskList = [];
-  // util.each(params.files, function (fileParams, index) {
+
   var FileSize = params.FileSize;
   var fileInfo = {TaskId: ''};
 
