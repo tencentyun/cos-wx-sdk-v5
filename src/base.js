@@ -2918,7 +2918,7 @@ function getObjectUrl(params, callback) {
     });
 
     if (AuthData) {
-        signUrl += '?' + AuthData.Authorization +
+        syncUrl += '?' + AuthData.Authorization +
             (AuthData.XCosSecurityToken ? '&x-cos-security-token=' + AuthData.XCosSecurityToken : '');
         queryParamsStr && (syncUrl += '&' + queryParamsStr);
     } else {
