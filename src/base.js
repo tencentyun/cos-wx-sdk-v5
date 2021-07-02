@@ -2898,6 +2898,8 @@ function getObjectUrl(params, callback) {
         Method: params.Method || 'get',
         Key: params.Key,
         Expires: params.Expires,
+        Headers: params.Headers,
+        Query: params.Query
     }, function (err, AuthData) {
         if (!callback) return;
         if (err) {
@@ -2918,7 +2920,7 @@ function getObjectUrl(params, callback) {
     });
 
     if (AuthData) {
-        signUrl += '?' + AuthData.Authorization +
+        syncUrl += '?' + AuthData.Authorization +
             (AuthData.XCosSecurityToken ? '&x-cos-security-token=' + AuthData.XCosSecurityToken : '');
         queryParamsStr && (syncUrl += '&' + queryParamsStr);
     } else {

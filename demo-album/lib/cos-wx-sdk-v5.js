@@ -67,7 +67,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
 /******/
 /******/ 	// __webpack_public_path__
-/******/ 	__webpack_require__.p = "D:\\code\\cos-wx-sdk-v5\\demo\\lib";
+/******/ 	__webpack_require__.p = "/Users/tianfeng/Documents/项目/sdk/cos-wx-sdk-v5/demo/lib";
 /******/
 /******/ 	// Load entry module and return exports
 /******/ 	return __webpack_require__(__webpack_require__.s = 6);
@@ -2338,7 +2338,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.0.9';
+COS.version = '1.0.10';
 
 module.exports = COS;
 
@@ -8193,6 +8193,8 @@ function getObjectUrl(params, callback) {
         Method: params.Method || 'get',
         Key: params.Key,
         Expires: params.Expires,
+        Headers: params.Headers,
+        Query: params.Query
     }, function (err, AuthData) {
         if (!callback) return;
         if (err) {
@@ -8213,7 +8215,7 @@ function getObjectUrl(params, callback) {
     });
 
     if (AuthData) {
-        signUrl += '?' + AuthData.Authorization +
+        syncUrl += '?' + AuthData.Authorization +
             (AuthData.XCosSecurityToken ? '&x-cos-security-token=' + AuthData.XCosSecurityToken : '');
         queryParamsStr && (syncUrl += '&' + queryParamsStr);
     } else {
@@ -9114,9 +9116,10 @@ function sliceUploadFile(params, callback) {
     // 上传过程中出现错误，返回错误
     ep.on('error', function (err) {
         if (!self._isRunningTask(TaskId)) return;
-        var _err = util.extend({
-          UploadId: params.UploadData.UploadId || ''
-        }, err);
+        var _err = {
+            UploadId: params.UploadData.UploadId || '',
+            err: err,
+        };
         return callback(_err);
     });
 
