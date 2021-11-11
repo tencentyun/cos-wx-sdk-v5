@@ -2339,7 +2339,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.0.12';
+COS.version = '1.0.13';
 
 module.exports = COS;
 
@@ -9673,6 +9673,7 @@ function uploadSliceItem(params, callback) {
     var ServerSideEncryption = params.ServerSideEncryption;
     var UploadData = params.UploadData;
     var ChunkRetryTimes = self.options.ChunkRetryTimes + 1;
+    var Headers = params.Headers || {};
 
     var start = SliceSize * (PartNumber - 1);
 
