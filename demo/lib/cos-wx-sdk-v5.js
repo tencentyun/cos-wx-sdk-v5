@@ -2339,7 +2339,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.0.11';
+COS.version = '1.0.12';
 
 module.exports = COS;
 
@@ -6432,9 +6432,8 @@ function getBucketReferer(params, callback) {
 
         var RefererConfiguration = data.RefererConfiguration || {};
         if (RefererConfiguration['DomainList']) {
-            var Domains = util.clone(RefererConfiguration['DomainList'].Domain || []);
-            Domains = util.makeArray(Domains);
-            RefererConfiguration.DomainList = {Domains: Domains};
+          var Domains = util.makeArray(RefererConfiguration['DomainList'].Domain || []);
+          RefererConfiguration.DomainList = {Domains: Domains};
         }
 
         callback(null, {
@@ -7233,6 +7232,8 @@ function postObject(params, callback) {
     headers['x-cos-grant-write'] = params['GrantWrite'];
     headers['x-cos-grant-full-control'] = params['GrantFullControl'];
     headers['x-cos-storage-class'] = params['StorageClass'];
+    headers['x-cos-mime-limit'] = params['MimeLimit'];
+    headers['x-cos-traffic-limit'] = params['TrafficLimit'];
 
     // 删除 Content-Length 避免签名错误
     delete headers['Content-Length'];
@@ -9684,6 +9685,14 @@ function uploadSliceItem(params, callback) {
         ContentLength = end - start;
     }
 
+    var headersWhiteList = ['x-cos-traffic-limit', 'x-cos-mime-limit'];
+    var headers = {};
+    util.each(Headers, function(v, k) {
+        if (headersWhiteList.indexOf(k) > -1) {
+            headers[k] = v;
+        }
+    });
+
     util.fileSlice(FilePath, start, end, function (Body) {
         var md5 = util.getFileMd5(Body);
         var contentMd5 = md5 ? util.binaryBase64(md5) : null;
@@ -9700,6 +9709,7 @@ function uploadSliceItem(params, callback) {
                 UploadId: UploadData.UploadId,
                 ServerSideEncryption: ServerSideEncryption,
                 Body: Body,
+                Headers: headers,
                 onProgress: params.onProgress,
                 ContentMD5: contentMd5,
             }, function (err, data) {

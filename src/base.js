@@ -1136,9 +1136,8 @@ function getBucketReferer(params, callback) {
 
         var RefererConfiguration = data.RefererConfiguration || {};
         if (RefererConfiguration['DomainList']) {
-            var Domains = util.clone(RefererConfiguration['DomainList'].Domain || []);
-            Domains = util.makeArray(Domains);
-            RefererConfiguration.DomainList = {Domains: Domains};
+          var Domains = util.makeArray(RefererConfiguration['DomainList'].Domain || []);
+          RefererConfiguration.DomainList = {Domains: Domains};
         }
 
         callback(null, {
@@ -1937,6 +1936,8 @@ function postObject(params, callback) {
     headers['x-cos-grant-write'] = params['GrantWrite'];
     headers['x-cos-grant-full-control'] = params['GrantFullControl'];
     headers['x-cos-storage-class'] = params['StorageClass'];
+    headers['x-cos-mime-limit'] = params['MimeLimit'];
+    headers['x-cos-traffic-limit'] = params['TrafficLimit'];
 
     // 删除 Content-Length 避免签名错误
     delete headers['Content-Length'];

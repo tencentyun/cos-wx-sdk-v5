@@ -599,6 +599,14 @@ function uploadSliceItem(params, callback) {
         ContentLength = end - start;
     }
 
+    var headersWhiteList = ['x-cos-traffic-limit', 'x-cos-mime-limit'];
+    var headers = {};
+    util.each(Headers, function(v, k) {
+        if (headersWhiteList.indexOf(k) > -1) {
+            headers[k] = v;
+        }
+    });
+
     util.fileSlice(FilePath, start, end, function (Body) {
         var md5 = util.getFileMd5(Body);
         var contentMd5 = md5 ? util.binaryBase64(md5) : null;
@@ -615,6 +623,7 @@ function uploadSliceItem(params, callback) {
                 UploadId: UploadData.UploadId,
                 ServerSideEncryption: ServerSideEncryption,
                 Body: Body,
+                Headers: headers,
                 onProgress: params.onProgress,
                 ContentMD5: contentMd5,
             }, function (err, data) {
