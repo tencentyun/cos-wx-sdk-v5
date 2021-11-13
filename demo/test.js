@@ -1,7 +1,13 @@
 var COS = require('./lib/cos-wx-sdk-v5');
 var wxfs = wx.getFileSystemManager();
 var config = require('./config');
+// 这里替换成自己的Uin （账号ID查询：https://console.cloud.tencent.com/developer）
 config.Uin = '10001';
+
+/**
+ * 测试须知
+ * 需要本地准备一个名为 5m.zip,大小为5mb的文件进行初始化上传
+**/
 
 var util = {
     createFile: function (options, filePath) {
@@ -364,7 +370,7 @@ group('putObject(),cancelTask()', function () {
             Bucket: config.Bucket,
             Region: config.Region,
             Key: filename,
-            Body: util.createFile({size: 1024 * 1024 * 100}),
+            Body: util.createFile({size: 1024 * 1024 * 10}),
             onTaskReady: function (taskId) {
                 TaskId = taskId;
             },
@@ -391,8 +397,8 @@ group('putObject(),cancelTask()', function () {
 group('sliceUploadFile() 完整上传文件', function () {
     test('sliceUploadFile() 完整上传文件', function (done, assert) {
         var lastPercent;
-        var filename = '3m.zip';
-        var fileSize = 1024 * 1024 * 3;
+        var filename = '5m.zip';
+        var fileSize = 1024 * 1024 * 5;
         cos.abortUploadTask({
             Bucket: config.Bucket,
             Region: config.Region,
@@ -473,8 +479,8 @@ group('sliceUploadFile(),pauseTask(),restartTask()', function () {
 
 group('sliceUploadFile(),cancelTask()', function () {
     test('sliceUploadFile(),cancelTask()', function (done, assert) {
-        var filename = '3m.zip';
-        var blob = util.createFile({size: 1024 * 1024 * 3});
+        var filename = '5m.zip';
+        var blob = util.createFile({size: 1024 * 1024 * 5});
         var alive = false;
         var canceled = false;
         cos.sliceUploadFile({
@@ -2840,3 +2846,64 @@ group('Query 的键值带有特殊字符', function () {
         });
     });
 });
+
+group('appendObject', function () {
+    test('describeMediaBuckets()', function (done, assert) {
+        cos.headObject({
+            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Region: config.Region,
+            Key: 'append.txt', /* 必须 */
+        }, function(err, data) {
+            assert.ok(!err);
+            if (err) return console.log(err);
+            // 首先取到要追加的文件当前长度，即需要上送的Position
+            var position = data.headers['content-length'];
+            cos.appendObject({
+                Bucket: config.Bucket, // Bucket 格式：test-1250000000
+                Region: config.Region,
+                Key: 'append.txt', /* 必须 */
+                Body: '66666',
+                Position: position,
+            },
+            function(err, data) {
+                assert.ok(!err);
+                done();
+            })
+        });
+    });
+});
+
+group('数据万象', function () {
+    test('describeMediaBuckets()', function (done, assert) {
+        cos.describeMediaBuckets({
+            Bucket: config.Bucket,
+            Region: config.Region,
+        },
+        function(err, data){
+            assert.ok(!err);
+            done();
+        });
+    });
+    test('getMediaInfo()', function (done, assert) {
+        cos.getMediaInfo({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: '1.mp4',
+        },
+        function(err, data){
+            assert.ok(!err);
+            done();
+        });
+    });
+    test('describeMediaBuckets()', function (done, assert) {
+        cos.getSnapshot({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: '1.mp4',
+        },
+        function(err, data){
+            assert.ok(!err);
+            done();
+        });
+    });
+  });
