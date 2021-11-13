@@ -174,7 +174,7 @@ var getFileMd5 = function (body, callback) {
 
 function clone(obj) {
     return map(obj, function (v) {
-        return typeof v === 'object' ? clone(v) : v;
+        return typeof v === 'object' && v !== null ? clone(v) : v;
     });
 }
 

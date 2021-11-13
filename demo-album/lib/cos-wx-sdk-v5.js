@@ -254,7 +254,7 @@ var getFileMd5 = function (body, callback) {
 
 function clone(obj) {
     return map(obj, function (v) {
-        return typeof v === 'object' ? clone(v) : v;
+        return typeof v === 'object' && v !== null ? clone(v) : v;
     });
 }
 
@@ -2287,6 +2287,7 @@ var event = __webpack_require__(4);
 var task = __webpack_require__(16);
 var base = __webpack_require__(17);
 var advance = __webpack_require__(23);
+var ci = __webpack_require__(25);
 
 var defaultOptions = {
     SecretId: '',
@@ -2337,9 +2338,10 @@ var COS = function (options) {
 
 base.init(COS, task);
 advance.init(COS, task);
+ci.init(COS);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.0.13';
+COS.version = '1.1.0';
 
 module.exports = COS;
 
@@ -8098,6 +8100,37 @@ function multipartAbort(params, callback) {
     });
 }
 
+/**
+ * 追加上传
+ * @param  {Object}  params                                 参数对象，必须
+ *     @param  {String}  params.Bucket                      Bucket名称，必须
+ *     @param  {String}  params.Region                      地域名称，必须
+ *     @param  {String}  params.Key                         object名称，必须
+ *     @param  {File || Blob || String}  params.Body        上传文件对象或字符串
+ *     @param  {Number}  params.Position                    追加操作的起始点，单位为字节，必须
+ * @param  {Function}  callback                             回调函数，必须
+ *     @return  {Object}    err                             请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ *     @return  {Object}    data                            返回的数据
+ */
+ function appendObject(params, callback) {
+    submitRequest.call(this, {
+        Action: 'name/cos:AppendObject',
+        method: 'POST',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        action: 'append',
+        Key: params.Key,
+        body: params.Body,
+        qs: {
+          position: params.Position
+        },
+        headers: params.Headers,
+    }, function (err, data) {
+          if (err) return callback(err);
+          callback(null, data);
+    });
+}
+
 
 /**
  * cos 内置请求
@@ -8119,6 +8152,8 @@ function multipartAbort(params, callback) {
         headers: params.Headers,
         qs: params.Query,
         body: params.Body,
+        Url: params.Url,
+        rawBody: params.RawBody,
     }, function (err, data) {
         if (err) return callback(err);
         if (data && data.body) {
@@ -8616,7 +8651,7 @@ function _submitRequest(params, callback) {
     var region = params.Region;
     var object = params.Key;
     var method = params.method || 'GET';
-    var url = params.url;
+    var url = params.url || params.Url;
     var body = params.body;
     var json = params.json;
     var rawBody = params.rawBody;
@@ -8811,6 +8846,7 @@ var API_MAP = {
     putObjectTagging: putObjectTagging,
     getObjectTagging: getObjectTagging,
     deleteObjectTagging: deleteObjectTagging,
+    appendObject: appendObject,
 
     // 分块上传相关方法
     uploadPartCopy: uploadPartCopy,
@@ -8852,10 +8888,47 @@ var obj2str = function (obj) {
     return list.join('&');
 };
 
+var stringifyPrimitive = function(v) {
+  switch (typeof v) {
+      case 'string':
+          return v;
+      case 'boolean':
+          return v ? 'true' : 'false';
+      case 'number':
+          return isFinite(v) ? v : '';
+      default:
+          return '';
+  }
+};
+
+var queryStringify = function(obj, sep, eq, name) {
+  sep = sep || '&';
+  eq = eq || '=';
+  if (obj === null) {
+      obj = undefined;
+  }
+  if (typeof obj === 'object') {
+      return Object.keys(obj).map(function(k) {
+          var ks = encodeURIComponent(stringifyPrimitive(k)) + eq;
+          if (Array.isArray(obj[k])) {
+              return obj[k].map(function(v) {
+                  return ks + encodeURIComponent(stringifyPrimitive(v));
+              }).join(sep);
+          } else {
+              return ks + encodeURIComponent(stringifyPrimitive(obj[k]));
+          }
+      }).filter(Boolean).join(sep);
+
+  }
+  if (!name) return '';
+  return encodeURIComponent(stringifyPrimitive(name)) + eq +
+      encodeURIComponent(stringifyPrimitive(obj));
+};
+
 var request = function (params, callback) {
     var filePath = params.filePath;
     var headers = params.headers || {};
-    var url = params.url;
+    var url = params.url || params.Url;
     var method = params.method;
     var onProgress = params.onProgress;
     var requestTask;
@@ -8926,7 +8999,7 @@ var request = function (params, callback) {
             });
         });
     } else {
-        var qsStr = params.qs && obj2str(params.qs) || '';
+        var qsStr = params.qs && queryStringify(params.qs) || '';
         if (qsStr) {
             url += (url.indexOf('?') > -1 ? '&' : '?') + qsStr;
         }
@@ -10351,6 +10424,110 @@ var async = {
 };
 
 module.exports = async;
+
+/***/ }),
+/* 25 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var util = __webpack_require__(0);
+
+/**
+ * 查询已经开通数据万象功能的存储桶
+ * @param  {Object} params                                          参数对象，必须
+ *     @param  {String}  params.Bucket                              Bucket名称，必须，格式：test-1250000000
+ *     @param  {String}  params.Region                              地域名称，必须
+ * @param  {Function}  callback                                     回调函数，必须
+ *     @return  {Object}  err                                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ *     @return  {Object}  data                                          为对应的 object 数据
+ */
+function describeMediaBuckets(params, callback) {
+    var url = 'https://' + params.Bucket + '.pic.' + params.Region + '.myqcloud.com';
+    this.request({
+        Bucket: params.Bucket,
+        Region: params.Region,
+        Method: 'GET',
+        Url: url
+    }, function (err, data) {
+        if (err) return callback(err);
+        callback(null, data);
+    });
+}
+
+/**
+ * 获取媒体文件信息
+ * @param  {Object} params                                          参数对象，必须
+ *     @param  {String}  params.Bucket                              Bucket名称，必须，格式：test-1250000000
+ *     @param  {String}  params.Region                              地域名称，必须
+ *     @param  {String}  params.Key                                 文件名称，必须
+ * @param  {Function}  callback                                     回调函数，必须
+ *     @return  {Object}  err                                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ *     @return  {Object}  data                                          为对应的 object 数据
+ */
+ function getMediaInfo(params, callback) {
+    this.request({
+        Bucket: params.Bucket,
+        Region: params.Region,
+        Method: 'GET',
+        Key: params.Key,
+        Query: {
+            'ci-process': 'videoinfo'
+        }
+    }, function (err, data) {
+        if (err) return callback(err);
+        callback(null, data);
+    });
+}
+
+/**
+ * 获取媒体文件某个时间的截图
+ * @param  {Object} params                                          参数对象，必须
+ *     @param  {String}  params.Bucket                              Bucket名称，必须，格式：test-1250000000
+ *     @param  {String}  params.Region                              地域名称，必须
+ *     @param  {String}  params.Key                                 文件名称，必须
+ *     @param  {Number}  params.Time                                截图的时间点，单位为秒，必须
+ *     @param  {Number}  params.Width                               截图的宽，非必须
+ *     @param  {Number}  params.Height                              截图的高，非必须
+ *     @param  {String}  params.Format                              截图的格式，支持 jpg 和 png，默认 jpg，非必须
+ *     @param  {String}  params.Rotate                              图片旋转方式，非必须
+ *     @param  {String}  params.Mode                                截帧方式，非必须
+ * @param  {Function}  callback                                     回调函数，必须
+ *     @return  {Object}  err                                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ *     @return  {Object}  data                                          为对应的 object 数据
+ */
+ function getSnapshot(params, callback) {
+    var query = {
+      'ci-process': 'snapshot',
+      time: params.Time || 1,
+      width: params.Width || 0,
+      height: params.Height || 0,
+      format: params.Format || 'jpg',
+      rotate: params.Rotate || 'auto',
+      mode: params.Mode || 'exactframe',
+    };
+    this.request({
+        Bucket: params.Bucket,
+        Region: params.Region,
+        Method: 'GET',
+        Key: params.Key,
+        Query: query,
+        RawBody: true,
+  }, function (err, data) {
+      if (err) return callback(err);
+      callback(null, data);
+  });
+}
+
+var API_MAP = {
+  describeMediaBuckets: describeMediaBuckets,
+  getMediaInfo: getMediaInfo,
+  getSnapshot: getSnapshot,
+};
+
+module.exports.init = function (COS) {
+  util.each(API_MAP, function (fn, apiName) {
+      COS.prototype[apiName] = util.apiWrapper(apiName, fn);
+  });
+};
 
 /***/ })
 /******/ ]);

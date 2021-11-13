@@ -352,6 +352,41 @@ var dao = {
         });
         console.log(url);
     },
+    appendObject: function() {
+        cos.appendObject({
+            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Region: config.Region,
+            Key: 'append.txt', /* 必须 */
+            Body: '12345',
+            Position: 0,
+        },
+        function(err, data) {
+            console.log(err || data);
+        })
+    },
+    appendObject_continue: function() {
+        cos.headObject({
+            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Region: config.Region,
+            Key: 'append.txt', /* 必须 */
+        }, function(err, data) {
+            if (err) return console.log(err);
+            // 首先取到要追加的文件当前长度，即需要上送的Position
+            var position = data.headers['content-length'];
+            cos.appendObject({
+                Bucket: config.Bucket, // Bucket 格式：test-1250000000
+                Region: config.Region,
+                Key: 'append.txt', /* 必须 */
+                Body: '66666',
+                Position: position,
+            },
+            function(err, data) {
+                // 也可以取到下一次上传的position继续追加上传
+                // var nextPosition = data.headers['x-cos-next-append-position'];
+                console.log(err || data);
+            })
+        });
+    },
     // Service
     getService: function() {
         cos.getService(requestCallback);
@@ -623,6 +658,35 @@ var dao = {
                 console.log('进度：' + percent + '%; 速度：' + speed + 'Mb/s;');
             }
         }, requestCallback);
+    },
+    describeMediaBuckets: function() {
+        cos.describeMediaBuckets({
+            Bucket: config.Bucket,
+            Region: config.Region,
+        },
+        function(err, data){
+            console.log(err || data);
+        });
+    },
+    getMediaInfo: function() {
+        cos.getMediaInfo({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: '20.mp4',
+        },
+        function(err, data){
+            console.log(err || data);
+        });
+    },
+    getSnapshot: function() {
+        cos.getSnapshot({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: '20.mp4',
+        },
+        function(err, data){
+            console.log(err || data);
+        });
     },
     cancelTask: function() {
         cos.cancelTask(TaskId);

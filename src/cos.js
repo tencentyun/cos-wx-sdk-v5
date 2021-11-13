@@ -5,6 +5,7 @@ var event = require('./event');
 var task = require('./task');
 var base = require('./base');
 var advance = require('./advance');
+var ci = require('./ci');
 
 var defaultOptions = {
     SecretId: '',
@@ -55,8 +56,9 @@ var COS = function (options) {
 
 base.init(COS, task);
 advance.init(COS, task);
+ci.init(COS);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.0.13';
+COS.version = '1.1.0';
 
 module.exports = COS;
