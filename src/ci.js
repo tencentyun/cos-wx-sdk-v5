@@ -12,19 +12,20 @@ var util = require('./util');
  function describeMediaBuckets(params, callback) {
   var host = 'ci.' + params.Region + '.myqcloud.com';
   var url = 'https://' + host + '/mediabucket';
+  var query = {
+      pageNumber: params.PageNumber,
+      pageSize: params.PageSize,
+      regions: params.Regions,
+      bucketNames: params.BucketNames,
+      bucketName: params.BucketName,
+  };
   this.request({
       Bucket: params.Bucket,
       Region: params.Region,
       Method: 'GET',
       Key: 'mediabucket',
       Url: url,
-      Query: {
-          pageNumber: params.PageNumber,
-          pageSize: params.PageSize,
-          regions: params.Regions,
-          bucketNames: params.BucketNames,
-          bucketName: params.BucketName,
-      }
+      Query: query
   }, function (err, data) {
       if (err) return callback(err);
       callback(null, data);
