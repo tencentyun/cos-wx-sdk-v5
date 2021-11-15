@@ -3409,7 +3409,7 @@ function _submitRequest(params, callback) {
 
     // 兼容ci接口
     var token = 'x-cos-security-token';
-    if (util.isCiHost(url)) {
+    if (util.isCIHost(url)) {
         token = 'x-ci-security-token';
     }
 

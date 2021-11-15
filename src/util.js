@@ -549,11 +549,11 @@ var canFileSlice = (function () {
     };
 })();
 
-var isCiHost = function(url) {
-  if (url && url.split('?')[0].match(/(.ci.|ci.|.ci)/g)) {
-      return true;
-  }
-  return false
+var isCIHost = function(url) {
+    if (url && url.split('?')[0].match(/(.ci.|ci.|.ci)/g)) {
+        return true;
+    }
+    return false;
 }
 
 var util = {
@@ -586,7 +586,7 @@ var util = {
     getAuth: getAuth,
     compareVersion: compareVersion,
     canFileSlice: canFileSlice,
-    isCiHost: isCiHost,
+    isCIHost: isCIHost,
 };
 
 module.exports = util;
