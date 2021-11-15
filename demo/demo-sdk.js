@@ -213,7 +213,7 @@ var toolsDao = {
             }
         });
     },
-    '分片上传': function() {
+    'sliceUploadFile 分片上传': function() {
         var sliceUploadFile = function (file) {
             var key = file.name;
             cos.sliceUploadFile({
@@ -341,7 +341,7 @@ var toolsDao = {
             Body: fileBuf,
         }, requestCallback);
     },
-    getObjectUrl: function() {
+    'getObjectUrl 获取对象访问url': function() {
         var url = cos.getObjectUrl({
             Bucket: config.Bucket, // Bucket 格式：test-1250000000
             Region: config.Region,
@@ -361,44 +361,44 @@ var bucketDao = {
         cos.getService(requestCallback);
     },
     // 简单 Bucket 操作
-    putBucket: function() {
+    'putBucket 创建存储桶': function() {
         cos.putBucket({
             Bucket: config.Bucket,
             Region: config.Region,
         }, requestCallback);
     },
-    headBucket: function() {
+    'headBucket 检索存储桶及其权限': function() {
         cos.headBucket({
             Bucket: config.Bucket,
             Region: config.Region
         }, requestCallback);
     },
-    deleteBucket: function() {
+    'deleteBucket 删除存储桶': function() {
         cos.deleteBucket({
             Bucket: config.Bucket,
             Region: config.Region
         }, requestCallback);
     },
-    getBucketACL: function() {
+    'getBucketACL 查询存储桶 ACL': function() {
         cos.getBucketAcl({
             Bucket: config.Bucket,
             Region: config.Region
         }, requestCallback);
     },
-    putBucketACL: function() {
+    'putBucketACL 设置存储桶 ACL': function() {
         cos.putBucketAcl({
             Bucket: config.Bucket,
             Region: config.Region,
             ACL: 'public-read'
         }, requestCallback);
     },
-    getBucketCors: function() {
+    'getBucketCors 查询跨域配置': function() {
         cos.getBucketCors({
             Bucket: config.Bucket,
             Region: config.Region
         }, requestCallback);
     },
-    putBucketCors: function() {
+    'putBucketCors 设置跨域配置': function() {
         cos.putBucketCors({
             Bucket: config.Bucket,
             Region: config.Region,
@@ -411,13 +411,13 @@ var bucketDao = {
             }]
         }, requestCallback);
     },
-    deleteBucketCors: function() {
+    'deleteBucketCors 删除跨域配置': function() {
         cos.deleteBucketCors({
             Bucket: config.Bucket,
             Region: config.Region
         }, requestCallback);
     },
-    putBucketPolicy: function() {
+    'putBucketPolicy 设置存储桶策略': function() {
         var AppId = config.Bucket.substr(config.Bucket.lastIndexOf('-') + 1);
         cos.putBucketPolicy({
             Bucket: config.Bucket,
@@ -447,31 +447,31 @@ var bucketDao = {
             },
         }, requestCallback);
     },
-    getBucketPolicy: function() {
+    'getBucketPolicy 查询存储桶策略': function() {
         cos.getBucketPolicy({
             Bucket: config.Bucket,
             Region: config.Region
         }, requestCallback);
     },
-    deleteBucketPolicy: function() {
+    'deleteBucketPolicy 删除存储桶策略': function() {
         cos.deleteBucketPolicy({
             Bucket: config.Bucket,
             Region: config.Region
         }, requestCallback);
     },
-    getBucketLocation: function() {
+    'getBucketLocation 获取Bucket的地域信息': function() {
         cos.getBucketLocation({
             Bucket: config.Bucket,
             Region: config.Region
         }, requestCallback);
     },
-    getBucketTagging: function() {
+    'getBucketTagging 获取Bucket标签': function() {
         cos.getBucketTagging({
             Bucket: config.Bucket,
             Region: config.Region
         }, requestCallback);
     },
-    putBucketTagging: function() {
+    'putBucketTagging 设置Bucket标签': function() {
         cos.putBucketTagging({
             Bucket: config.Bucket,
             Region: config.Region,
@@ -489,7 +489,7 @@ var bucketDao = {
             }
         }, requestCallback);
     },
-    deleteBucketTagging: function() {
+    'deleteBucketTagging 删除存储桶标签': function() {
         cos.deleteBucketTagging({
             Bucket: config.Bucket,
             Region: config.Region
@@ -581,7 +581,7 @@ var objectDao = {
             Body: fileBuf,
         }, requestCallback);
     },
-    getObject: function() {
+    'getObject 下载对象': function() {
         cos.getObject({
             Bucket: config.Bucket,
             Region: config.Region,
@@ -590,28 +590,28 @@ var objectDao = {
             // QueryString: `imageMogr2/thumbnail/200x/`,
         }, requestCallback);
     },
-    headObject: function() {
+    'headObject 检索对象': function() {
         cos.headObject({
             Bucket: config.Bucket,
             Region: config.Region,
             Key: '1.txt'
         }, requestCallback);
     },
-    deleteObject: function() {
+    'deleteObject 删除对象': function() {
         cos.deleteObject({
             Bucket: config.Bucket,
             Region: config.Region,
             Key: '1.txt'
         }, requestCallback);
     },
-    getObjectACL: function() {
+    'getObjectACL 获取对象ACL': function() {
         cos.getObjectAcl({
             Bucket: config.Bucket,
             Region: config.Region,
             Key: '1.txt'
         }, requestCallback);
     },
-    putObjectACL: function() {
+    'putObjectACL 设置对象ACL': function() {
         cos.putObjectAcl({
             Bucket: config.Bucket, // Bucket 格式：test-1250000000
             Region: config.Region,
@@ -636,7 +636,7 @@ var objectDao = {
             // }
         }, requestCallback);
     },
-    deleteMultipleObject: function() {
+    'deleteMultipleObject 批量删除对象': function() {
         cos.deleteMultipleObject({
             Bucket: config.Bucket, // Bucket 格式：test-1250000000
             Region: config.Region,
@@ -649,7 +649,7 @@ var objectDao = {
             ]
         }, requestCallback);
     },
-    putObjectCopy: function() {
+    'putObjectCopy 复制对象': function() {
         cos.putObjectCopy({
             Bucket: config.Bucket, // Bucket 格式：test-1250000000
             Region: config.Region,
@@ -657,7 +657,7 @@ var objectDao = {
             CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/1.txt',
         }, requestCallback);
     },
-    restoreObject: function() {
+    'restoreObject 恢复归档对象': function() {
         cos.restoreObject({
             Bucket: config.Bucket,
             Region: config.Region,
@@ -670,27 +670,64 @@ var objectDao = {
             }
         }, requestCallback);
     },
-    abortUploadTask: function() {
-        cos.abortUploadTask({
-            Bucket: config.Bucket,
-            /* 必须 */ // Bucket 格式：test-1250000000
+    'appendObject 追加上传': function() {
+        // 初始化一个可追加上传的对象append.txt
+        cos.appendObject({
+            Bucket: config.Bucket, // Bucket 格式：test-1250000000
             Region: config.Region,
-            /* 必须 */
-            // 格式1，删除单个上传任务
-            // Level: 'task',
-            // Key: '10mb.zip',
-            // UploadId: '14985543913e4e2642e31db217b9a1a3d9b3cd6cf62abfda23372c8d36ffa38585492681e3',
-            // 格式2，删除单个文件所有未完成上传任务
-            Level: 'file',
-            Key: '10mb.zip',
-            // 格式3，删除 Bucket 下所有未完成上传任务
-            // Level: 'bucket',
-        }, requestCallback);
+            Key: 'append.txt', /* 必须 */
+            Body: '12345',
+            Position: 0,
+        },
+        function(err, data) {
+            logger.log('putObject:', err || data);
+        })
     },
+    'appendObject_continue 继续追加上传': function() {
+        // append.txt必须是一个可追加上传的对象，参考文档：https://cloud.tencent.com/document/product/436/7741
+        cos.headObject({
+            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Region: config.Region,
+            Key: 'append.txt', /* 必须 */
+        }, function(err, data) {
+            if (err) return console.log(err);
+            // 首先取到要追加的文件当前长度，即需要上送的Position
+            var position = data.headers['content-length'];
+            cos.appendObject({
+                Bucket: config.Bucket, // Bucket 格式：test-1250000000
+                Region: config.Region,
+                Key: 'append.txt', /* 必须 */
+                Body: '66666',
+                Position: position,
+            },
+            function(err, data) {
+                // 也可以取到下一次上传的position继续追加上传
+                // var nextPosition = data.headers['x-cos-next-append-position'];
+                logger.log('putObject:', err || data);
+            })
+        });
+    }
+    // abortUploadTask: function() {
+    //     cos.abortUploadTask({
+    //         Bucket: config.Bucket,
+    //         /* 必须 */ // Bucket 格式：test-1250000000
+    //         Region: config.Region,
+    //         /* 必须 */
+    //         // 格式1，删除单个上传任务
+    //         // Level: 'task',
+    //         // Key: '10mb.zip',
+    //         // UploadId: '14985543913e4e2642e31db217b9a1a3d9b3cd6cf62abfda23372c8d36ffa38585492681e3',
+    //         // 格式2，删除单个文件所有未完成上传任务
+    //         Level: 'file',
+    //         Key: '10mb.zip',
+    //         // 格式3，删除 Bucket 下所有未完成上传任务
+    //         // Level: 'bucket',
+    //     }, requestCallback);
+    // },
 }
 
 var advanceObjectDao = {
-    'sliceUploadFile 分片上传': function() {
+    'sliceUploadFile 分块上传': function() {
         var sliceUploadFile = function (file) {
             var key = file.name;
             cos.sliceUploadFile({
@@ -741,7 +778,7 @@ var advanceObjectDao = {
         //     }
         // })
     },
-    'sliceCopyFile 分片复制': function() {
+    'sliceCopyFile 分块复制对象': function() {
         // 创建测试文件
         var sourceName = '1.txt';
         var Key = '1.slicecopy.exe';
@@ -760,38 +797,6 @@ var advanceObjectDao = {
                 console.log('进度：' + percent + '%; 速度：' + speed + 'Mb/s;');
             }
         }, requestCallback);
-    },
-    describeMediaBuckets: function() {
-        cos.describeMediaBuckets({
-            Bucket: config.Bucket,
-            Region: config.Region,
-            Regions: 'ap-chengdu',
-            // BucketNames: 'test1-1250000000,test2-1250000000', // 筛选存储桶名为test1-1250000000,test2-1250000000
-            BucketName: 'test',  // 筛选bucket前缀为test的存储桶
-        },
-        function(err, data){
-            console.log(err || data);
-        });
-    },
-    getMediaInfo: function() {
-        cos.getMediaInfo({
-            Bucket: config.Bucket,
-            Region: config.Region,
-            Key: '20.mp4',
-        },
-        function(err, data){
-            console.log(err || data);
-        });
-    },
-    getSnapshot: function() {
-        cos.getSnapshot({
-            Bucket: config.Bucket,
-            Region: config.Region,
-            Key: '20.mp4',
-        },
-        function(err, data){
-            console.log(err || data);
-        });
     },
     cancelTask: function() {
         cos.cancelTask(TaskId);
@@ -884,7 +889,38 @@ var ciObjectDao = {
         (err, data) => {
             console.log('不带签名', err || data);
         });
-
+    },
+    'describeMediaBuckets 查询已经开通数据万象功能的存储桶': function() {
+        cos.describeMediaBuckets({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Regions: 'ap-chengdu',
+            // BucketNames: 'test1-1250000000,test2-1250000000', // 筛选存储桶名为test1-1250000000,test2-1250000000
+            BucketName: 'test',  // 筛选bucket前缀为test的存储桶
+        },
+        function(err, data){
+            console.log(err || data);
+        });
+    },
+    'getMediaInfo 获取媒体文件信息': function() {
+        cos.getMediaInfo({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: '1.mp4',
+        },
+        function(err, data){
+            console.log(err || data);
+        });
+    },
+    'getSnapshot 获取媒体文件某个时间的截图': function() {
+        cos.getSnapshot({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: '1.mp4',
+        },
+        function(err, data){
+            console.log(err || data);
+        });
     },
 }
 
