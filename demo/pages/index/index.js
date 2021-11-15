@@ -1,6 +1,7 @@
 //index.js
 var demoSdk = require('../../demo-sdk');
-var demoNoSdk = require('../../demo-no-sdk');
+var simpleUpload = require('../../demo-no-sdk');
+var postUpload = require('../../demo-post-policy');
 
 var option = {
     data: {
@@ -27,7 +28,8 @@ for (var key in demoSdk) {
     }
 }
 
-option.simpleUpload = demoNoSdk;
+option.postUpload = postUpload;
+option.simpleUpload = simpleUpload;
 
 //获取应用实例
 Page(option);

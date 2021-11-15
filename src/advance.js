@@ -32,12 +32,19 @@ function sliceUploadFile(params, callback) {
     // 上传过程中出现错误，返回错误
     ep.on('error', function (err) {
         if (!self._isRunningTask(TaskId)) return;
-        return callback(err);
+        var _err = {
+            UploadId: params.UploadData.UploadId || '',
+            err: err,
+        };
+        return callback(_err);
     });
 
     // 上传分块完成，开始 uploadSliceComplete 操作
     ep.on('upload_complete', function (UploadCompleteData) {
-        callback(null, UploadCompleteData);
+        var _UploadCompleteData = util.extend({
+          UploadId: params.UploadData.UploadId || ''
+        }, UploadCompleteData);
+        callback(null, _UploadCompleteData);
     });
 
     // 上传分块完成，开始 uploadSliceComplete 操作
@@ -580,6 +587,7 @@ function uploadSliceItem(params, callback) {
     var ServerSideEncryption = params.ServerSideEncryption;
     var UploadData = params.UploadData;
     var ChunkRetryTimes = self.options.ChunkRetryTimes + 1;
+    var Headers = params.Headers || {};
 
     var start = SliceSize * (PartNumber - 1);
 
@@ -591,6 +599,14 @@ function uploadSliceItem(params, callback) {
         end = FileSize;
         ContentLength = end - start;
     }
+
+    var headersWhiteList = ['x-cos-traffic-limit', 'x-cos-mime-limit'];
+    var headers = {};
+    util.each(Headers, function(v, k) {
+        if (headersWhiteList.indexOf(k) > -1) {
+            headers[k] = v;
+        }
+    });
 
     util.fileSlice(FilePath, start, end, function (Body) {
         var md5 = util.getFileMd5(Body);
@@ -608,6 +624,7 @@ function uploadSliceItem(params, callback) {
                 UploadId: UploadData.UploadId,
                 ServerSideEncryption: ServerSideEncryption,
                 Body: Body,
+                Headers: headers,
                 onProgress: params.onProgress,
                 ContentMD5: contentMd5,
             }, function (err, data) {
@@ -796,6 +813,48 @@ function abortUploadTaskArray(params, callback) {
     });
 }
 
+// 高级上传
+function uploadFile(params, callback) {
+  var self = this;
+
+  // 判断多大的文件使用分片上传
+  var SliceSize = params.SliceSize === undefined ? self.options.SliceSize : params.SliceSize;
+
+  var taskList = [];
+
+  var FileSize = params.FileSize;
+  var fileInfo = {TaskId: ''};
+
+  // 整理 option，用于返回给回调
+  util.each(params, function (v, k) {
+      if (typeof v !== 'object' && typeof v !== 'function') {
+          fileInfo[k] = v;
+      }
+  });
+
+  // 处理文件 TaskReady
+  var _onTaskReady = params.onTaskReady;
+  params.onTaskReady = function (tid) {
+      fileInfo.TaskId = tid;
+      _onTaskReady && _onTaskReady(tid);
+  };
+
+  // 处理文件完成
+  var _onFileFinish = params.onFileFinish;
+  var onFileFinish = function (err, data) {
+      _onFileFinish && _onFileFinish(err, data, fileInfo);
+      callback && callback(err, data);
+  };
+
+  // 添加上传任务
+  var api = FileSize > SliceSize ? 'sliceUploadFile' : 'postObject';
+  taskList.push({
+      api: api,
+      params: params,
+      callback: onFileFinish,
+  });
+  self._addTasks(taskList);
+}
 
 // 批量上传文件
 function uploadFiles(params, callback) {
@@ -1129,6 +1188,7 @@ function copySliceItem(params, callback) {
 var API_MAP = {
     sliceUploadFile: sliceUploadFile,
     abortUploadTask: abortUploadTask,
+    uploadFile: uploadFile,
     uploadFiles: uploadFiles,
     sliceCopyFile: sliceCopyFile,
 };
