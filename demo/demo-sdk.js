@@ -663,6 +663,9 @@ var dao = {
         cos.describeMediaBuckets({
             Bucket: config.Bucket,
             Region: config.Region,
+            Regions: 'ap-chengdu',
+            // BucketNames: 'test1-1250000000,test2-1250000000', // 筛选存储桶名为test1-1250000000,test2-1250000000
+            BucketName: 'test',  // 筛选bucket前缀为test的存储桶
         },
         function(err, data){
             console.log(err || data);

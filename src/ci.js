@@ -9,17 +9,26 @@ var util = require('./util');
  *     @return  {Object}  err                                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  *     @return  {Object}  data                                          为对应的 object 数据
  */
-function describeMediaBuckets(params, callback) {
-    var url = 'https://' + params.Bucket + '.pic.' + params.Region + '.myqcloud.com';
-    this.request({
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Method: 'GET',
-        Url: url
-    }, function (err, data) {
-        if (err) return callback(err);
-        callback(null, data);
-    });
+ function describeMediaBuckets(params, callback) {
+  var host = 'ci.' + params.Region + '.myqcloud.com';
+  var url = 'https://' + host + '/mediabucket';
+  this.request({
+      Bucket: params.Bucket,
+      Region: params.Region,
+      Method: 'GET',
+      Key: 'mediabucket',
+      Url: url,
+      Query: {
+          pageNumber: params.PageNumber,
+          pageSize: params.PageSize,
+          regions: params.Regions,
+          bucketNames: params.BucketNames,
+          bucketName: params.BucketName,
+      }
+  }, function (err, data) {
+      if (err) return callback(err);
+      callback(null, data);
+  });
 }
 
 /**
