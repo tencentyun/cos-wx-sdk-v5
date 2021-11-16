@@ -706,24 +706,24 @@ var objectDao = {
                 logger.log('putObject:', err || data);
             })
         });
-    }
-    // abortUploadTask: function() {
-    //     cos.abortUploadTask({
-    //         Bucket: config.Bucket,
-    //         /* 必须 */ // Bucket 格式：test-1250000000
-    //         Region: config.Region,
-    //         /* 必须 */
-    //         // 格式1，删除单个上传任务
-    //         // Level: 'task',
-    //         // Key: '10mb.zip',
-    //         // UploadId: '14985543913e4e2642e31db217b9a1a3d9b3cd6cf62abfda23372c8d36ffa38585492681e3',
-    //         // 格式2，删除单个文件所有未完成上传任务
-    //         Level: 'file',
-    //         Key: '10mb.zip',
-    //         // 格式3，删除 Bucket 下所有未完成上传任务
-    //         // Level: 'bucket',
-    //     }, requestCallback);
-    // },
+    },
+    'abortUploadTask 抛弃分块上传任务': function() {
+        cos.abortUploadTask({
+            Bucket: config.Bucket,
+            /* 必须 */ // Bucket 格式：test-1250000000
+            Region: config.Region,
+            /* 必须 */
+            // 格式1，删除单个上传任务
+            // Level: 'task',
+            // Key: '10mb.zip',
+            // UploadId: '14985543913e4e2642e31db217b9a1a3d9b3cd6cf62abfda23372c8d36ffa38585492681e3',
+            // 格式2，删除单个文件所有未完成上传任务
+            Level: 'file',
+            Key: '10mb.zip',
+            // 格式3，删除 Bucket 下所有未完成上传任务
+            // Level: 'bucket',
+        }, requestCallback);
+    },
 }
 
 var advanceObjectDao = {
@@ -929,6 +929,7 @@ var ciObjectDao = {
         cos.request({
             Bucket: config.Bucket,
             Region: config.Region,
+            Method: 'GET',
             Key: 'test.mp4',
             Query: {
                 'ci-process': 'snapshot', /** 固定值，必须 */
