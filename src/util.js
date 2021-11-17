@@ -174,7 +174,7 @@ var getFileMd5 = function (body, callback) {
 
 function clone(obj) {
     return map(obj, function (v) {
-        return typeof v === 'object' ? clone(v) : v;
+        return typeof v === 'object' && v !== null ? clone(v) : v;
     });
 }
 
@@ -549,6 +549,13 @@ var canFileSlice = (function () {
     };
 })();
 
+var isCIHost = function(url) {
+    if (url && url.split('?')[0].match(/(.ci.|ci.|.ci)/g)) {
+        return true;
+    }
+    return false;
+}
+
 var util = {
     noop: noop,
     formatParams: formatParams,
@@ -579,6 +586,7 @@ var util = {
     getAuth: getAuth,
     compareVersion: compareVersion,
     canFileSlice: canFileSlice,
+    isCIHost: isCIHost,
 };
 
 module.exports = util;

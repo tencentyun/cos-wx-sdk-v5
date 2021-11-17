@@ -1,7 +1,13 @@
 var COS = require('./lib/cos-wx-sdk-v5');
 var wxfs = wx.getFileSystemManager();
 var config = require('./config');
+// 这里替换成自己的Uin （账号ID查询：https://console.cloud.tencent.com/developer）
 config.Uin = '10001';
+
+/**
+ * 测试须知
+ * 需要本地准备一个名为 5m.zip,大小为5mb的文件进行初始化上传
+**/
 
 var util = {
     createFile: function (options, filePath) {
@@ -364,7 +370,7 @@ group('putObject(),cancelTask()', function () {
             Bucket: config.Bucket,
             Region: config.Region,
             Key: filename,
-            Body: util.createFile({size: 1024 * 1024 * 100}),
+            Body: util.createFile({size: 1024 * 1024 * 10}),
             onTaskReady: function (taskId) {
                 TaskId = taskId;
             },
@@ -391,8 +397,8 @@ group('putObject(),cancelTask()', function () {
 group('sliceUploadFile() 完整上传文件', function () {
     test('sliceUploadFile() 完整上传文件', function (done, assert) {
         var lastPercent;
-        var filename = '3m.zip';
-        var fileSize = 1024 * 1024 * 3;
+        var filename = '5m.zip';
+        var fileSize = 1024 * 1024 * 5;
         cos.abortUploadTask({
             Bucket: config.Bucket,
             Region: config.Region,
@@ -473,8 +479,8 @@ group('sliceUploadFile(),pauseTask(),restartTask()', function () {
 
 group('sliceUploadFile(),cancelTask()', function () {
     test('sliceUploadFile(),cancelTask()', function (done, assert) {
-        var filename = '3m.zip';
-        var blob = util.createFile({size: 1024 * 1024 * 3});
+        var filename = '5m.zip';
+        var blob = util.createFile({size: 1024 * 1024 * 5});
         var alive = false;
         var canceled = false;
         cos.sliceUploadFile({
@@ -2840,3 +2846,91 @@ group('Query 的键值带有特殊字符', function () {
         });
     });
 });
+
+group('appendObject', function () {
+    test('appendObject()', function (done, assert) {
+        cos.headObject({
+            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Region: config.Region,
+            Key: 'append.txt', /* 必须 */
+        }, function(err, data) {
+            assert.ok(!err);
+            if (err) return console.log(err);
+            // 首先取到要追加的文件当前长度，即需要上送的Position
+            var position = data.headers['content-length'];
+            cos.appendObject({
+                Bucket: config.Bucket, // Bucket 格式：test-1250000000
+                Region: config.Region,
+                Key: 'append.txt', /* 必须 */
+                Body: '66666',
+                Position: position,
+            },
+            function(err, data) {
+                assert.ok(!err);
+                done();
+            })
+        });
+    });
+});
+
+group('数据万象', function () {
+    test('describeMediaBuckets()', function (done, assert) {
+        var host = 'ci.' + config.Region + '.myqcloud.com';
+        var url = 'https://' + host + '/mediabucket';
+        cos.request({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Method: 'GET',
+            Key: 'mediabucket', /** 固定值，必须 */
+            Url: url,
+            Query: {
+                pageNumber: '1', /** 第几页，非必须 */
+                pageSize: '10', /** 每页个数，非必须 */
+                // regions: 'ap-chengdu', /** 地域信息，例如'ap-beijing'，支持多个值用逗号分隔如'ap-shanghai,ap-beijing'，非必须 */
+                // bucketNames: 'test-1250000000', /** 存储桶名称，精确搜索，例如'test-1250000000'，支持多个值用逗号分隔如'test1-1250000000,test2-1250000000'，非必须 */
+                // bucketName: 'test', /** 存储桶名称前缀，前缀搜索，例如'test'，支持多个值用逗号分隔如'test1,test2'，非必须 */
+            }
+        },
+        function(err, data){
+            assert.ok(!err);
+            done();
+        });
+    });
+    test('getMediaInfo()', function (done, assert) {
+        cos.request({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Method: 'GET',
+            Key: 'test.mp4',
+            Query: {
+                'ci-process': 'videoinfo' /** 固定值，必须 */
+            }
+        },
+        function(err, data){
+            assert.ok(!err);
+            done();
+        });
+    });
+    test('getSnapshot()', function (done, assert) {
+        cos.request({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Method: 'GET',
+            Key: 'test.mp4',
+            Query: {
+                'ci-process': 'snapshot', /** 固定值，必须 */
+                time: 1, /** 截图的时间点，单位为秒，必须 */
+                // width: 0, /** 截图的宽，非必须 */
+                // height: 0, /** 截图的高，非必须 */
+                // format: 'jpg', /** 截图的格式，支持 jpg 和 png，默认 jpg，非必须 */
+                // rotate: 'auto', /** 图片旋转方式，默认为'auto'，非必须 */
+                // mode: 'exactframe', /** 截帧方式，默认为'exactframe'，非必须 */
+            },
+            RawBody: true,
+        },
+        function(err, data){
+            assert.ok(!err);
+            done();
+        });
+    });
+  });
