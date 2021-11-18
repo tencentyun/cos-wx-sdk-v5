@@ -630,10 +630,7 @@ var canFileSlice = (function () {
 })();
 
 var isCIHost = function(url) {
-    if (url && url.split('?')[0].match(/(.ci.|ci.|.ci)/g)) {
-        return true;
-    }
-    return false;
+    return /^https?:\/\/([^/]+\.)?ci\.[^/]+/.test(url);
 }
 
 var util = {
@@ -2347,7 +2344,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.1.0';
+COS.version = '1.1.1';
 
 module.exports = COS;
 
