@@ -36,6 +36,11 @@ function getService(params, callback) {
         domain = protocol + '//service.cos.myqcloud.com';
     }
 
+    var SignHost = '';
+    var standardHost = region ? 'cos.' + region + '.myqcloud.com' : 'service.cos.myqcloud.com';
+    var urlHost = domain.replace(/^https?:\/\/([^/]+)(\/.*)?$/, '$1');
+    if (standardHost === urlHost) SignHost = standardHost;
+
     submitRequest.call(this, {
         Action: 'name/cos:GetService',
         url: domain,
@@ -2895,6 +2900,8 @@ function getAuth(params) {
     return util.getAuth({
         SecretId: params.SecretId || this.options.SecretId || '',
         SecretKey: params.SecretKey || this.options.SecretKey || '',
+        Bucket: params.Bucket,
+        Region: params.Region,
         Method: params.Method,
         Key: params.Key,
         Query: params.Query,
@@ -2929,11 +2936,18 @@ function getObjectUrl(params, callback) {
 
     var queryParamsStr = '';
     if(params.Query){
-      queryParamsStr += util.obj2str(params.Query);
+        queryParamsStr += util.obj2str(params.Query, true);
     }
     if(params.QueryString){
-      queryParamsStr += (queryParamsStr ? '&' : '') + params.QueryString;
+        queryParamsStr += (queryParamsStr ? '&' : '') + params.QueryString;
     }
+
+    // 签名加上 Host，避免跨桶访问
+    var SignHost = '';
+    var standardHost = 'cos.' + params.Region + '.myqcloud.com';
+    if (!self.options.ForcePathStyle) standardHost = params.Bucket + '.' + standardHost;
+    var urlHost = url.replace(/^https?:\/\/([^/]+)(\/.*)?$/, '$1');
+    if (standardHost === urlHost) SignHost = standardHost;
 
     var syncUrl = url;
     if (params.Sign !== undefined && !params.Sign) {
@@ -2941,6 +2955,8 @@ function getObjectUrl(params, callback) {
         callback(null, {Url: syncUrl});
         return syncUrl;
     }
+
+    var SignHost = getSignHost.call(this, {Bucket: params.Bucket, Region: params.Region, Url: url});
     var AuthData = getAuthorizationAsync.call(this, {
         Action: ((params.Method || '').toUpperCase() === 'PUT' ? 'name/cos:PutObject' : 'name/cos:GetObject'),
         Bucket: params.Bucket || '',
@@ -2949,16 +2965,27 @@ function getObjectUrl(params, callback) {
         Key: params.Key,
         Expires: params.Expires,
         Headers: params.Headers,
-        Query: params.Query
+        Query: params.Query,
+        SignHost: SignHost,
     }, function (err, AuthData) {
         if (!callback) return;
         if (err) {
             callback(err);
             return;
         }
+
+        // 兼容万象url需要encode两次
+        var replaceUrlParamList = function(url) {
+            var urlParams = url.match(/q-url-param-list.*?(?=&)/g)[0];
+            var encodedParams = 'q-url-param-list=' + encodeURIComponent(encodeURIComponent(urlParams.replace(/q-url-param-list=/, '').toLowerCase())).toLowerCase();
+            var reg = new RegExp(urlParams, 'g');
+            var replacedUrl = url.replace(reg, encodedParams);
+            return replacedUrl;
+        }
+
         var signUrl = url;
         signUrl += '?' + (AuthData.Authorization.indexOf('q-signature') > -1 ?
-            AuthData.Authorization : 'sign=' + encodeURIComponent(AuthData.Authorization));
+            replaceUrlParamList(AuthData.Authorization) : 'sign=' + encodeURIComponent(AuthData.Authorization));
         AuthData.XCosSecurityToken && (signUrl += '&x-cos-security-token=' + AuthData.XCosSecurityToken);
         AuthData.ClientIP && (signUrl += '&clientIP=' + AuthData.ClientIP);
         AuthData.ClientUA && (signUrl += '&clientUA=' + AuthData.ClientUA);
@@ -3095,15 +3122,33 @@ function getUrl(params) {
     return url;
 }
 
+var getSignHost = function (opt) {
+    if (!opt.Bucket || !opt.Bucket) return '';
+    var url = opt.Url || getUrl({
+        ForcePathStyle: this.options.ForcePathStyle,
+        protocol: this.options.Protocol,
+        domain: this.options.Domain,
+        bucket: opt.Bucket,
+        region: opt.Region,
+    });
+    var urlHost = url.replace(/^https?:\/\/([^/]+)(\/.*)?$/, '$1');
+    var standardHostReg = new RegExp('^([a-z\\d-]+-\\d+\\.)?(cos|cosv6|ci|pic)\\.([a-z\\d-]+)\\.myqcloud\\.com$');
+    if (standardHostReg.test(urlHost)) return urlHost;
+    return '';
+}
+
 // 异步获取签名
 function getAuthorizationAsync(params, callback) {
 
     var headers = util.clone(params.Headers);
-    delete headers['Content-Type'];
-    delete headers['Cache-Control'];
+    var headerHost = '';
     util.each(headers, function (v, k) {
-        v === '' && delete headers[k];
+        (v === '' || ['content-type', 'cache-control'].indexOf(k.toLowerCase()) > -1) && delete headers[k];
+        if (k.toLowerCase() === 'host') headerHost = v;
     });
+
+    // Host 加入签名计算
+    if (!headerHost && params.SignHost) headers.Host = params.SignHost;
 
     var cb = function (AuthData) {
 
@@ -3321,6 +3366,8 @@ function submitRequest(params, callback) {
     var Query = util.clone(params.qs);
     params.action && (Query[params.action] = '');
 
+    var paramsUrl = params.url || params.Url;
+    var SignHost = params.SignHost || getSignHost.call(this, {Bucket: params.Bucket, Region: params.Region, Url: paramsUrl});
     var next = function (tryTimes) {
         var oldClockOffset = self.options.SystemClockOffset;
         getAuthorizationAsync.call(self, {
@@ -3330,6 +3377,7 @@ function submitRequest(params, callback) {
             Key: params.Key,
             Query: Query,
             Headers: params.headers,
+            SignHost: SignHost,
             Action: params.Action,
             ResourceKey: params.ResourceKey,
             Scope: params.Scope,
