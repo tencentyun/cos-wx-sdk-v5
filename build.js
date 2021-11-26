@@ -46,7 +46,6 @@ var config = {
             {
                 test: /\.m?js$/,
                 loader: 'babel-loader',
-                // exclude: /(node_modules|bower_components)/,
                 options: {
                   presets: ['es2015']
                }
@@ -63,7 +62,6 @@ var config = {
 };
 
 if (process.env.NODE_ENV === 'production') {
-  console.log('production');
     replaceDevCode([
         'demo/config.js',
         'demo/project.config.json',
