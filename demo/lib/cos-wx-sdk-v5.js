@@ -9032,7 +9032,7 @@ var request = function request(params, callback) {
             });
         });
     } else {
-        var qsStr = params.qs && obj2str(params.qs, true) || '';
+        var qsStr = params.qs && obj2str(params.qs) || '';
         if (qsStr) {
             url += (url.indexOf('?') > -1 ? '&' : '?') + qsStr;
         }
