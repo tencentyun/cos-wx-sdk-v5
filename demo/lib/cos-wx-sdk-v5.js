@@ -111,17 +111,17 @@ function getObjectKeys(obj, forKey) {
 /**
  * obj转为string
  * @param  {Object}  obj                需要转的对象，必须
- * @param  {Boolean} stayCase           保留原始大小写，默认false，非必须
+ * @param  {Boolean} lowerCaseKey       key是否转为小写，默认false，非必须
  * @return {String}  data               返回字符串
  */
-var obj2str = function obj2str(obj, stayCase) {
+var obj2str = function obj2str(obj, lowerCaseKey) {
     var i, key, val;
     var list = [];
     var keyList = getObjectKeys(obj);
     for (i = 0; i < keyList.length; i++) {
         key = keyList[i];
         val = obj[key] === undefined || obj[key] === null ? '' : '' + obj[key];
-        key = stayCase ? camSafeUrlEncode(key) : camSafeUrlEncode(key).toLowerCase();
+        key = lowerCaseKey ? camSafeUrlEncode(key).toLowerCase() : camSafeUrlEncode(key);
         val = camSafeUrlEncode(val) || '';
         list.push(key + '=' + val);
     }
@@ -192,7 +192,7 @@ var getAuth = function getAuth(opt) {
     var signKey = CryptoJS.HmacSHA1(qKeyTime, SecretKey).toString();
 
     // 步骤二：构成 FormatString
-    var formatString = [method, pathname, util.obj2str(queryParams), util.obj2str(headers), ''].join('\n');
+    var formatString = [method, pathname, util.obj2str(queryParams, true), util.obj2str(headers, true), ''].join('\n');
 
     // 步骤三：计算 StringToSign
     var stringToSign = ['sha1', qSignTime, CryptoJS.SHA1(formatString).toString(), ''].join('\n');
@@ -8248,7 +8248,7 @@ function getObjectUrl(params, callback) {
 
     var queryParamsStr = '';
     if (params.Query) {
-        queryParamsStr += util.obj2str(params.Query, true);
+        queryParamsStr += util.obj2str(params.Query);
     }
     if (params.QueryString) {
         queryParamsStr += (queryParamsStr ? '&' : '') + params.QueryString;
@@ -8280,10 +8280,10 @@ function getObjectUrl(params, callback) {
             return;
         }
 
-        // 兼容万象url需要encode两次
+        // 兼容万象url qUrlParamList需要再encode一次
         var replaceUrlParamList = function replaceUrlParamList(url) {
             var urlParams = url.match(/q-url-param-list.*?(?=&)/g)[0];
-            var encodedParams = 'q-url-param-list=' + encodeURIComponent(encodeURIComponent(urlParams.replace(/q-url-param-list=/, '').toLowerCase())).toLowerCase();
+            var encodedParams = 'q-url-param-list=' + encodeURIComponent(urlParams.replace(/q-url-param-list=/, '')).toLowerCase();
             var reg = new RegExp(urlParams, 'g');
             var replacedUrl = url.replace(reg, encodedParams);
             return replacedUrl;
@@ -8952,14 +8952,14 @@ function getObjectKeys(obj, forKey) {
     });
 };
 
-var obj2str = function obj2str(obj) {
+var obj2str = function obj2str(obj, lowerCaseKey) {
     var i, key, val;
     var list = [];
     var keyList = getObjectKeys(obj);
     for (i = 0; i < keyList.length; i++) {
         key = keyList[i];
         val = obj[key] === undefined || obj[key] === null ? '' : '' + obj[key];
-        key = camSafeUrlEncode(key).toLowerCase();
+        key = lowerCaseKey ? camSafeUrlEncode(key).toLowerCase() : camSafeUrlEncode(key);
         val = camSafeUrlEncode(val) || '';
         list.push(key + '=' + val);
     }
@@ -9032,7 +9032,7 @@ var request = function request(params, callback) {
             });
         });
     } else {
-        var qsStr = params.qs && obj2str(params.qs) || '';
+        var qsStr = params.qs && obj2str(params.qs, true) || '';
         if (qsStr) {
             url += (url.indexOf('?') > -1 ? '&' : '?') + qsStr;
         }
