@@ -18,7 +18,11 @@
 1. 把 demo/lib/cos-wx-sdk-v5.js 复制到自己小程序项目代码里，在需要上传文件的地方贴以下代码
 
 ```javascript
+
+// 存储桶名称，由bucketname-appid 组成，appid必须填入，可以在COS控制台查看存储桶名称。 https://console.cloud.tencent.com/cos5/bucket
 var Bucket = 'test-1250000000';
+// 存储桶Region可以在COS控制台指定存储桶的概览页查看 https://console.cloud.tencent.com/cos5/bucket/ 
+// 关于地域的详情见 https://cloud.tencent.com/document/product/436/6224
 var Region = 'ap-guangzhou';
 
 // 初始化实例
@@ -68,8 +72,10 @@ wx.chooseImage({
 });
 ```
 
-## 说明文档
+## 说明文档 
 
-完整文档有待完善，不支持分片相关接口，上传下载相关方法请查看源码和例子 [使用例子](demo/demo-sdk.js)
+[使用例子](demo/demo-sdk.js)
 
-其他大部分接口可以参考以下 JS SDK 文档 [接口文档](https://cloud.tencent.com/document/product/436/12260)
+[快速入门](https://cloud.tencent.com/document/product/436/31953)
+
+[接口文档](https://cloud.tencent.com/document/product/436/31953)

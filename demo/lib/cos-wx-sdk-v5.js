@@ -80,53 +80,70 @@ return /******/ (function(modules) { // webpackBootstrap
 "use strict";
 /* WEBPACK VAR INJECTION */(function(global) {
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var md5 = __webpack_require__(8);
-var CryptoJS = __webpack_require__(11);
-var xml2json = __webpack_require__(12);
-var json2xml = __webpack_require__(15);
+var CryptoJS = __webpack_require__(12);
+var xml2json = __webpack_require__(13);
+var json2xml = __webpack_require__(16);
 var base64 = __webpack_require__(3);
 var btoa = base64.btoa;
 var wxfs = wx.getFileSystemManager();
 
 function camSafeUrlEncode(str) {
-    return encodeURIComponent(str)
-        .replace(/!/g, '%21')
-        .replace(/'/g, '%27')
-        .replace(/\(/g, '%28')
-        .replace(/\)/g, '%29')
-        .replace(/\*/g, '%2A');
+    return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/\*/g, '%2A');
 }
 
 function getObjectKeys(obj, forKey) {
-  var list = [];
-  for (var key in obj) {
-      if (obj.hasOwnProperty(key)) {
-          list.push(forKey ? camSafeUrlEncode(key).toLowerCase() : key);
-      }
-  }
-  return list.sort(function (a, b) {
-      a = a.toLowerCase();
-      b = b.toLowerCase();
-      return a === b ? 0 : (a > b ? 1 : -1);
-  });
+    var list = [];
+    for (var key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            list.push(forKey ? camSafeUrlEncode(key).toLowerCase() : key);
+        }
+    }
+    return list.sort(function (a, b) {
+        a = a.toLowerCase();
+        b = b.toLowerCase();
+        return a === b ? 0 : a > b ? 1 : -1;
+    });
 };
 
-var obj2str = function (obj) {
-  var i, key, val;
-  var list = [];
-  var keyList = getObjectKeys(obj);
-  for (i = 0; i < keyList.length; i++) {
-      key = keyList[i];
-      val = (obj[key] === undefined || obj[key] === null) ? '' : ('' + obj[key]);
-      key = camSafeUrlEncode(key).toLowerCase();
-      val = camSafeUrlEncode(val) || '';
-      list.push(key + '=' + val)
-  }
-  return list.join('&');
+/**
+ * obj转为string
+ * @param  {Object}  obj                需要转的对象，必须
+ * @param  {Boolean} lowerCaseKey       key是否转为小写，默认false，非必须
+ * @return {String}  data               返回字符串
+ */
+var obj2str = function obj2str(obj, lowerCaseKey) {
+    var i, key, val;
+    var list = [];
+    var keyList = getObjectKeys(obj);
+    for (i = 0; i < keyList.length; i++) {
+        key = keyList[i];
+        val = obj[key] === undefined || obj[key] === null ? '' : '' + obj[key];
+        key = lowerCaseKey ? camSafeUrlEncode(key).toLowerCase() : camSafeUrlEncode(key);
+        val = camSafeUrlEncode(val) || '';
+        list.push(key + '=' + val);
+    }
+    return list.join('&');
+};
+
+// 可以签入签名的headers
+var signHeaders = ['content-disposition', 'content-encoding', 'content-length', 'content-md5', 'expect', 'expires', 'host', 'if-match', 'if-modified-since', 'if-none-match', 'if-unmodified-since', 'origin', 'range', 'response-cache-control', 'response-content-disposition', 'response-content-encoding', 'response-content-language', 'response-content-type', 'response-expires', 'transfer-encoding', 'versionid'];
+
+var getSignHeaderObj = function getSignHeaderObj(headers) {
+    var signHeaderObj = {};
+    for (var i in headers) {
+        var key = i.toLowerCase();
+        if (key.indexOf('x-cos-') > -1 || signHeaders.indexOf(key) > -1) {
+            signHeaderObj[i] = headers[i];
+        }
+    }
+    return signHeaderObj;
 };
 
 //测试用的key后面可以去掉
-var getAuth = function (opt) {
+var getAuth = function getAuth(opt) {
     opt = opt || {};
 
     var SecretId = opt.SecretId;
@@ -134,7 +151,7 @@ var getAuth = function (opt) {
     var KeyTime = opt.KeyTime;
     var method = (opt.method || opt.Method || 'get').toLowerCase();
     var queryParams = clone(opt.Query || opt.params || {});
-    var headers = clone(opt.Headers || opt.headers || {});
+    var headers = getSignHeaderObj(clone(opt.Headers || opt.headers || {}));
 
     var Key = opt.Key || '';
     var pathname;
@@ -144,6 +161,9 @@ var getAuth = function (opt) {
         pathname = opt.Pathname || opt.pathname || Key;
         pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
     }
+
+    // 如果有传入存储桶，那么签名默认加 Host 参与计算，避免跨桶访问
+    if (!headers.Host && !headers.host && opt.Bucket && opt.Region) headers.Host = opt.Bucket + '.cos.' + opt.Region + '.myqcloud.com';
 
     if (!SecretId) return console.error('missing param SecretId');
     if (!SecretKey) return console.error('missing param SecretKey');
@@ -156,7 +176,7 @@ var getAuth = function (opt) {
     if (Expires === undefined) {
         exp += 900; // 签名过期时间为当前 + 900s
     } else {
-        exp += (Expires * 1) || 0;
+        exp += Expires * 1 || 0;
     }
 
     // 要用到的 Authorization 参数列表
@@ -172,7 +192,7 @@ var getAuth = function (opt) {
     var signKey = CryptoJS.HmacSHA1(qKeyTime, SecretKey).toString();
 
     // 步骤二：构成 FormatString
-    var formatString = [method, pathname, util.obj2str(queryParams), util.obj2str(headers), ''].join('\n');
+    var formatString = [method, pathname, util.obj2str(queryParams, true), util.obj2str(headers, true), ''].join('\n');
 
     // 步骤三：计算 StringToSign
     var stringToSign = ['sha1', qSignTime, CryptoJS.SHA1(formatString).toString(), ''].join('\n');
@@ -181,26 +201,15 @@ var getAuth = function (opt) {
     var qSignature = CryptoJS.HmacSHA1(stringToSign, signKey).toString();
 
     // 步骤五：构造 Authorization
-    var authorization = [
-        'q-sign-algorithm=' + qSignAlgorithm,
-        'q-ak=' + qAk,
-        'q-sign-time=' + qSignTime,
-        'q-key-time=' + qKeyTime,
-        'q-header-list=' + qHeaderList,
-        'q-url-param-list=' + qUrlParamList,
-        'q-signature=' + qSignature
-    ].join('&');
+    var authorization = ['q-sign-algorithm=' + qSignAlgorithm, 'q-ak=' + qAk, 'q-sign-time=' + qSignTime, 'q-key-time=' + qKeyTime, 'q-header-list=' + qHeaderList, 'q-url-param-list=' + qUrlParamList, 'q-signature=' + qSignature].join('&');
 
     return authorization;
-
 };
 
-var noop = function () {
-
-};
+var noop = function noop() {};
 
 // 清除对象里值为的 undefined 或 null 的属性
-var clearKey = function (obj) {
+var clearKey = function clearKey(obj) {
     var retObj = {};
     for (var key in obj) {
         if (obj.hasOwnProperty(key) && obj[key] !== undefined && obj[key] !== null) {
@@ -211,18 +220,18 @@ var clearKey = function (obj) {
 };
 
 // 获取文件分片
-var fileSlice = function (FilePath, start, end, callback) {
+var fileSlice = function fileSlice(FilePath, start, end, callback) {
     if (FilePath) {
         wxfs.readFile({
             filePath: FilePath,
             position: start,
             length: end - start,
-            success: function (res) {
+            success: function success(res) {
                 callback(res.data);
             },
-            fail: function () {
+            fail: function fail() {
                 callback(null);
-            },
+            }
         });
     } else {
         callback(null);
@@ -230,7 +239,7 @@ var fileSlice = function (FilePath, start, end, callback) {
 };
 
 // 获取文件内容的 MD5
-var getBodyMd5 = function (UploadCheckContentMd5, Body, callback) {
+var getBodyMd5 = function getBodyMd5(UploadCheckContentMd5, Body, callback) {
     callback = callback || noop;
     if (UploadCheckContentMd5) {
         if (Body && Body instanceof ArrayBuffer) {
@@ -246,7 +255,7 @@ var getBodyMd5 = function (UploadCheckContentMd5, Body, callback) {
 };
 
 // 获取文件 md5 值
-var getFileMd5 = function (body, callback) {
+var getFileMd5 = function getFileMd5(body, callback) {
     var hash = md5(body);
     callback && callback(hash);
     return hash;
@@ -254,7 +263,7 @@ var getFileMd5 = function (body, callback) {
 
 function clone(obj) {
     return map(obj, function (v) {
-        return typeof v === 'object' && v !== null ? clone(v) : v;
+        return (typeof v === 'undefined' ? 'undefined' : _typeof(v)) === 'object' && v !== null ? clone(v) : v;
     });
 }
 
@@ -323,22 +332,25 @@ function filter(obj, fn) {
     return o;
 }
 
-var binaryBase64 = function (str) {
-    var i, len, char, res = '';
+var binaryBase64 = function binaryBase64(str) {
+    var i,
+        len,
+        char,
+        res = '';
     for (i = 0, len = str.length / 2; i < len; i++) {
         char = parseInt(str[i * 2] + str[i * 2 + 1], 16);
         res += String.fromCharCode(char);
     }
     return btoa(res);
 };
-var uuid = function () {
-    var S4 = function () {
-        return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+var uuid = function uuid() {
+    var S4 = function S4() {
+        return ((1 + Math.random()) * 0x10000 | 0).toString(16).substring(1);
     };
-    return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
+    return S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4();
 };
 
-var hasMissingParams = function (apiName, params) {
+var hasMissingParams = function hasMissingParams(apiName, params) {
     var Bucket = params.Bucket;
     var Region = params.Region;
     var Key = params.Key;
@@ -353,7 +365,7 @@ var hasMissingParams = function (apiName, params) {
     return false;
 };
 
-var formatParams = function (apiName, params) {
+var formatParams = function formatParams(apiName, params) {
 
     // 复制参数对象
     params = extend({}, params);
@@ -361,7 +373,7 @@ var formatParams = function (apiName, params) {
     // 统一处理 Headers
     if (apiName !== 'getAuth' && apiName !== 'getV4Auth' && apiName !== 'getObjectUrl') {
         var Headers = params.Headers || {};
-        if (params && typeof params === 'object') {
+        if (params && (typeof params === 'undefined' ? 'undefined' : _typeof(params)) === 'object') {
             (function () {
                 for (var key in params) {
                     if (params.hasOwnProperty(key) && key.indexOf('x-cos-') > -1) {
@@ -407,7 +419,7 @@ var formatParams = function (apiName, params) {
                 // SSE-COS、SSE-KMS
                 'x-cos-server-side-encryption': 'ServerSideEncryption',
                 'x-cos-server-side-encryption-cos-kms-key-id': 'SSEKMSKeyId',
-                'x-cos-server-side-encryption-context': 'SSEContext',
+                'x-cos-server-side-encryption-context': 'SSEContext'
             };
             util.each(headerMap, function (paramKey, headerKey) {
                 if (params[paramKey] !== undefined) {
@@ -422,7 +434,7 @@ var formatParams = function (apiName, params) {
     return params;
 };
 
-var apiWrapper = function (apiName, apiFn) {
+var apiWrapper = function apiWrapper(apiName, apiFn) {
     return function (params, callback) {
 
         var self = this;
@@ -437,21 +449,21 @@ var apiWrapper = function (apiName, apiFn) {
         params = formatParams(apiName, params);
 
         // 代理回调函数
-        var formatResult = function (result) {
+        var formatResult = function formatResult(result) {
             if (result && result.headers) {
                 result.headers['x-cos-version-id'] && (result.VersionId = result.headers['x-cos-version-id']);
                 result.headers['x-cos-delete-marker'] && (result.DeleteMarker = result.headers['x-cos-delete-marker']);
             }
             return result;
         };
-        var _callback = function (err, data) {
+        var _callback = function _callback(err, data) {
             callback && callback(formatResult(err), formatResult(data));
         };
 
-        var checkParams = function () {
+        var checkParams = function checkParams() {
             if (apiName !== 'getService' && apiName !== 'abortUploadTask') {
                 // 判断参数是否完整
-                var missingResult = hasMissingParams(apiName, params)
+                var missingResult = hasMissingParams(apiName, params);
                 if (missingResult) {
                     return 'missing param ' + missingResult;
                 }
@@ -463,11 +475,7 @@ var apiWrapper = function (apiName, apiFn) {
                         return 'Region format error.';
                     }
                     // 判断 region 格式
-                    if (!self.options.CompatibilityMode
-                        && params.Region.indexOf('-') === -1
-                        && params.Region !== 'yfb'
-                        && params.Region !== 'default'
-                        && params.Region !== 'accelerate') {
+                    if (!self.options.CompatibilityMode && params.Region.indexOf('-') === -1 && params.Region !== 'yfb' && params.Region !== 'default' && params.Region !== 'accelerate') {
                         console.warn('warning: param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224');
                     }
                 }
@@ -499,21 +507,21 @@ var apiWrapper = function (apiName, apiFn) {
         var Promise = global.Promise;
         if (!isSync && Promise && !callback) {
             return new Promise(function (resolve, reject) {
-                callback = function (err, data) {
+                callback = function callback(err, data) {
                     err ? reject(err) : resolve(data);
                 };
-                if (errMsg) return _callback({error: errMsg});
+                if (errMsg) return _callback({ error: errMsg });
                 apiFn.call(self, params, _callback);
             });
         } else {
-            if (errMsg) return _callback({error: errMsg});
+            if (errMsg) return _callback({ error: errMsg });
             var res = apiFn.call(self, params, _callback);
             if (isSync) return res;
         }
-    }
+    };
 };
 
-var throttleOnProgress = function (total, onProgress) {
+var throttleOnProgress = function throttleOnProgress(total, onProgress) {
     var self = this;
     var size0 = 0;
     var size1 = 0;
@@ -523,7 +531,7 @@ var throttleOnProgress = function (total, onProgress) {
 
     function update() {
         timer = 0;
-        if (onProgress && (typeof onProgress === 'function')) {
+        if (onProgress && typeof onProgress === 'function') {
             time1 = Date.now();
             var speed = Math.max(0, Math.round((size1 - size0) / ((time1 - time0) / 1000) * 100) / 100) || 0;
             var percent;
@@ -535,9 +543,8 @@ var throttleOnProgress = function (total, onProgress) {
             time0 = time1;
             size0 = size1;
             try {
-                onProgress({loaded: size1, total: total, speed: speed, percent: percent});
-            } catch (e) {
-            }
+                onProgress({ loaded: size1, total: total, speed: speed, percent: percent });
+            } catch (e) {}
         }
     }
 
@@ -556,7 +563,7 @@ var throttleOnProgress = function (total, onProgress) {
     };
 };
 
-var getFileSize = function (api, params, callback) {
+var getFileSize = function getFileSize(api, params, callback) {
     if (api === 'postObject') {
         callback();
     } else if (api === 'putObject') {
@@ -564,13 +571,13 @@ var getFileSize = function (api, params, callback) {
             params.ContentLength = params.Body.byteLength;
             callback(null, params.ContentLength);
         } else {
-            callback({error: 'missing param Body'});
+            callback({ error: 'missing param Body' });
         }
     } else {
         if (params.FilePath) {
             wxfs.stat({
                 path: params.FilePath,
-                success: function (res) {
+                success: function success(res) {
                     var stats = res.stats;
                     params.FileStat = stats;
                     params.FileStat.FilePath = params.FilePath;
@@ -578,47 +585,47 @@ var getFileSize = function (api, params, callback) {
                     params.ContentLength = size = size || 0;
                     callback(null, size);
                 },
-                fail: function (err) {
+                fail: function fail(err) {
                     callback(err);
-                },
+                }
             });
         } else {
-            callback({error: 'missing param FilePath'});
+            callback({ error: 'missing param FilePath' });
         }
     }
 };
 
-var getSkewTime = function (offset) {
+var getSkewTime = function getSkewTime(offset) {
     return Date.now() + (offset || 0);
 };
 
-var compareVersion = function (v1, v2) {
-    v1 = v1.split('.')
-    v2 = v2.split('.')
-    var len = Math.max(v1.length, v2.length)
+var compareVersion = function compareVersion(v1, v2) {
+    v1 = v1.split('.');
+    v2 = v2.split('.');
+    var len = Math.max(v1.length, v2.length);
 
     while (v1.length < len) {
-        v1.push('0')
+        v1.push('0');
     }
     while (v2.length < len) {
-        v2.push('0')
+        v2.push('0');
     }
 
     for (var i = 0; i < len; i++) {
-        var num1 = parseInt(v1[i])
-        var num2 = parseInt(v2[i])
+        var num1 = parseInt(v1[i]);
+        var num2 = parseInt(v2[i]);
 
         if (num1 > num2) {
-            return 1
+            return 1;
         } else if (num1 < num2) {
-            return -1
+            return -1;
         }
     }
 
-    return 0
+    return 0;
 };
 
-var canFileSlice = (function () {
+var canFileSlice = function () {
     var systemInfo = wx.getSystemInfoSync();
     var support = compareVersion(systemInfo.SDKVersion, '2.10.0') >= 0;
     var needWarning = !support && systemInfo.platform === "devtools";
@@ -627,11 +634,12 @@ var canFileSlice = (function () {
         needWarning = false;
         return support;
     };
-})();
+}();
 
-var isCIHost = function(url) {
-    return /^https?:\/\/([^/]+\.)?ci\.[^/]+/.test(url);
-}
+var isCIHost = function isCIHost(url) {
+    return (/^https?:\/\/([^/]+\.)?ci\.[^/]+/.test(url)
+    );
+};
 
 var util = {
     noop: noop,
@@ -663,32 +671,35 @@ var util = {
     getAuth: getAuth,
     compareVersion: compareVersion,
     canFileSlice: canFileSlice,
-    isCIHost: isCIHost,
+    isCIHost: isCIHost
 };
 
 module.exports = util;
-xml2json
-
+xml2json;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
 
 /***/ }),
 /* 1 */
-/***/ (function(module, exports) {
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 var g;
 
 // This works in non-strict mode
-g = (function() {
+g = function () {
 	return this;
-})();
+}();
 
 try {
 	// This works if eval is allowed (see CSP)
-	g = g || Function("return this")() || (1,eval)("this");
-} catch(e) {
+	g = g || Function("return this")() || (1, eval)("this");
+} catch (e) {
 	// This works if the window reference is available
-	if(typeof window === "object")
-		g = window;
+	if ((typeof window === "undefined" ? "undefined" : _typeof(window)) === "object") g = window;
 }
 
 // g can still be undefined, but nothing to do about it...
@@ -697,10 +708,14 @@ try {
 
 module.exports = g;
 
-
 /***/ }),
 /* 2 */
-/***/ (function(module, exports) {
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 /*
  * DOM Level 2
@@ -709,8 +724,8 @@ module.exports = g;
  * @see http://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/ecma-script-binding.html
  */
 
-function copy(src,dest){
-	for(var p in src){
+function copy(src, dest) {
+	for (var p in src) {
 		dest[p] = src[p];
 	}
 }
@@ -718,238 +733,239 @@ function copy(src,dest){
 ^\w+\.prototype\.([_\w]+)\s*=\s*((?:.*\{\s*?[\r\n][\s\S]*?^})|\S.*?(?=[;\r\n]));?
 ^\w+\.prototype\.([_\w]+)\s*=\s*(\S.*?(?=[;\r\n]));?
  */
-function _extends(Class,Super){
+function _extends(Class, Super) {
 	var pt = Class.prototype;
-	if(Object.create){
-		var ppt = Object.create(Super.prototype)
+	if (Object.create) {
+		var ppt = Object.create(Super.prototype);
 		pt.__proto__ = ppt;
 	}
-	if(!(pt instanceof Super)){
-		function t(){};
+	if (!(pt instanceof Super)) {
+		var t = function t() {};
+
+		;
 		t.prototype = Super.prototype;
 		t = new t();
-		copy(pt,t);
+		copy(pt, t);
 		Class.prototype = pt = t;
 	}
-	if(pt.constructor != Class){
-		if(typeof Class != 'function'){
-			console.error("unknow Class:"+Class)
+	if (pt.constructor != Class) {
+		if (typeof Class != 'function') {
+			console.error("unknow Class:" + Class);
 		}
-		pt.constructor = Class
+		pt.constructor = Class;
 	}
 }
-var htmlns = 'http://www.w3.org/1999/xhtml' ;
+var htmlns = 'http://www.w3.org/1999/xhtml';
 // Node Types
-var NodeType = {}
-var ELEMENT_NODE                = NodeType.ELEMENT_NODE                = 1;
-var ATTRIBUTE_NODE              = NodeType.ATTRIBUTE_NODE              = 2;
-var TEXT_NODE                   = NodeType.TEXT_NODE                   = 3;
-var CDATA_SECTION_NODE          = NodeType.CDATA_SECTION_NODE          = 4;
-var ENTITY_REFERENCE_NODE       = NodeType.ENTITY_REFERENCE_NODE       = 5;
-var ENTITY_NODE                 = NodeType.ENTITY_NODE                 = 6;
+var NodeType = {};
+var ELEMENT_NODE = NodeType.ELEMENT_NODE = 1;
+var ATTRIBUTE_NODE = NodeType.ATTRIBUTE_NODE = 2;
+var TEXT_NODE = NodeType.TEXT_NODE = 3;
+var CDATA_SECTION_NODE = NodeType.CDATA_SECTION_NODE = 4;
+var ENTITY_REFERENCE_NODE = NodeType.ENTITY_REFERENCE_NODE = 5;
+var ENTITY_NODE = NodeType.ENTITY_NODE = 6;
 var PROCESSING_INSTRUCTION_NODE = NodeType.PROCESSING_INSTRUCTION_NODE = 7;
-var COMMENT_NODE                = NodeType.COMMENT_NODE                = 8;
-var DOCUMENT_NODE               = NodeType.DOCUMENT_NODE               = 9;
-var DOCUMENT_TYPE_NODE          = NodeType.DOCUMENT_TYPE_NODE          = 10;
-var DOCUMENT_FRAGMENT_NODE      = NodeType.DOCUMENT_FRAGMENT_NODE      = 11;
-var NOTATION_NODE               = NodeType.NOTATION_NODE               = 12;
+var COMMENT_NODE = NodeType.COMMENT_NODE = 8;
+var DOCUMENT_NODE = NodeType.DOCUMENT_NODE = 9;
+var DOCUMENT_TYPE_NODE = NodeType.DOCUMENT_TYPE_NODE = 10;
+var DOCUMENT_FRAGMENT_NODE = NodeType.DOCUMENT_FRAGMENT_NODE = 11;
+var NOTATION_NODE = NodeType.NOTATION_NODE = 12;
 
 // ExceptionCode
-var ExceptionCode = {}
+var ExceptionCode = {};
 var ExceptionMessage = {};
-var INDEX_SIZE_ERR              = ExceptionCode.INDEX_SIZE_ERR              = ((ExceptionMessage[1]="Index size error"),1);
-var DOMSTRING_SIZE_ERR          = ExceptionCode.DOMSTRING_SIZE_ERR          = ((ExceptionMessage[2]="DOMString size error"),2);
-var HIERARCHY_REQUEST_ERR       = ExceptionCode.HIERARCHY_REQUEST_ERR       = ((ExceptionMessage[3]="Hierarchy request error"),3);
-var WRONG_DOCUMENT_ERR          = ExceptionCode.WRONG_DOCUMENT_ERR          = ((ExceptionMessage[4]="Wrong document"),4);
-var INVALID_CHARACTER_ERR       = ExceptionCode.INVALID_CHARACTER_ERR       = ((ExceptionMessage[5]="Invalid character"),5);
-var NO_DATA_ALLOWED_ERR         = ExceptionCode.NO_DATA_ALLOWED_ERR         = ((ExceptionMessage[6]="No data allowed"),6);
-var NO_MODIFICATION_ALLOWED_ERR = ExceptionCode.NO_MODIFICATION_ALLOWED_ERR = ((ExceptionMessage[7]="No modification allowed"),7);
-var NOT_FOUND_ERR               = ExceptionCode.NOT_FOUND_ERR               = ((ExceptionMessage[8]="Not found"),8);
-var NOT_SUPPORTED_ERR           = ExceptionCode.NOT_SUPPORTED_ERR           = ((ExceptionMessage[9]="Not supported"),9);
-var INUSE_ATTRIBUTE_ERR         = ExceptionCode.INUSE_ATTRIBUTE_ERR         = ((ExceptionMessage[10]="Attribute in use"),10);
+var INDEX_SIZE_ERR = ExceptionCode.INDEX_SIZE_ERR = (ExceptionMessage[1] = "Index size error", 1);
+var DOMSTRING_SIZE_ERR = ExceptionCode.DOMSTRING_SIZE_ERR = (ExceptionMessage[2] = "DOMString size error", 2);
+var HIERARCHY_REQUEST_ERR = ExceptionCode.HIERARCHY_REQUEST_ERR = (ExceptionMessage[3] = "Hierarchy request error", 3);
+var WRONG_DOCUMENT_ERR = ExceptionCode.WRONG_DOCUMENT_ERR = (ExceptionMessage[4] = "Wrong document", 4);
+var INVALID_CHARACTER_ERR = ExceptionCode.INVALID_CHARACTER_ERR = (ExceptionMessage[5] = "Invalid character", 5);
+var NO_DATA_ALLOWED_ERR = ExceptionCode.NO_DATA_ALLOWED_ERR = (ExceptionMessage[6] = "No data allowed", 6);
+var NO_MODIFICATION_ALLOWED_ERR = ExceptionCode.NO_MODIFICATION_ALLOWED_ERR = (ExceptionMessage[7] = "No modification allowed", 7);
+var NOT_FOUND_ERR = ExceptionCode.NOT_FOUND_ERR = (ExceptionMessage[8] = "Not found", 8);
+var NOT_SUPPORTED_ERR = ExceptionCode.NOT_SUPPORTED_ERR = (ExceptionMessage[9] = "Not supported", 9);
+var INUSE_ATTRIBUTE_ERR = ExceptionCode.INUSE_ATTRIBUTE_ERR = (ExceptionMessage[10] = "Attribute in use", 10);
 //level2
-var INVALID_STATE_ERR        	= ExceptionCode.INVALID_STATE_ERR        	= ((ExceptionMessage[11]="Invalid state"),11);
-var SYNTAX_ERR               	= ExceptionCode.SYNTAX_ERR               	= ((ExceptionMessage[12]="Syntax error"),12);
-var INVALID_MODIFICATION_ERR 	= ExceptionCode.INVALID_MODIFICATION_ERR 	= ((ExceptionMessage[13]="Invalid modification"),13);
-var NAMESPACE_ERR            	= ExceptionCode.NAMESPACE_ERR           	= ((ExceptionMessage[14]="Invalid namespace"),14);
-var INVALID_ACCESS_ERR       	= ExceptionCode.INVALID_ACCESS_ERR      	= ((ExceptionMessage[15]="Invalid access"),15);
-
+var INVALID_STATE_ERR = ExceptionCode.INVALID_STATE_ERR = (ExceptionMessage[11] = "Invalid state", 11);
+var SYNTAX_ERR = ExceptionCode.SYNTAX_ERR = (ExceptionMessage[12] = "Syntax error", 12);
+var INVALID_MODIFICATION_ERR = ExceptionCode.INVALID_MODIFICATION_ERR = (ExceptionMessage[13] = "Invalid modification", 13);
+var NAMESPACE_ERR = ExceptionCode.NAMESPACE_ERR = (ExceptionMessage[14] = "Invalid namespace", 14);
+var INVALID_ACCESS_ERR = ExceptionCode.INVALID_ACCESS_ERR = (ExceptionMessage[15] = "Invalid access", 15);
 
 function DOMException(code, message) {
-	if(message instanceof Error){
+	if (message instanceof Error) {
 		var error = message;
-	}else{
+	} else {
 		error = this;
 		Error.call(this, ExceptionMessage[code]);
 		this.message = ExceptionMessage[code];
-		if(Error.captureStackTrace) Error.captureStackTrace(this, DOMException);
+		if (Error.captureStackTrace) Error.captureStackTrace(this, DOMException);
 	}
 	error.code = code;
-	if(message) this.message = this.message + ": " + message;
+	if (message) this.message = this.message + ": " + message;
 	return error;
 };
 DOMException.prototype = Error.prototype;
-copy(ExceptionCode,DOMException)
+copy(ExceptionCode, DOMException);
 /**
  * @see http://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/core.html#ID-536297177
  * The NodeList interface provides the abstraction of an ordered collection of nodes, without defining or constraining how this collection is implemented. NodeList objects in the DOM are live.
  * The items in the NodeList are accessible via an integral index, starting from 0.
  */
-function NodeList() {
-};
+function NodeList() {};
 NodeList.prototype = {
 	/**
-	 * The number of nodes in the list. The range of valid child node indices is 0 to length-1 inclusive.
-	 * @standard level1
-	 */
-	length:0, 
+  * The number of nodes in the list. The range of valid child node indices is 0 to length-1 inclusive.
+  * @standard level1
+  */
+	length: 0,
 	/**
-	 * Returns the indexth item in the collection. If index is greater than or equal to the number of nodes in the list, this returns null.
-	 * @standard level1
-	 * @param index  unsigned long 
-	 *   Index into the collection.
-	 * @return Node
-	 * 	The node at the indexth position in the NodeList, or null if that is not a valid index. 
-	 */
-	item: function(index) {
+  * Returns the indexth item in the collection. If index is greater than or equal to the number of nodes in the list, this returns null.
+  * @standard level1
+  * @param index  unsigned long 
+  *   Index into the collection.
+  * @return Node
+  * 	The node at the indexth position in the NodeList, or null if that is not a valid index. 
+  */
+	item: function item(index) {
 		return this[index] || null;
 	},
-	toString:function(isHTML,nodeFilter){
-		for(var buf = [], i = 0;i<this.length;i++){
-			serializeToString(this[i],buf,isHTML,nodeFilter);
+	toString: function toString(isHTML, nodeFilter) {
+		for (var buf = [], i = 0; i < this.length; i++) {
+			serializeToString(this[i], buf, isHTML, nodeFilter);
 		}
 		return buf.join('');
 	}
 };
-function LiveNodeList(node,refresh){
+function LiveNodeList(node, refresh) {
 	this._node = node;
-	this._refresh = refresh
+	this._refresh = refresh;
 	_updateLiveList(this);
 }
-function _updateLiveList(list){
+function _updateLiveList(list) {
 	var inc = list._node._inc || list._node.ownerDocument._inc;
-	if(list._inc != inc){
+	if (list._inc != inc) {
 		var ls = list._refresh(list._node);
 		//console.log(ls.length)
-		__set__(list,'length',ls.length);
-		copy(ls,list);
+		__set__(list, 'length', ls.length);
+		copy(ls, list);
 		list._inc = inc;
 	}
 }
-LiveNodeList.prototype.item = function(i){
+LiveNodeList.prototype.item = function (i) {
 	_updateLiveList(this);
 	return this[i];
-}
+};
 
-_extends(LiveNodeList,NodeList);
+_extends(LiveNodeList, NodeList);
 /**
  * 
  * Objects implementing the NamedNodeMap interface are used to represent collections of nodes that can be accessed by name. Note that NamedNodeMap does not inherit from NodeList; NamedNodeMaps are not maintained in any particular order. Objects contained in an object implementing NamedNodeMap may also be accessed by an ordinal index, but this is simply to allow convenient enumeration of the contents of a NamedNodeMap, and does not imply that the DOM specifies an order to these Nodes.
  * NamedNodeMap objects in the DOM are live.
  * used for attributes or DocumentType entities 
  */
-function NamedNodeMap() {
-};
+function NamedNodeMap() {};
 
-function _findNodeIndex(list,node){
+function _findNodeIndex(list, node) {
 	var i = list.length;
-	while(i--){
-		if(list[i] === node){return i}
+	while (i--) {
+		if (list[i] === node) {
+			return i;
+		}
 	}
 }
 
-function _addNamedNode(el,list,newAttr,oldAttr){
-	if(oldAttr){
-		list[_findNodeIndex(list,oldAttr)] = newAttr;
-	}else{
+function _addNamedNode(el, list, newAttr, oldAttr) {
+	if (oldAttr) {
+		list[_findNodeIndex(list, oldAttr)] = newAttr;
+	} else {
 		list[list.length++] = newAttr;
 	}
-	if(el){
+	if (el) {
 		newAttr.ownerElement = el;
 		var doc = el.ownerDocument;
-		if(doc){
-			oldAttr && _onRemoveAttribute(doc,el,oldAttr);
-			_onAddAttribute(doc,el,newAttr);
+		if (doc) {
+			oldAttr && _onRemoveAttribute(doc, el, oldAttr);
+			_onAddAttribute(doc, el, newAttr);
 		}
 	}
 }
-function _removeNamedNode(el,list,attr){
+function _removeNamedNode(el, list, attr) {
 	//console.log('remove attr:'+attr)
-	var i = _findNodeIndex(list,attr);
-	if(i>=0){
-		var lastIndex = list.length-1
-		while(i<lastIndex){
-			list[i] = list[++i]
+	var i = _findNodeIndex(list, attr);
+	if (i >= 0) {
+		var lastIndex = list.length - 1;
+		while (i < lastIndex) {
+			list[i] = list[++i];
 		}
 		list.length = lastIndex;
-		if(el){
+		if (el) {
 			var doc = el.ownerDocument;
-			if(doc){
-				_onRemoveAttribute(doc,el,attr);
+			if (doc) {
+				_onRemoveAttribute(doc, el, attr);
 				attr.ownerElement = null;
 			}
 		}
-	}else{
-		throw DOMException(NOT_FOUND_ERR,new Error(el.tagName+'@'+attr))
+	} else {
+		throw DOMException(NOT_FOUND_ERR, new Error(el.tagName + '@' + attr));
 	}
 }
 NamedNodeMap.prototype = {
-	length:0,
-	item:NodeList.prototype.item,
-	getNamedItem: function(key) {
-//		if(key.indexOf(':')>0 || key == 'xmlns'){
-//			return null;
-//		}
+	length: 0,
+	item: NodeList.prototype.item,
+	getNamedItem: function getNamedItem(key) {
+		//		if(key.indexOf(':')>0 || key == 'xmlns'){
+		//			return null;
+		//		}
 		//console.log()
 		var i = this.length;
-		while(i--){
+		while (i--) {
 			var attr = this[i];
 			//console.log(attr.nodeName,key)
-			if(attr.nodeName == key){
+			if (attr.nodeName == key) {
 				return attr;
 			}
 		}
 	},
-	setNamedItem: function(attr) {
+	setNamedItem: function setNamedItem(attr) {
 		var el = attr.ownerElement;
-		if(el && el!=this._ownerElement){
+		if (el && el != this._ownerElement) {
 			throw new DOMException(INUSE_ATTRIBUTE_ERR);
 		}
 		var oldAttr = this.getNamedItem(attr.nodeName);
-		_addNamedNode(this._ownerElement,this,attr,oldAttr);
+		_addNamedNode(this._ownerElement, this, attr, oldAttr);
 		return oldAttr;
 	},
 	/* returns Node */
-	setNamedItemNS: function(attr) {// raises: WRONG_DOCUMENT_ERR,NO_MODIFICATION_ALLOWED_ERR,INUSE_ATTRIBUTE_ERR
-		var el = attr.ownerElement, oldAttr;
-		if(el && el!=this._ownerElement){
+	setNamedItemNS: function setNamedItemNS(attr) {
+		// raises: WRONG_DOCUMENT_ERR,NO_MODIFICATION_ALLOWED_ERR,INUSE_ATTRIBUTE_ERR
+		var el = attr.ownerElement,
+		    oldAttr;
+		if (el && el != this._ownerElement) {
 			throw new DOMException(INUSE_ATTRIBUTE_ERR);
 		}
-		oldAttr = this.getNamedItemNS(attr.namespaceURI,attr.localName);
-		_addNamedNode(this._ownerElement,this,attr,oldAttr);
+		oldAttr = this.getNamedItemNS(attr.namespaceURI, attr.localName);
+		_addNamedNode(this._ownerElement, this, attr, oldAttr);
 		return oldAttr;
 	},
 
 	/* returns Node */
-	removeNamedItem: function(key) {
+	removeNamedItem: function removeNamedItem(key) {
 		var attr = this.getNamedItem(key);
-		_removeNamedNode(this._ownerElement,this,attr);
+		_removeNamedNode(this._ownerElement, this, attr);
 		return attr;
-		
-		
-	},// raises: NOT_FOUND_ERR,NO_MODIFICATION_ALLOWED_ERR
-	
+	}, // raises: NOT_FOUND_ERR,NO_MODIFICATION_ALLOWED_ERR
+
 	//for level2
-	removeNamedItemNS:function(namespaceURI,localName){
-		var attr = this.getNamedItemNS(namespaceURI,localName);
-		_removeNamedNode(this._ownerElement,this,attr);
+	removeNamedItemNS: function removeNamedItemNS(namespaceURI, localName) {
+		var attr = this.getNamedItemNS(namespaceURI, localName);
+		_removeNamedNode(this._ownerElement, this, attr);
 		return attr;
 	},
-	getNamedItemNS: function(namespaceURI, localName) {
+	getNamedItemNS: function getNamedItemNS(namespaceURI, localName) {
 		var i = this.length;
-		while(i--){
+		while (i--) {
 			var node = this[i];
-			if(node.localName == localName && node.namespaceURI == namespaceURI){
+			if (node.localName == localName && node.namespaceURI == namespaceURI) {
 				return node;
 			}
 		}
@@ -959,17 +975,17 @@ NamedNodeMap.prototype = {
 /**
  * @see http://www.w3.org/TR/REC-DOM-Level-1/level-one-core.html#ID-102161490
  */
-function DOMImplementation(/* Object */ features) {
+function DOMImplementation( /* Object */features) {
 	this._features = {};
 	if (features) {
 		for (var feature in features) {
-			 this._features = features[feature];
+			this._features = features[feature];
 		}
 	}
 };
 
 DOMImplementation.prototype = {
-	hasFeature: function(/* string */ feature, /* string */ version) {
+	hasFeature: function hasFeature( /* string */feature, /* string */version) {
 		var versions = this._features[feature.toLowerCase()];
 		if (versions && (!version || version in versions)) {
 			return true;
@@ -978,22 +994,24 @@ DOMImplementation.prototype = {
 		}
 	},
 	// Introduced in DOM Level 2:
-	createDocument:function(namespaceURI,  qualifiedName, doctype){// raises:INVALID_CHARACTER_ERR,NAMESPACE_ERR,WRONG_DOCUMENT_ERR
+	createDocument: function createDocument(namespaceURI, qualifiedName, doctype) {
+		// raises:INVALID_CHARACTER_ERR,NAMESPACE_ERR,WRONG_DOCUMENT_ERR
 		var doc = new Document();
 		doc.implementation = this;
 		doc.childNodes = new NodeList();
 		doc.doctype = doctype;
-		if(doctype){
+		if (doctype) {
 			doc.appendChild(doctype);
 		}
-		if(qualifiedName){
-			var root = doc.createElementNS(namespaceURI,qualifiedName);
+		if (qualifiedName) {
+			var root = doc.createElementNS(namespaceURI, qualifiedName);
 			doc.appendChild(root);
 		}
 		return doc;
 	},
 	// Introduced in DOM Level 2:
-	createDocumentType:function(qualifiedName, publicId, systemId){// raises:INVALID_CHARACTER_ERR,NAMESPACE_ERR
+	createDocumentType: function createDocumentType(qualifiedName, publicId, systemId) {
+		// raises:INVALID_CHARACTER_ERR,NAMESPACE_ERR
 		var node = new DocumentType();
 		node.name = qualifiedName;
 		node.nodeName = qualifiedName;
@@ -1001,7 +1019,7 @@ DOMImplementation.prototype = {
 		node.systemId = systemId;
 		// Introduced in DOM Level 2:
 		//readonly attribute DOMString        internalSubset;
-		
+
 		//TODO:..
 		//  readonly attribute NamedNodeMap     entities;
 		//  readonly attribute NamedNodeMap     notations;
@@ -1009,171 +1027,164 @@ DOMImplementation.prototype = {
 	}
 };
 
-
 /**
  * @see http://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/core.html#ID-1950641247
  */
 
-function Node() {
-};
+function Node() {};
 
 Node.prototype = {
-	firstChild : null,
-	lastChild : null,
-	previousSibling : null,
-	nextSibling : null,
-	attributes : null,
-	parentNode : null,
-	childNodes : null,
-	ownerDocument : null,
-	nodeValue : null,
-	namespaceURI : null,
-	prefix : null,
-	localName : null,
+	firstChild: null,
+	lastChild: null,
+	previousSibling: null,
+	nextSibling: null,
+	attributes: null,
+	parentNode: null,
+	childNodes: null,
+	ownerDocument: null,
+	nodeValue: null,
+	namespaceURI: null,
+	prefix: null,
+	localName: null,
 	// Modified in DOM Level 2:
-	insertBefore:function(newChild, refChild){//raises 
-		return _insertBefore(this,newChild,refChild);
+	insertBefore: function insertBefore(newChild, refChild) {
+		//raises 
+		return _insertBefore(this, newChild, refChild);
 	},
-	replaceChild:function(newChild, oldChild){//raises 
-		this.insertBefore(newChild,oldChild);
-		if(oldChild){
+	replaceChild: function replaceChild(newChild, oldChild) {
+		//raises 
+		this.insertBefore(newChild, oldChild);
+		if (oldChild) {
 			this.removeChild(oldChild);
 		}
 	},
-	removeChild:function(oldChild){
-		return _removeChild(this,oldChild);
+	removeChild: function removeChild(oldChild) {
+		return _removeChild(this, oldChild);
 	},
-	appendChild:function(newChild){
-		return this.insertBefore(newChild,null);
+	appendChild: function appendChild(newChild) {
+		return this.insertBefore(newChild, null);
 	},
-	hasChildNodes:function(){
+	hasChildNodes: function hasChildNodes() {
 		return this.firstChild != null;
 	},
-	cloneNode:function(deep){
-		return cloneNode(this.ownerDocument||this,this,deep);
+	cloneNode: function cloneNode(deep) {
+		return _cloneNode(this.ownerDocument || this, this, deep);
 	},
 	// Modified in DOM Level 2:
-	normalize:function(){
+	normalize: function normalize() {
 		var child = this.firstChild;
-		while(child){
+		while (child) {
 			var next = child.nextSibling;
-			if(next && next.nodeType == TEXT_NODE && child.nodeType == TEXT_NODE){
+			if (next && next.nodeType == TEXT_NODE && child.nodeType == TEXT_NODE) {
 				this.removeChild(next);
 				child.appendData(next.data);
-			}else{
+			} else {
 				child.normalize();
 				child = next;
 			}
 		}
 	},
-  	// Introduced in DOM Level 2:
-	isSupported:function(feature, version){
-		return this.ownerDocument.implementation.hasFeature(feature,version);
+	// Introduced in DOM Level 2:
+	isSupported: function isSupported(feature, version) {
+		return this.ownerDocument.implementation.hasFeature(feature, version);
 	},
-    // Introduced in DOM Level 2:
-    hasAttributes:function(){
-    	return this.attributes.length>0;
-    },
-    lookupPrefix:function(namespaceURI){
-    	var el = this;
-    	while(el){
-    		var map = el._nsMap;
-    		//console.dir(map)
-    		if(map){
-    			for(var n in map){
-    				if(map[n] == namespaceURI){
-    					return n;
-    				}
-    			}
-    		}
-    		el = el.nodeType == ATTRIBUTE_NODE?el.ownerDocument : el.parentNode;
-    	}
-    	return null;
-    },
-    // Introduced in DOM Level 3:
-    lookupNamespaceURI:function(prefix){
-    	var el = this;
-    	while(el){
-    		var map = el._nsMap;
-    		//console.dir(map)
-    		if(map){
-    			if(prefix in map){
-    				return map[prefix] ;
-    			}
-    		}
-    		el = el.nodeType == ATTRIBUTE_NODE?el.ownerDocument : el.parentNode;
-    	}
-    	return null;
-    },
-    // Introduced in DOM Level 3:
-    isDefaultNamespace:function(namespaceURI){
-    	var prefix = this.lookupPrefix(namespaceURI);
-    	return prefix == null;
-    }
+	// Introduced in DOM Level 2:
+	hasAttributes: function hasAttributes() {
+		return this.attributes.length > 0;
+	},
+	lookupPrefix: function lookupPrefix(namespaceURI) {
+		var el = this;
+		while (el) {
+			var map = el._nsMap;
+			//console.dir(map)
+			if (map) {
+				for (var n in map) {
+					if (map[n] == namespaceURI) {
+						return n;
+					}
+				}
+			}
+			el = el.nodeType == ATTRIBUTE_NODE ? el.ownerDocument : el.parentNode;
+		}
+		return null;
+	},
+	// Introduced in DOM Level 3:
+	lookupNamespaceURI: function lookupNamespaceURI(prefix) {
+		var el = this;
+		while (el) {
+			var map = el._nsMap;
+			//console.dir(map)
+			if (map) {
+				if (prefix in map) {
+					return map[prefix];
+				}
+			}
+			el = el.nodeType == ATTRIBUTE_NODE ? el.ownerDocument : el.parentNode;
+		}
+		return null;
+	},
+	// Introduced in DOM Level 3:
+	isDefaultNamespace: function isDefaultNamespace(namespaceURI) {
+		var prefix = this.lookupPrefix(namespaceURI);
+		return prefix == null;
+	}
 };
 
-
-function _xmlEncoder(c){
-	return c == '<' && '&lt;' ||
-         c == '>' && '&gt;' ||
-         c == '&' && '&amp;' ||
-         c == '"' && '&quot;' ||
-         '&#'+c.charCodeAt()+';'
+function _xmlEncoder(c) {
+	return c == '<' && '&lt;' || c == '>' && '&gt;' || c == '&' && '&amp;' || c == '"' && '&quot;' || '&#' + c.charCodeAt() + ';';
 }
 
-
-copy(NodeType,Node);
-copy(NodeType,Node.prototype);
+copy(NodeType, Node);
+copy(NodeType, Node.prototype);
 
 /**
  * @param callback return true for continue,false for break
  * @return boolean true: break visit;
  */
-function _visitNode(node,callback){
-	if(callback(node)){
+function _visitNode(node, callback) {
+	if (callback(node)) {
 		return true;
 	}
-	if(node = node.firstChild){
-		do{
-			if(_visitNode(node,callback)){return true}
-        }while(node=node.nextSibling)
-    }
-}
-
-
-
-function Document(){
-}
-function _onAddAttribute(doc,el,newAttr){
-	doc && doc._inc++;
-	var ns = newAttr.namespaceURI ;
-	if(ns == 'http://www.w3.org/2000/xmlns/'){
-		//update namespace
-		el._nsMap[newAttr.prefix?newAttr.localName:''] = newAttr.value
+	if (node = node.firstChild) {
+		do {
+			if (_visitNode(node, callback)) {
+				return true;
+			}
+		} while (node = node.nextSibling);
 	}
 }
-function _onRemoveAttribute(doc,el,newAttr,remove){
+
+function Document() {}
+function _onAddAttribute(doc, el, newAttr) {
 	doc && doc._inc++;
-	var ns = newAttr.namespaceURI ;
-	if(ns == 'http://www.w3.org/2000/xmlns/'){
+	var ns = newAttr.namespaceURI;
+	if (ns == 'http://www.w3.org/2000/xmlns/') {
 		//update namespace
-		delete el._nsMap[newAttr.prefix?newAttr.localName:'']
+		el._nsMap[newAttr.prefix ? newAttr.localName : ''] = newAttr.value;
 	}
 }
-function _onUpdateChild(doc,el,newChild){
-	if(doc && doc._inc){
+function _onRemoveAttribute(doc, el, newAttr, remove) {
+	doc && doc._inc++;
+	var ns = newAttr.namespaceURI;
+	if (ns == 'http://www.w3.org/2000/xmlns/') {
+		//update namespace
+		delete el._nsMap[newAttr.prefix ? newAttr.localName : ''];
+	}
+}
+function _onUpdateChild(doc, el, newChild) {
+	if (doc && doc._inc) {
 		doc._inc++;
 		//update childNodes
 		var cs = el.childNodes;
-		if(newChild){
+		if (newChild) {
 			cs[cs.length++] = newChild;
-		}else{
+		} else {
 			//console.log(1)
 			var child = el.firstChild;
 			var i = 0;
-			while(child){
+			while (child) {
 				cs[i++] = child;
-				child =child.nextSibling;
+				child = child.nextSibling;
 			}
 			cs.length = i;
 		}
@@ -1188,205 +1199,205 @@ function _onUpdateChild(doc,el,newChild){
  * nodeValue,Attr:value,CharacterData:data
  * prefix
  */
-function _removeChild(parentNode,child){
+function _removeChild(parentNode, child) {
 	var previous = child.previousSibling;
 	var next = child.nextSibling;
-	if(previous){
+	if (previous) {
 		previous.nextSibling = next;
-	}else{
-		parentNode.firstChild = next
+	} else {
+		parentNode.firstChild = next;
 	}
-	if(next){
+	if (next) {
 		next.previousSibling = previous;
-	}else{
+	} else {
 		parentNode.lastChild = previous;
 	}
-	_onUpdateChild(parentNode.ownerDocument,parentNode);
+	_onUpdateChild(parentNode.ownerDocument, parentNode);
 	return child;
 }
 /**
  * preformance key(refChild == null)
  */
-function _insertBefore(parentNode,newChild,nextChild){
+function _insertBefore(parentNode, newChild, nextChild) {
 	var cp = newChild.parentNode;
-	if(cp){
-		cp.removeChild(newChild);//remove and update
+	if (cp) {
+		cp.removeChild(newChild); //remove and update
 	}
-	if(newChild.nodeType === DOCUMENT_FRAGMENT_NODE){
+	if (newChild.nodeType === DOCUMENT_FRAGMENT_NODE) {
 		var newFirst = newChild.firstChild;
 		if (newFirst == null) {
 			return newChild;
 		}
 		var newLast = newChild.lastChild;
-	}else{
+	} else {
 		newFirst = newLast = newChild;
 	}
 	var pre = nextChild ? nextChild.previousSibling : parentNode.lastChild;
 
 	newFirst.previousSibling = pre;
 	newLast.nextSibling = nextChild;
-	
-	
-	if(pre){
+
+	if (pre) {
 		pre.nextSibling = newFirst;
-	}else{
+	} else {
 		parentNode.firstChild = newFirst;
 	}
-	if(nextChild == null){
+	if (nextChild == null) {
 		parentNode.lastChild = newLast;
-	}else{
+	} else {
 		nextChild.previousSibling = newLast;
 	}
-	do{
+	do {
 		newFirst.parentNode = parentNode;
-	}while(newFirst !== newLast && (newFirst= newFirst.nextSibling))
-	_onUpdateChild(parentNode.ownerDocument||parentNode,parentNode);
+	} while (newFirst !== newLast && (newFirst = newFirst.nextSibling));
+	_onUpdateChild(parentNode.ownerDocument || parentNode, parentNode);
 	//console.log(parentNode.lastChild.nextSibling == null)
 	if (newChild.nodeType == DOCUMENT_FRAGMENT_NODE) {
 		newChild.firstChild = newChild.lastChild = null;
 	}
 	return newChild;
 }
-function _appendSingleChild(parentNode,newChild){
+function _appendSingleChild(parentNode, newChild) {
 	var cp = newChild.parentNode;
-	if(cp){
+	if (cp) {
 		var pre = parentNode.lastChild;
-		cp.removeChild(newChild);//remove and update
+		cp.removeChild(newChild); //remove and update
 		var pre = parentNode.lastChild;
 	}
 	var pre = parentNode.lastChild;
 	newChild.parentNode = parentNode;
 	newChild.previousSibling = pre;
 	newChild.nextSibling = null;
-	if(pre){
+	if (pre) {
 		pre.nextSibling = newChild;
-	}else{
+	} else {
 		parentNode.firstChild = newChild;
 	}
 	parentNode.lastChild = newChild;
-	_onUpdateChild(parentNode.ownerDocument,parentNode,newChild);
+	_onUpdateChild(parentNode.ownerDocument, parentNode, newChild);
 	return newChild;
 	//console.log("__aa",parentNode.lastChild.nextSibling == null)
 }
 Document.prototype = {
 	//implementation : null,
-	nodeName :  '#document',
-	nodeType :  DOCUMENT_NODE,
-	doctype :  null,
-	documentElement :  null,
-	_inc : 1,
-	
-	insertBefore :  function(newChild, refChild){//raises 
-		if(newChild.nodeType == DOCUMENT_FRAGMENT_NODE){
+	nodeName: '#document',
+	nodeType: DOCUMENT_NODE,
+	doctype: null,
+	documentElement: null,
+	_inc: 1,
+
+	insertBefore: function insertBefore(newChild, refChild) {
+		//raises 
+		if (newChild.nodeType == DOCUMENT_FRAGMENT_NODE) {
 			var child = newChild.firstChild;
-			while(child){
+			while (child) {
 				var next = child.nextSibling;
-				this.insertBefore(child,refChild);
+				this.insertBefore(child, refChild);
 				child = next;
 			}
 			return newChild;
 		}
-		if(this.documentElement == null && newChild.nodeType == ELEMENT_NODE){
+		if (this.documentElement == null && newChild.nodeType == ELEMENT_NODE) {
 			this.documentElement = newChild;
 		}
-		
-		return _insertBefore(this,newChild,refChild),(newChild.ownerDocument = this),newChild;
+
+		return _insertBefore(this, newChild, refChild), newChild.ownerDocument = this, newChild;
 	},
-	removeChild :  function(oldChild){
-		if(this.documentElement == oldChild){
+	removeChild: function removeChild(oldChild) {
+		if (this.documentElement == oldChild) {
 			this.documentElement = null;
 		}
-		return _removeChild(this,oldChild);
+		return _removeChild(this, oldChild);
 	},
 	// Introduced in DOM Level 2:
-	importNode : function(importedNode,deep){
-		return importNode(this,importedNode,deep);
+	importNode: function importNode(importedNode, deep) {
+		return _importNode(this, importedNode, deep);
 	},
 	// Introduced in DOM Level 2:
-	getElementById :	function(id){
+	getElementById: function getElementById(id) {
 		var rtv = null;
-		_visitNode(this.documentElement,function(node){
-			if(node.nodeType == ELEMENT_NODE){
-				if(node.getAttribute('id') == id){
+		_visitNode(this.documentElement, function (node) {
+			if (node.nodeType == ELEMENT_NODE) {
+				if (node.getAttribute('id') == id) {
 					rtv = node;
 					return true;
 				}
 			}
-		})
+		});
 		return rtv;
 	},
-	
+
 	//document factory method:
-	createElement :	function(tagName){
+	createElement: function createElement(tagName) {
 		var node = new Element();
 		node.ownerDocument = this;
 		node.nodeName = tagName;
 		node.tagName = tagName;
 		node.childNodes = new NodeList();
-		var attrs	= node.attributes = new NamedNodeMap();
+		var attrs = node.attributes = new NamedNodeMap();
 		attrs._ownerElement = node;
 		return node;
 	},
-	createDocumentFragment :	function(){
+	createDocumentFragment: function createDocumentFragment() {
 		var node = new DocumentFragment();
 		node.ownerDocument = this;
 		node.childNodes = new NodeList();
 		return node;
 	},
-	createTextNode :	function(data){
+	createTextNode: function createTextNode(data) {
 		var node = new Text();
 		node.ownerDocument = this;
-		node.appendData(data)
+		node.appendData(data);
 		return node;
 	},
-	createComment :	function(data){
+	createComment: function createComment(data) {
 		var node = new Comment();
 		node.ownerDocument = this;
-		node.appendData(data)
+		node.appendData(data);
 		return node;
 	},
-	createCDATASection :	function(data){
+	createCDATASection: function createCDATASection(data) {
 		var node = new CDATASection();
 		node.ownerDocument = this;
-		node.appendData(data)
+		node.appendData(data);
 		return node;
 	},
-	createProcessingInstruction :	function(target,data){
+	createProcessingInstruction: function createProcessingInstruction(target, data) {
 		var node = new ProcessingInstruction();
 		node.ownerDocument = this;
 		node.tagName = node.target = target;
-		node.nodeValue= node.data = data;
+		node.nodeValue = node.data = data;
 		return node;
 	},
-	createAttribute :	function(name){
+	createAttribute: function createAttribute(name) {
 		var node = new Attr();
-		node.ownerDocument	= this;
+		node.ownerDocument = this;
 		node.name = name;
-		node.nodeName	= name;
+		node.nodeName = name;
 		node.localName = name;
 		node.specified = true;
 		return node;
 	},
-	createEntityReference :	function(name){
+	createEntityReference: function createEntityReference(name) {
 		var node = new EntityReference();
-		node.ownerDocument	= this;
-		node.nodeName	= name;
+		node.ownerDocument = this;
+		node.nodeName = name;
 		return node;
 	},
 	// Introduced in DOM Level 2:
-	createElementNS :	function(namespaceURI,qualifiedName){
+	createElementNS: function createElementNS(namespaceURI, qualifiedName) {
 		var node = new Element();
 		var pl = qualifiedName.split(':');
-		var attrs	= node.attributes = new NamedNodeMap();
+		var attrs = node.attributes = new NamedNodeMap();
 		node.childNodes = new NodeList();
 		node.ownerDocument = this;
 		node.nodeName = qualifiedName;
 		node.tagName = qualifiedName;
 		node.namespaceURI = namespaceURI;
-		if(pl.length == 2){
+		if (pl.length == 2) {
 			node.prefix = pl[0];
 			node.localName = pl[1];
-		}else{
+		} else {
 			//el.prefix = null;
 			node.localName = qualifiedName;
 		}
@@ -1394,7 +1405,7 @@ Document.prototype = {
 		return node;
 	},
 	// Introduced in DOM Level 2:
-	createAttributeNS :	function(namespaceURI,qualifiedName){
+	createAttributeNS: function createAttributeNS(namespaceURI, qualifiedName) {
 		var node = new Attr();
 		var pl = qualifiedName.split(':');
 		node.ownerDocument = this;
@@ -1402,261 +1413,241 @@ Document.prototype = {
 		node.name = qualifiedName;
 		node.namespaceURI = namespaceURI;
 		node.specified = true;
-		if(pl.length == 2){
+		if (pl.length == 2) {
 			node.prefix = pl[0];
 			node.localName = pl[1];
-		}else{
+		} else {
 			//el.prefix = null;
 			node.localName = qualifiedName;
 		}
 		return node;
 	}
 };
-_extends(Document,Node);
-
+_extends(Document, Node);
 
 function Element() {
 	this._nsMap = {};
 };
 Element.prototype = {
-	nodeType : ELEMENT_NODE,
-	hasAttribute : function(name){
-		return this.getAttributeNode(name)!=null;
+	nodeType: ELEMENT_NODE,
+	hasAttribute: function hasAttribute(name) {
+		return this.getAttributeNode(name) != null;
 	},
-	getAttribute : function(name){
+	getAttribute: function getAttribute(name) {
 		var attr = this.getAttributeNode(name);
 		return attr && attr.value || '';
 	},
-	getAttributeNode : function(name){
+	getAttributeNode: function getAttributeNode(name) {
 		return this.attributes.getNamedItem(name);
 	},
-	setAttribute : function(name, value){
+	setAttribute: function setAttribute(name, value) {
 		var attr = this.ownerDocument.createAttribute(name);
 		attr.value = attr.nodeValue = "" + value;
-		this.setAttributeNode(attr)
+		this.setAttributeNode(attr);
 	},
-	removeAttribute : function(name){
-		var attr = this.getAttributeNode(name)
+	removeAttribute: function removeAttribute(name) {
+		var attr = this.getAttributeNode(name);
 		attr && this.removeAttributeNode(attr);
 	},
-	
+
 	//four real opeartion method
-	appendChild:function(newChild){
-		if(newChild.nodeType === DOCUMENT_FRAGMENT_NODE){
-			return this.insertBefore(newChild,null);
-		}else{
-			return _appendSingleChild(this,newChild);
+	appendChild: function appendChild(newChild) {
+		if (newChild.nodeType === DOCUMENT_FRAGMENT_NODE) {
+			return this.insertBefore(newChild, null);
+		} else {
+			return _appendSingleChild(this, newChild);
 		}
 	},
-	setAttributeNode : function(newAttr){
+	setAttributeNode: function setAttributeNode(newAttr) {
 		return this.attributes.setNamedItem(newAttr);
 	},
-	setAttributeNodeNS : function(newAttr){
+	setAttributeNodeNS: function setAttributeNodeNS(newAttr) {
 		return this.attributes.setNamedItemNS(newAttr);
 	},
-	removeAttributeNode : function(oldAttr){
+	removeAttributeNode: function removeAttributeNode(oldAttr) {
 		//console.log(this == oldAttr.ownerElement)
 		return this.attributes.removeNamedItem(oldAttr.nodeName);
 	},
 	//get real attribute name,and remove it by removeAttributeNode
-	removeAttributeNS : function(namespaceURI, localName){
+	removeAttributeNS: function removeAttributeNS(namespaceURI, localName) {
 		var old = this.getAttributeNodeNS(namespaceURI, localName);
 		old && this.removeAttributeNode(old);
 	},
-	
-	hasAttributeNS : function(namespaceURI, localName){
-		return this.getAttributeNodeNS(namespaceURI, localName)!=null;
+
+	hasAttributeNS: function hasAttributeNS(namespaceURI, localName) {
+		return this.getAttributeNodeNS(namespaceURI, localName) != null;
 	},
-	getAttributeNS : function(namespaceURI, localName){
+	getAttributeNS: function getAttributeNS(namespaceURI, localName) {
 		var attr = this.getAttributeNodeNS(namespaceURI, localName);
 		return attr && attr.value || '';
 	},
-	setAttributeNS : function(namespaceURI, qualifiedName, value){
+	setAttributeNS: function setAttributeNS(namespaceURI, qualifiedName, value) {
 		var attr = this.ownerDocument.createAttributeNS(namespaceURI, qualifiedName);
 		attr.value = attr.nodeValue = "" + value;
-		this.setAttributeNode(attr)
+		this.setAttributeNode(attr);
 	},
-	getAttributeNodeNS : function(namespaceURI, localName){
+	getAttributeNodeNS: function getAttributeNodeNS(namespaceURI, localName) {
 		return this.attributes.getNamedItemNS(namespaceURI, localName);
 	},
-	
-	getElementsByTagName : function(tagName){
-		return new LiveNodeList(this,function(base){
+
+	getElementsByTagName: function getElementsByTagName(tagName) {
+		return new LiveNodeList(this, function (base) {
 			var ls = [];
-			_visitNode(base,function(node){
-				if(node !== base && node.nodeType == ELEMENT_NODE && (tagName === '*' || node.tagName == tagName)){
+			_visitNode(base, function (node) {
+				if (node !== base && node.nodeType == ELEMENT_NODE && (tagName === '*' || node.tagName == tagName)) {
 					ls.push(node);
 				}
 			});
 			return ls;
 		});
 	},
-	getElementsByTagNameNS : function(namespaceURI, localName){
-		return new LiveNodeList(this,function(base){
+	getElementsByTagNameNS: function getElementsByTagNameNS(namespaceURI, localName) {
+		return new LiveNodeList(this, function (base) {
 			var ls = [];
-			_visitNode(base,function(node){
-				if(node !== base && node.nodeType === ELEMENT_NODE && (namespaceURI === '*' || node.namespaceURI === namespaceURI) && (localName === '*' || node.localName == localName)){
+			_visitNode(base, function (node) {
+				if (node !== base && node.nodeType === ELEMENT_NODE && (namespaceURI === '*' || node.namespaceURI === namespaceURI) && (localName === '*' || node.localName == localName)) {
 					ls.push(node);
 				}
 			});
 			return ls;
-			
 		});
 	}
 };
 Document.prototype.getElementsByTagName = Element.prototype.getElementsByTagName;
 Document.prototype.getElementsByTagNameNS = Element.prototype.getElementsByTagNameNS;
 
-
-_extends(Element,Node);
-function Attr() {
-};
+_extends(Element, Node);
+function Attr() {};
 Attr.prototype.nodeType = ATTRIBUTE_NODE;
-_extends(Attr,Node);
+_extends(Attr, Node);
 
-
-function CharacterData() {
-};
+function CharacterData() {};
 CharacterData.prototype = {
-	data : '',
-	substringData : function(offset, count) {
-		return this.data.substring(offset, offset+count);
+	data: '',
+	substringData: function substringData(offset, count) {
+		return this.data.substring(offset, offset + count);
 	},
-	appendData: function(text) {
-		text = this.data+text;
+	appendData: function appendData(text) {
+		text = this.data + text;
 		this.nodeValue = this.data = text;
 		this.length = text.length;
 	},
-	insertData: function(offset,text) {
-		this.replaceData(offset,0,text);
-	
+	insertData: function insertData(offset, text) {
+		this.replaceData(offset, 0, text);
 	},
-	appendChild:function(newChild){
-		throw new Error(ExceptionMessage[HIERARCHY_REQUEST_ERR])
+	appendChild: function appendChild(newChild) {
+		throw new Error(ExceptionMessage[HIERARCHY_REQUEST_ERR]);
 	},
-	deleteData: function(offset, count) {
-		this.replaceData(offset,count,"");
+	deleteData: function deleteData(offset, count) {
+		this.replaceData(offset, count, "");
 	},
-	replaceData: function(offset, count, text) {
-		var start = this.data.substring(0,offset);
-		var end = this.data.substring(offset+count);
+	replaceData: function replaceData(offset, count, text) {
+		var start = this.data.substring(0, offset);
+		var end = this.data.substring(offset + count);
 		text = start + text + end;
 		this.nodeValue = this.data = text;
 		this.length = text.length;
 	}
-}
-_extends(CharacterData,Node);
-function Text() {
 };
+_extends(CharacterData, Node);
+function Text() {};
 Text.prototype = {
-	nodeName : "#text",
-	nodeType : TEXT_NODE,
-	splitText : function(offset) {
+	nodeName: "#text",
+	nodeType: TEXT_NODE,
+	splitText: function splitText(offset) {
 		var text = this.data;
 		var newText = text.substring(offset);
 		text = text.substring(0, offset);
 		this.data = this.nodeValue = text;
 		this.length = text.length;
 		var newNode = this.ownerDocument.createTextNode(newText);
-		if(this.parentNode){
+		if (this.parentNode) {
 			this.parentNode.insertBefore(newNode, this.nextSibling);
 		}
 		return newNode;
 	}
-}
-_extends(Text,CharacterData);
-function Comment() {
 };
+_extends(Text, CharacterData);
+function Comment() {};
 Comment.prototype = {
-	nodeName : "#comment",
-	nodeType : COMMENT_NODE
-}
-_extends(Comment,CharacterData);
-
-function CDATASection() {
+	nodeName: "#comment",
+	nodeType: COMMENT_NODE
 };
+_extends(Comment, CharacterData);
+
+function CDATASection() {};
 CDATASection.prototype = {
-	nodeName : "#cdata-section",
-	nodeType : CDATA_SECTION_NODE
-}
-_extends(CDATASection,CharacterData);
-
-
-function DocumentType() {
+	nodeName: "#cdata-section",
+	nodeType: CDATA_SECTION_NODE
 };
+_extends(CDATASection, CharacterData);
+
+function DocumentType() {};
 DocumentType.prototype.nodeType = DOCUMENT_TYPE_NODE;
-_extends(DocumentType,Node);
+_extends(DocumentType, Node);
 
-function Notation() {
-};
+function Notation() {};
 Notation.prototype.nodeType = NOTATION_NODE;
-_extends(Notation,Node);
+_extends(Notation, Node);
 
-function Entity() {
-};
+function Entity() {};
 Entity.prototype.nodeType = ENTITY_NODE;
-_extends(Entity,Node);
+_extends(Entity, Node);
 
-function EntityReference() {
-};
+function EntityReference() {};
 EntityReference.prototype.nodeType = ENTITY_REFERENCE_NODE;
-_extends(EntityReference,Node);
+_extends(EntityReference, Node);
 
-function DocumentFragment() {
-};
-DocumentFragment.prototype.nodeName =	"#document-fragment";
-DocumentFragment.prototype.nodeType =	DOCUMENT_FRAGMENT_NODE;
-_extends(DocumentFragment,Node);
+function DocumentFragment() {};
+DocumentFragment.prototype.nodeName = "#document-fragment";
+DocumentFragment.prototype.nodeType = DOCUMENT_FRAGMENT_NODE;
+_extends(DocumentFragment, Node);
 
-
-function ProcessingInstruction() {
-}
+function ProcessingInstruction() {}
 ProcessingInstruction.prototype.nodeType = PROCESSING_INSTRUCTION_NODE;
-_extends(ProcessingInstruction,Node);
-function XMLSerializer(){}
-XMLSerializer.prototype.serializeToString = function(node,isHtml,nodeFilter){
-	return nodeSerializeToString.call(node,isHtml,nodeFilter);
-}
+_extends(ProcessingInstruction, Node);
+function XMLSerializer() {}
+XMLSerializer.prototype.serializeToString = function (node, isHtml, nodeFilter) {
+	return nodeSerializeToString.call(node, isHtml, nodeFilter);
+};
 Node.prototype.toString = nodeSerializeToString;
-function nodeSerializeToString(isHtml,nodeFilter){
+function nodeSerializeToString(isHtml, nodeFilter) {
 	var buf = [];
-	var refNode = this.nodeType == 9?this.documentElement:this;
+	var refNode = this.nodeType == 9 ? this.documentElement : this;
 	var prefix = refNode.prefix;
 	var uri = refNode.namespaceURI;
-	
-	if(uri && prefix == null){
+
+	if (uri && prefix == null) {
 		//console.log(prefix)
 		var prefix = refNode.lookupPrefix(uri);
-		if(prefix == null){
+		if (prefix == null) {
 			//isHTML = true;
-			var visibleNamespaces=[
-			{namespace:uri,prefix:null}
-			//{namespace:uri,prefix:''}
-			]
+			var visibleNamespaces = [{ namespace: uri, prefix: null
+				//{namespace:uri,prefix:''}
+			}];
 		}
 	}
-	serializeToString(this,buf,isHtml,nodeFilter,visibleNamespaces);
+	serializeToString(this, buf, isHtml, nodeFilter, visibleNamespaces);
 	//console.log('###',this.nodeType,uri,prefix,buf.join(''))
 	return buf.join('');
 }
-function needNamespaceDefine(node,isHTML, visibleNamespaces) {
-	var prefix = node.prefix||'';
+function needNamespaceDefine(node, isHTML, visibleNamespaces) {
+	var prefix = node.prefix || '';
 	var uri = node.namespaceURI;
-	if (!prefix && !uri){
+	if (!prefix && !uri) {
 		return false;
 	}
-	if (prefix === "xml" && uri === "http://www.w3.org/XML/1998/namespace" 
-		|| uri == 'http://www.w3.org/2000/xmlns/'){
+	if (prefix === "xml" && uri === "http://www.w3.org/XML/1998/namespace" || uri == 'http://www.w3.org/2000/xmlns/') {
 		return false;
 	}
-	
-	var i = visibleNamespaces.length 
+
+	var i = visibleNamespaces.length;
 	//console.log('@@@@',node.tagName,prefix,uri,visibleNamespaces)
 	while (i--) {
 		var ns = visibleNamespaces[i];
 		// get namespace prefix
 		//console.log(node.nodeType,node.tagName,ns.prefix,prefix)
-		if (ns.prefix == prefix){
+		if (ns.prefix == prefix) {
 			return ns.namespace != uri;
 		}
 	}
@@ -1668,174 +1659,171 @@ function needNamespaceDefine(node,isHTML, visibleNamespaces) {
 	//console.error(3,true,node.flag,node.prefix,node.namespaceURI)
 	return true;
 }
-function serializeToString(node,buf,isHTML,nodeFilter,visibleNamespaces){
-	if(nodeFilter){
+function serializeToString(node, buf, isHTML, nodeFilter, visibleNamespaces) {
+	if (nodeFilter) {
 		node = nodeFilter(node);
-		if(node){
-			if(typeof node == 'string'){
+		if (node) {
+			if (typeof node == 'string') {
 				buf.push(node);
 				return;
 			}
-		}else{
+		} else {
 			return;
 		}
 		//buf.sort.apply(attrs, attributeSorter);
 	}
-	switch(node.nodeType){
-	case ELEMENT_NODE:
-		if (!visibleNamespaces) visibleNamespaces = [];
-		var startVisibleNamespaces = visibleNamespaces.length;
-		var attrs = node.attributes;
-		var len = attrs.length;
-		var child = node.firstChild;
-		var nodeName = node.tagName;
-		
-		isHTML =  (htmlns === node.namespaceURI) ||isHTML 
-		buf.push('<',nodeName);
-		
-		
-		
-		for(var i=0;i<len;i++){
-			// add namespaces for attributes
-			var attr = attrs.item(i);
-			if (attr.prefix == 'xmlns') {
-				visibleNamespaces.push({ prefix: attr.localName, namespace: attr.value });
-			}else if(attr.nodeName == 'xmlns'){
-				visibleNamespaces.push({ prefix: '', namespace: attr.value });
+	switch (node.nodeType) {
+		case ELEMENT_NODE:
+			if (!visibleNamespaces) visibleNamespaces = [];
+			var startVisibleNamespaces = visibleNamespaces.length;
+			var attrs = node.attributes;
+			var len = attrs.length;
+			var child = node.firstChild;
+			var nodeName = node.tagName;
+
+			isHTML = htmlns === node.namespaceURI || isHTML;
+			buf.push('<', nodeName);
+
+			for (var i = 0; i < len; i++) {
+				// add namespaces for attributes
+				var attr = attrs.item(i);
+				if (attr.prefix == 'xmlns') {
+					visibleNamespaces.push({ prefix: attr.localName, namespace: attr.value });
+				} else if (attr.nodeName == 'xmlns') {
+					visibleNamespaces.push({ prefix: '', namespace: attr.value });
+				}
 			}
-		}
-		for(var i=0;i<len;i++){
-			var attr = attrs.item(i);
-			if (needNamespaceDefine(attr,isHTML, visibleNamespaces)) {
-				var prefix = attr.prefix||'';
-				var uri = attr.namespaceURI;
+			for (var i = 0; i < len; i++) {
+				var attr = attrs.item(i);
+				if (needNamespaceDefine(attr, isHTML, visibleNamespaces)) {
+					var prefix = attr.prefix || '';
+					var uri = attr.namespaceURI;
+					var ns = prefix ? ' xmlns:' + prefix : " xmlns";
+					buf.push(ns, '="', uri, '"');
+					visibleNamespaces.push({ prefix: prefix, namespace: uri });
+				}
+				serializeToString(attr, buf, isHTML, nodeFilter, visibleNamespaces);
+			}
+			// add namespace for current node		
+			if (needNamespaceDefine(node, isHTML, visibleNamespaces)) {
+				var prefix = node.prefix || '';
+				var uri = node.namespaceURI;
 				var ns = prefix ? ' xmlns:' + prefix : " xmlns";
-				buf.push(ns, '="' , uri , '"');
-				visibleNamespaces.push({ prefix: prefix, namespace:uri });
+				buf.push(ns, '="', uri, '"');
+				visibleNamespaces.push({ prefix: prefix, namespace: uri });
 			}
-			serializeToString(attr,buf,isHTML,nodeFilter,visibleNamespaces);
-		}
-		// add namespace for current node		
-		if (needNamespaceDefine(node,isHTML, visibleNamespaces)) {
-			var prefix = node.prefix||'';
-			var uri = node.namespaceURI;
-			var ns = prefix ? ' xmlns:' + prefix : " xmlns";
-			buf.push(ns, '="' , uri , '"');
-			visibleNamespaces.push({ prefix: prefix, namespace:uri });
-		}
-		
-		if(child || isHTML && !/^(?:meta|link|img|br|hr|input)$/i.test(nodeName)){
-			buf.push('>');
-			//if is cdata child node
-			if(isHTML && /^script$/i.test(nodeName)){
-				while(child){
-					if(child.data){
-						buf.push(child.data);
-					}else{
-						serializeToString(child,buf,isHTML,nodeFilter,visibleNamespaces);
+
+			if (child || isHTML && !/^(?:meta|link|img|br|hr|input)$/i.test(nodeName)) {
+				buf.push('>');
+				//if is cdata child node
+				if (isHTML && /^script$/i.test(nodeName)) {
+					while (child) {
+						if (child.data) {
+							buf.push(child.data);
+						} else {
+							serializeToString(child, buf, isHTML, nodeFilter, visibleNamespaces);
+						}
+						child = child.nextSibling;
 					}
-					child = child.nextSibling;
+				} else {
+					while (child) {
+						serializeToString(child, buf, isHTML, nodeFilter, visibleNamespaces);
+						child = child.nextSibling;
+					}
 				}
-			}else
-			{
-				while(child){
-					serializeToString(child,buf,isHTML,nodeFilter,visibleNamespaces);
-					child = child.nextSibling;
+				buf.push('</', nodeName, '>');
+			} else {
+				buf.push('/>');
+			}
+			// remove added visible namespaces
+			//visibleNamespaces.length = startVisibleNamespaces;
+			return;
+		case DOCUMENT_NODE:
+		case DOCUMENT_FRAGMENT_NODE:
+			var child = node.firstChild;
+			while (child) {
+				serializeToString(child, buf, isHTML, nodeFilter, visibleNamespaces);
+				child = child.nextSibling;
+			}
+			return;
+		case ATTRIBUTE_NODE:
+			return buf.push(' ', node.name, '="', node.value.replace(/[<&"]/g, _xmlEncoder), '"');
+		case TEXT_NODE:
+			return buf.push(node.data.replace(/[<&]/g, _xmlEncoder));
+		case CDATA_SECTION_NODE:
+			return buf.push('<![CDATA[', node.data, ']]>');
+		case COMMENT_NODE:
+			return buf.push("<!--", node.data, "-->");
+		case DOCUMENT_TYPE_NODE:
+			var pubid = node.publicId;
+			var sysid = node.systemId;
+			buf.push('<!DOCTYPE ', node.name);
+			if (pubid) {
+				buf.push(' PUBLIC "', pubid);
+				if (sysid && sysid != '.') {
+					buf.push('" "', sysid);
 				}
+				buf.push('">');
+			} else if (sysid && sysid != '.') {
+				buf.push(' SYSTEM "', sysid, '">');
+			} else {
+				var sub = node.internalSubset;
+				if (sub) {
+					buf.push(" [", sub, "]");
+				}
+				buf.push(">");
 			}
-			buf.push('</',nodeName,'>');
-		}else{
-			buf.push('/>');
-		}
-		// remove added visible namespaces
-		//visibleNamespaces.length = startVisibleNamespaces;
-		return;
-	case DOCUMENT_NODE:
-	case DOCUMENT_FRAGMENT_NODE:
-		var child = node.firstChild;
-		while(child){
-			serializeToString(child,buf,isHTML,nodeFilter,visibleNamespaces);
-			child = child.nextSibling;
-		}
-		return;
-	case ATTRIBUTE_NODE:
-		return buf.push(' ',node.name,'="',node.value.replace(/[<&"]/g,_xmlEncoder),'"');
-	case TEXT_NODE:
-		return buf.push(node.data.replace(/[<&]/g,_xmlEncoder));
-	case CDATA_SECTION_NODE:
-		return buf.push( '<![CDATA[',node.data,']]>');
-	case COMMENT_NODE:
-		return buf.push( "<!--",node.data,"-->");
-	case DOCUMENT_TYPE_NODE:
-		var pubid = node.publicId;
-		var sysid = node.systemId;
-		buf.push('<!DOCTYPE ',node.name);
-		if(pubid){
-			buf.push(' PUBLIC "',pubid);
-			if (sysid && sysid!='.') {
-				buf.push( '" "',sysid);
-			}
-			buf.push('">');
-		}else if(sysid && sysid!='.'){
-			buf.push(' SYSTEM "',sysid,'">');
-		}else{
-			var sub = node.internalSubset;
-			if(sub){
-				buf.push(" [",sub,"]");
-			}
-			buf.push(">");
-		}
-		return;
-	case PROCESSING_INSTRUCTION_NODE:
-		return buf.push( "<?",node.target," ",node.data,"?>");
-	case ENTITY_REFERENCE_NODE:
-		return buf.push( '&',node.nodeName,';');
-	//case ENTITY_NODE:
-	//case NOTATION_NODE:
-	default:
-		buf.push('??',node.nodeName);
+			return;
+		case PROCESSING_INSTRUCTION_NODE:
+			return buf.push("<?", node.target, " ", node.data, "?>");
+		case ENTITY_REFERENCE_NODE:
+			return buf.push('&', node.nodeName, ';');
+		//case ENTITY_NODE:
+		//case NOTATION_NODE:
+		default:
+			buf.push('??', node.nodeName);
 	}
 }
-function importNode(doc,node,deep){
+function _importNode(doc, node, deep) {
 	var node2;
 	switch (node.nodeType) {
-	case ELEMENT_NODE:
-		node2 = node.cloneNode(false);
-		node2.ownerDocument = doc;
+		case ELEMENT_NODE:
+			node2 = node.cloneNode(false);
+			node2.ownerDocument = doc;
 		//var attrs = node2.attributes;
 		//var len = attrs.length;
 		//for(var i=0;i<len;i++){
-			//node2.setAttributeNodeNS(importNode(doc,attrs.item(i),deep));
+		//node2.setAttributeNodeNS(importNode(doc,attrs.item(i),deep));
 		//}
-	case DOCUMENT_FRAGMENT_NODE:
-		break;
-	case ATTRIBUTE_NODE:
-		deep = true;
-		break;
-	//case ENTITY_REFERENCE_NODE:
-	//case PROCESSING_INSTRUCTION_NODE:
-	////case TEXT_NODE:
-	//case CDATA_SECTION_NODE:
-	//case COMMENT_NODE:
-	//	deep = false;
-	//	break;
-	//case DOCUMENT_NODE:
-	//case DOCUMENT_TYPE_NODE:
-	//cannot be imported.
-	//case ENTITY_NODE:
-	//case NOTATION_NODE：
-	//can not hit in level3
-	//default:throw e;
+		case DOCUMENT_FRAGMENT_NODE:
+			break;
+		case ATTRIBUTE_NODE:
+			deep = true;
+			break;
+		//case ENTITY_REFERENCE_NODE:
+		//case PROCESSING_INSTRUCTION_NODE:
+		////case TEXT_NODE:
+		//case CDATA_SECTION_NODE:
+		//case COMMENT_NODE:
+		//	deep = false;
+		//	break;
+		//case DOCUMENT_NODE:
+		//case DOCUMENT_TYPE_NODE:
+		//cannot be imported.
+		//case ENTITY_NODE:
+		//case NOTATION_NODE：
+		//can not hit in level3
+		//default:throw e;
 	}
-	if(!node2){
-		node2 = node.cloneNode(false);//false
+	if (!node2) {
+		node2 = node.cloneNode(false); //false
 	}
 	node2.ownerDocument = doc;
 	node2.parentNode = null;
-	if(deep){
+	if (deep) {
 		var child = node.firstChild;
-		while(child){
-			node2.appendChild(importNode(doc,child,deep));
+		while (child) {
+			node2.appendChild(_importNode(doc, child, deep));
 			child = child.nextSibling;
 		}
 	}
@@ -1844,113 +1832,116 @@ function importNode(doc,node,deep){
 //
 //var _relationMap = {firstChild:1,lastChild:1,previousSibling:1,nextSibling:1,
 //					attributes:1,childNodes:1,parentNode:1,documentElement:1,doctype,};
-function cloneNode(doc,node,deep){
+function _cloneNode(doc, node, deep) {
 	var node2 = new node.constructor();
-	for(var n in node){
+	for (var n in node) {
 		var v = node[n];
-		if(typeof v != 'object' ){
-			if(v != node2[n]){
+		if ((typeof v === 'undefined' ? 'undefined' : _typeof(v)) != 'object') {
+			if (v != node2[n]) {
 				node2[n] = v;
 			}
 		}
 	}
-	if(node.childNodes){
+	if (node.childNodes) {
 		node2.childNodes = new NodeList();
 	}
 	node2.ownerDocument = doc;
 	switch (node2.nodeType) {
-	case ELEMENT_NODE:
-		var attrs	= node.attributes;
-		var attrs2	= node2.attributes = new NamedNodeMap();
-		var len = attrs.length
-		attrs2._ownerElement = node2;
-		for(var i=0;i<len;i++){
-			node2.setAttributeNode(cloneNode(doc,attrs.item(i),true));
-		}
-		break;;
-	case ATTRIBUTE_NODE:
-		deep = true;
+		case ELEMENT_NODE:
+			var attrs = node.attributes;
+			var attrs2 = node2.attributes = new NamedNodeMap();
+			var len = attrs.length;
+			attrs2._ownerElement = node2;
+			for (var i = 0; i < len; i++) {
+				node2.setAttributeNode(_cloneNode(doc, attrs.item(i), true));
+			}
+			break;;
+		case ATTRIBUTE_NODE:
+			deep = true;
 	}
-	if(deep){
+	if (deep) {
 		var child = node.firstChild;
-		while(child){
-			node2.appendChild(cloneNode(doc,child,deep));
+		while (child) {
+			node2.appendChild(_cloneNode(doc, child, deep));
 			child = child.nextSibling;
 		}
 	}
 	return node2;
 }
 
-function __set__(object,key,value){
-	object[key] = value
+function __set__(object, key, value) {
+	object[key] = value;
 }
 //do dynamic
-try{
-	if(Object.defineProperty){
-		Object.defineProperty(LiveNodeList.prototype,'length',{
-			get:function(){
+try {
+	if (Object.defineProperty) {
+		var getTextContent = function getTextContent(node) {
+			switch (node.nodeType) {
+				case ELEMENT_NODE:
+				case DOCUMENT_FRAGMENT_NODE:
+					var buf = [];
+					node = node.firstChild;
+					while (node) {
+						if (node.nodeType !== 7 && node.nodeType !== 8) {
+							buf.push(getTextContent(node));
+						}
+						node = node.nextSibling;
+					}
+					return buf.join('');
+				default:
+					return node.nodeValue;
+			}
+		};
+
+		Object.defineProperty(LiveNodeList.prototype, 'length', {
+			get: function get() {
 				_updateLiveList(this);
 				return this.$$length;
 			}
 		});
-		Object.defineProperty(Node.prototype,'textContent',{
-			get:function(){
+		Object.defineProperty(Node.prototype, 'textContent', {
+			get: function get() {
 				return getTextContent(this);
 			},
-			set:function(data){
-				switch(this.nodeType){
-				case ELEMENT_NODE:
-				case DOCUMENT_FRAGMENT_NODE:
-					while(this.firstChild){
-						this.removeChild(this.firstChild);
-					}
-					if(data || String(data)){
-						this.appendChild(this.ownerDocument.createTextNode(data));
-					}
-					break;
-				default:
-					//TODO:
-					this.data = data;
-					this.value = data;
-					this.nodeValue = data;
+			set: function set(data) {
+				switch (this.nodeType) {
+					case ELEMENT_NODE:
+					case DOCUMENT_FRAGMENT_NODE:
+						while (this.firstChild) {
+							this.removeChild(this.firstChild);
+						}
+						if (data || String(data)) {
+							this.appendChild(this.ownerDocument.createTextNode(data));
+						}
+						break;
+					default:
+						//TODO:
+						this.data = data;
+						this.value = data;
+						this.nodeValue = data;
 				}
 			}
-		})
-		
-		function getTextContent(node){
-			switch(node.nodeType){
-			case ELEMENT_NODE:
-			case DOCUMENT_FRAGMENT_NODE:
-				var buf = [];
-				node = node.firstChild;
-				while(node){
-					if(node.nodeType!==7 && node.nodeType !==8){
-						buf.push(getTextContent(node));
-					}
-					node = node.nextSibling;
-				}
-				return buf.join('');
-			default:
-				return node.nodeValue;
-			}
-		}
-		__set__ = function(object,key,value){
+		});
+
+		__set__ = function __set__(object, key, value) {
 			//console.log(value)
-			object['$$'+key] = value
-		}
+			object['$$' + key] = value;
+		};
 	}
-}catch(e){//ie8
-}
+} catch (e) {} //ie8
+
 
 //if(typeof require == 'function'){
-	exports.DOMImplementation = DOMImplementation;
-	exports.XMLSerializer = XMLSerializer;
+exports.DOMImplementation = DOMImplementation;
+exports.XMLSerializer = XMLSerializer;
 //}
-
 
 /***/ }),
 /* 3 */
-/***/ (function(module, exports) {
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 
 /*
  * $Id: base64.js,v 2.15 2014/04/05 12:58:57 dankogai Exp dankogai $
@@ -1962,7 +1953,7 @@ try{
  *    http://en.wikipedia.org/wiki/Base64
  */
 
-var Base64 = (function(global) {
+var Base64 = function (global) {
     global = global || {};
     'use strict';
     // existing version for noConflict()
@@ -1971,134 +1962,93 @@ var Base64 = (function(global) {
     // if node.js, we use Buffer
     var buffer;
     // constants
-    var b64chars
-        = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-    var b64tab = function(bin) {
+    var b64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+    var b64tab = function (bin) {
         var t = {};
-        for (var i = 0, l = bin.length; i < l; i++) t[bin.charAt(i)] = i;
-        return t;
+        for (var i = 0, l = bin.length; i < l; i++) {
+            t[bin.charAt(i)] = i;
+        }return t;
     }(b64chars);
     var fromCharCode = String.fromCharCode;
     // encoder stuff
-    var cb_utob = function(c) {
+    var cb_utob = function cb_utob(c) {
         if (c.length < 2) {
             var cc = c.charCodeAt(0);
-            return cc < 0x80 ? c
-                : cc < 0x800 ? (fromCharCode(0xc0 | (cc >>> 6))
-                                + fromCharCode(0x80 | (cc & 0x3f)))
-                : (fromCharCode(0xe0 | ((cc >>> 12) & 0x0f))
-                   + fromCharCode(0x80 | ((cc >>>  6) & 0x3f))
-                   + fromCharCode(0x80 | ( cc         & 0x3f)));
+            return cc < 0x80 ? c : cc < 0x800 ? fromCharCode(0xc0 | cc >>> 6) + fromCharCode(0x80 | cc & 0x3f) : fromCharCode(0xe0 | cc >>> 12 & 0x0f) + fromCharCode(0x80 | cc >>> 6 & 0x3f) + fromCharCode(0x80 | cc & 0x3f);
         } else {
-            var cc = 0x10000
-                + (c.charCodeAt(0) - 0xD800) * 0x400
-                + (c.charCodeAt(1) - 0xDC00);
-            return (fromCharCode(0xf0 | ((cc >>> 18) & 0x07))
-                    + fromCharCode(0x80 | ((cc >>> 12) & 0x3f))
-                    + fromCharCode(0x80 | ((cc >>>  6) & 0x3f))
-                    + fromCharCode(0x80 | ( cc         & 0x3f)));
+            var cc = 0x10000 + (c.charCodeAt(0) - 0xD800) * 0x400 + (c.charCodeAt(1) - 0xDC00);
+            return fromCharCode(0xf0 | cc >>> 18 & 0x07) + fromCharCode(0x80 | cc >>> 12 & 0x3f) + fromCharCode(0x80 | cc >>> 6 & 0x3f) + fromCharCode(0x80 | cc & 0x3f);
         }
     };
     var re_utob = /[\uD800-\uDBFF][\uDC00-\uDFFFF]|[^\x00-\x7F]/g;
-    var utob = function(u) {
+    var utob = function utob(u) {
         return u.replace(re_utob, cb_utob);
     };
-    var cb_encode = function(ccc) {
+    var cb_encode = function cb_encode(ccc) {
         var padlen = [0, 2, 1][ccc.length % 3],
-        ord = ccc.charCodeAt(0) << 16
-            | ((ccc.length > 1 ? ccc.charCodeAt(1) : 0) << 8)
-            | ((ccc.length > 2 ? ccc.charCodeAt(2) : 0)),
-        chars = [
-            b64chars.charAt( ord >>> 18),
-            b64chars.charAt((ord >>> 12) & 63),
-            padlen >= 2 ? '=' : b64chars.charAt((ord >>> 6) & 63),
-            padlen >= 1 ? '=' : b64chars.charAt(ord & 63)
-        ];
+            ord = ccc.charCodeAt(0) << 16 | (ccc.length > 1 ? ccc.charCodeAt(1) : 0) << 8 | (ccc.length > 2 ? ccc.charCodeAt(2) : 0),
+            chars = [b64chars.charAt(ord >>> 18), b64chars.charAt(ord >>> 12 & 63), padlen >= 2 ? '=' : b64chars.charAt(ord >>> 6 & 63), padlen >= 1 ? '=' : b64chars.charAt(ord & 63)];
         return chars.join('');
     };
-    var btoa = global.btoa ? function(b) {
+    var btoa = global.btoa ? function (b) {
         return global.btoa(b);
-    } : function(b) {
+    } : function (b) {
         return b.replace(/[\s\S]{1,3}/g, cb_encode);
     };
     var _encode = buffer ? function (u) {
-        return (u.constructor === buffer.constructor ? u : new buffer(u))
-        .toString('base64')
-    }
-    : function (u) { return btoa(utob(u)) }
-    ;
-    var encode = function(u, urisafe) {
-        return !urisafe
-            ? _encode(String(u))
-            : _encode(String(u)).replace(/[+\/]/g, function(m0) {
-                return m0 == '+' ? '-' : '_';
-            }).replace(/=/g, '');
+        return (u.constructor === buffer.constructor ? u : new buffer(u)).toString('base64');
+    } : function (u) {
+        return btoa(utob(u));
     };
-    var encodeURI = function(u) { return encode(u, true) };
+    var encode = function encode(u, urisafe) {
+        return !urisafe ? _encode(String(u)) : _encode(String(u)).replace(/[+\/]/g, function (m0) {
+            return m0 == '+' ? '-' : '_';
+        }).replace(/=/g, '');
+    };
+    var encodeURI = function encodeURI(u) {
+        return encode(u, true);
+    };
     // decoder stuff
-    var re_btou = new RegExp([
-        '[\xC0-\xDF][\x80-\xBF]',
-        '[\xE0-\xEF][\x80-\xBF]{2}',
-        '[\xF0-\xF7][\x80-\xBF]{3}'
-    ].join('|'), 'g');
-    var cb_btou = function(cccc) {
-        switch(cccc.length) {
-        case 4:
-            var cp = ((0x07 & cccc.charCodeAt(0)) << 18)
-                |    ((0x3f & cccc.charCodeAt(1)) << 12)
-                |    ((0x3f & cccc.charCodeAt(2)) <<  6)
-                |     (0x3f & cccc.charCodeAt(3)),
-            offset = cp - 0x10000;
-            return (fromCharCode((offset  >>> 10) + 0xD800)
-                    + fromCharCode((offset & 0x3FF) + 0xDC00));
-        case 3:
-            return fromCharCode(
-                ((0x0f & cccc.charCodeAt(0)) << 12)
-                    | ((0x3f & cccc.charCodeAt(1)) << 6)
-                    |  (0x3f & cccc.charCodeAt(2))
-            );
-        default:
-            return  fromCharCode(
-                ((0x1f & cccc.charCodeAt(0)) << 6)
-                    |  (0x3f & cccc.charCodeAt(1))
-            );
+    var re_btou = new RegExp(['[\xC0-\xDF][\x80-\xBF]', '[\xE0-\xEF][\x80-\xBF]{2}', '[\xF0-\xF7][\x80-\xBF]{3}'].join('|'), 'g');
+    var cb_btou = function cb_btou(cccc) {
+        switch (cccc.length) {
+            case 4:
+                var cp = (0x07 & cccc.charCodeAt(0)) << 18 | (0x3f & cccc.charCodeAt(1)) << 12 | (0x3f & cccc.charCodeAt(2)) << 6 | 0x3f & cccc.charCodeAt(3),
+                    offset = cp - 0x10000;
+                return fromCharCode((offset >>> 10) + 0xD800) + fromCharCode((offset & 0x3FF) + 0xDC00);
+            case 3:
+                return fromCharCode((0x0f & cccc.charCodeAt(0)) << 12 | (0x3f & cccc.charCodeAt(1)) << 6 | 0x3f & cccc.charCodeAt(2));
+            default:
+                return fromCharCode((0x1f & cccc.charCodeAt(0)) << 6 | 0x3f & cccc.charCodeAt(1));
         }
     };
-    var btou = function(b) {
+    var btou = function btou(b) {
         return b.replace(re_btou, cb_btou);
     };
-    var cb_decode = function(cccc) {
+    var cb_decode = function cb_decode(cccc) {
         var len = cccc.length,
-        padlen = len % 4,
-        n = (len > 0 ? b64tab[cccc.charAt(0)] << 18 : 0)
-            | (len > 1 ? b64tab[cccc.charAt(1)] << 12 : 0)
-            | (len > 2 ? b64tab[cccc.charAt(2)] <<  6 : 0)
-            | (len > 3 ? b64tab[cccc.charAt(3)]       : 0),
-        chars = [
-            fromCharCode( n >>> 16),
-            fromCharCode((n >>>  8) & 0xff),
-            fromCharCode( n         & 0xff)
-        ];
+            padlen = len % 4,
+            n = (len > 0 ? b64tab[cccc.charAt(0)] << 18 : 0) | (len > 1 ? b64tab[cccc.charAt(1)] << 12 : 0) | (len > 2 ? b64tab[cccc.charAt(2)] << 6 : 0) | (len > 3 ? b64tab[cccc.charAt(3)] : 0),
+            chars = [fromCharCode(n >>> 16), fromCharCode(n >>> 8 & 0xff), fromCharCode(n & 0xff)];
         chars.length -= [0, 0, 2, 1][padlen];
         return chars.join('');
     };
-    var atob = global.atob ? function(a) {
+    var atob = global.atob ? function (a) {
         return global.atob(a);
-    } : function(a){
+    } : function (a) {
         return a.replace(/[\s\S]{1,4}/g, cb_decode);
     };
-    var _decode = buffer ? function(a) {
-        return (a.constructor === buffer.constructor
-                ? a : new buffer(a, 'base64')).toString();
-    }
-    : function(a) { return btou(atob(a)) };
-    var decode = function(a){
-        return _decode(
-            String(a).replace(/[-_]/g, function(m0) { return m0 == '-' ? '+' : '/' })
-                .replace(/[^A-Za-z0-9\+\/]/g, '')
-        );
+    var _decode = buffer ? function (a) {
+        return (a.constructor === buffer.constructor ? a : new buffer(a, 'base64')).toString();
+    } : function (a) {
+        return btou(atob(a));
     };
-    var noConflict = function() {
+    var decode = function decode(a) {
+        return _decode(String(a).replace(/[-_]/g, function (m0) {
+            return m0 == '-' ? '+' : '/';
+        }).replace(/[^A-Za-z0-9\+\/]/g, ''));
+    };
+    var noConflict = function noConflict() {
         var Base64 = global.Base64;
         global.Base64 = _Base64;
         return Base64;
@@ -2118,19 +2068,20 @@ var Base64 = (function(global) {
         noConflict: noConflict
     };
     return Base64;
-})();
+}();
 
 module.exports = Base64;
 
-
-
 /***/ }),
 /* 4 */
-/***/ (function(module, exports) {
+/***/ (function(module, exports, __webpack_require__) {
 
-var initEvent = function (cos) {
+"use strict";
+
+
+var initEvent = function initEvent(cos) {
     var listeners = {};
-    var getList = function (action) {
+    var getList = function getList(action) {
         !listeners[action] && (listeners[action] = []);
         return listeners[action];
     };
@@ -2153,7 +2104,7 @@ var initEvent = function (cos) {
     };
 };
 
-var EventProxy = function () {
+var EventProxy = function EventProxy() {
     initEvent(this);
 };
 
@@ -2164,6 +2115,9 @@ module.exports.EventProxy = EventProxy;
 /* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
+"use strict";
+
+
 var util = __webpack_require__(0);
 
 // 按照文件特征值，缓存 UploadId
@@ -2172,22 +2126,20 @@ var expires = 30 * 24 * 3600;
 var cache;
 var timer;
 
-var getCache = function () {
+var getCache = function getCache() {
     try {
         var val = JSON.parse(wx.getStorageSync(cacheKey));
-    } catch (e) {
-    }
+    } catch (e) {}
     if (!val) val = [];
     return val;
 };
-var setCache = function () {
+var setCache = function setCache() {
     try {
-        wx.setStorageSync(cacheKey, JSON.stringify(cache))
-    } catch (e) {
-    }
+        wx.setStorageSync(cacheKey, JSON.stringify(cache));
+    } catch (e) {}
 };
 
-var init = function () {
+var init = function init() {
     if (cache) return;
     cache = getCache();
     // 清理太老旧的数据
@@ -2204,7 +2156,7 @@ var init = function () {
 };
 
 // 把缓存存到本地
-var save = function () {
+var save = function save() {
     if (timer) return;
     timer = setTimeout(function () {
         setCache();
@@ -2215,15 +2167,15 @@ var save = function () {
 var mod = {
     using: {},
     // 标记 UploadId 正在使用
-    setUsing: function (uuid) {
+    setUsing: function setUsing(uuid) {
         mod.using[uuid] = true;
     },
     // 标记 UploadId 已经没在使用
-    removeUsing: function (uuid) {
+    removeUsing: function removeUsing(uuid) {
         delete mod.using[uuid];
     },
     // 用上传参数生成哈希值
-    getFileId: function (FileStat, ChunkSize, Bucket, Key) {
+    getFileId: function getFileId(FileStat, ChunkSize, Bucket, Key) {
         if (FileStat.FilePath && FileStat.size && FileStat.lastModifiedTime && ChunkSize) {
             return util.md5([FileStat.FilePath].join('::')) + '-' + util.md5([FileStat.size, FileStat.mode, FileStat.lastAccessedTime, FileStat.lastModifiedTime, ChunkSize, Bucket, Key].join('::'));
         } else {
@@ -2231,18 +2183,17 @@ var mod = {
         }
     },
     // 获取文件对应的 UploadId 列表
-    getUploadIdList: function (uuid) {
+    getUploadIdList: function getUploadIdList(uuid) {
         if (!uuid) return null;
         init();
         var list = [];
         for (var i = 0; i < cache.length; i++) {
-            if (cache[i][0] === uuid)
-                list.push(cache[i][1]);
+            if (cache[i][0] === uuid) list.push(cache[i][1]);
         }
         return list.length ? list : null;
     },
     // 缓存 UploadId
-    saveUploadId: function (uuid, UploadId, limit) {
+    saveUploadId: function saveUploadId(uuid, UploadId, limit) {
         init();
         if (!uuid) return;
         // 清理没用的 UploadId
@@ -2251,7 +2202,8 @@ var mod = {
             var item = cache[i];
             if (item[0] === uuid && item[1] === UploadId) {
                 cache.splice(i, 1);
-            } else if (uuid !== item[0] && item[0].indexOf(part1) === 0) { // 文件路径相同，但其他信息不同，说明文件改变了或上传参数（存储桶、路径、分片大小）变了，直接清理掉
+            } else if (uuid !== item[0] && item[0].indexOf(part1) === 0) {
+                // 文件路径相同，但其他信息不同，说明文件改变了或上传参数（存储桶、路径、分片大小）变了，直接清理掉
                 cache.splice(i, 1);
             }
         }
@@ -2260,22 +2212,24 @@ var mod = {
         save();
     },
     // UploadId 已用完，移除掉
-    removeUploadId: function (UploadId) {
+    removeUploadId: function removeUploadId(UploadId) {
         init();
         delete mod.using[UploadId];
         for (var i = cache.length - 1; i >= 0; i--) {
-            if (cache[i][1] === UploadId) cache.splice(i, 1)
+            if (cache[i][1] === UploadId) cache.splice(i, 1);
         }
         save();
-    },
+    }
 };
 
 module.exports = mod;
 
-
 /***/ }),
 /* 6 */
 /***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 
 var COS = __webpack_require__(7);
 module.exports = COS;
@@ -2289,9 +2243,9 @@ module.exports = COS;
 
 var util = __webpack_require__(0);
 var event = __webpack_require__(4);
-var task = __webpack_require__(16);
-var base = __webpack_require__(17);
-var advance = __webpack_require__(23);
+var task = __webpack_require__(17);
+var base = __webpack_require__(18);
+var advance = __webpack_require__(24);
 
 var defaultOptions = {
     SecretId: '',
@@ -2318,11 +2272,11 @@ var defaultOptions = {
     SystemClockOffset: 0, // 单位毫秒，ms
     UploadCheckContentMd5: false,
     UploadIdCacheLimit: 50,
-    UseAccelerate: false,
+    UseAccelerate: false
 };
 
 // 对外暴露的类
-var COS = function (options) {
+var COS = function COS(options) {
     this.options = util.extend(util.clone(defaultOptions), options || {});
     this.options.FileParallelLimit = Math.max(1, this.options.FileParallelLimit);
     this.options.ChunkParallelLimit = Math.max(1, this.options.ChunkParallelLimit);
@@ -2336,6 +2290,14 @@ var COS = function (options) {
     if (this.options.AppId) {
         console.warn('warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g: "test-1250000000").');
     }
+    if (this.options.SecretId && this.options.SecretId.indexOf(' ') > -1) {
+        console.error('error: SecretId格式错误，请检查');
+        console.error('error: SecretId format is incorrect. Please check');
+    }
+    if (this.options.SecretKey && this.options.SecretKey.indexOf(' ') > -1) {
+        console.error('error: SecretKey格式错误，请检查');
+        console.error('error: SecretKey format is incorrect. Please check');
+    }
     event.init(this);
     task.init(this);
 };
@@ -2344,34 +2306,38 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.1.1';
+COS.version = '1.1.2';
 
 module.exports = COS;
-
 
 /***/ }),
 /* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
-/* WEBPACK VAR INJECTION */(function(process, global) {var __WEBPACK_AMD_DEFINE_RESULT__;/* https://github.com/emn178/js-md5 */
+"use strict";
+/* WEBPACK VAR INJECTION */(function(process, global, module) {var __WEBPACK_AMD_DEFINE_RESULT__;
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+/* https://github.com/emn178/js-md5 */
 (function () {
     'use strict';
 
     var ERROR = 'input is invalid type';
-    var WINDOW = typeof window === 'object';
+    var WINDOW = (typeof window === 'undefined' ? 'undefined' : _typeof(window)) === 'object';
     var root = WINDOW ? window : {};
     if (root.JS_MD5_NO_WINDOW) {
         WINDOW = false;
     }
-    var WEB_WORKER = !WINDOW && typeof self === 'object';
-    var NODE_JS = !root.JS_MD5_NO_NODE_JS && typeof process === 'object' && process.versions && process.versions.node;
+    var WEB_WORKER = !WINDOW && (typeof self === 'undefined' ? 'undefined' : _typeof(self)) === 'object';
+    var NODE_JS = !root.JS_MD5_NO_NODE_JS && (typeof process === 'undefined' ? 'undefined' : _typeof(process)) === 'object' && process.versions && process.versions.node;
     if (NODE_JS) {
         root = global;
     } else if (WEB_WORKER) {
         root = self;
     }
-    var COMMON_JS = !root.JS_MD5_NO_COMMON_JS && typeof module === 'object' && module.exports;
-    var AMD = "function" === 'function' && __webpack_require__(10);
+    var COMMON_JS = !root.JS_MD5_NO_COMMON_JS && ( false ? 'undefined' : _typeof(module)) === 'object' && module.exports;
+    var AMD = "function" === 'function' && __webpack_require__(11);
     var ARRAY_BUFFER = !root.JS_MD5_NO_ARRAY_BUFFER && typeof ArrayBuffer !== 'undefined';
     var HEX_CHARS = '0123456789abcdef'.split('');
     var EXTRA = [128, 32768, 8388608, -2147483648];
@@ -2379,7 +2345,8 @@ module.exports = COS;
     var OUTPUT_TYPES = ['hex', 'array', 'digest', 'buffer', 'arrayBuffer', 'base64'];
     var BASE64_ENCODE_CHAR = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'.split('');
 
-    var blocks = [], buffer8;
+    var blocks = [],
+        buffer8;
     if (ARRAY_BUFFER) {
         var buffer = new ArrayBuffer(68);
         buffer8 = new Uint8Array(buffer);
@@ -2394,7 +2361,7 @@ module.exports = COS;
 
     if (ARRAY_BUFFER && (root.JS_MD5_NO_ARRAY_BUFFER_IS_VIEW || !ArrayBuffer.isView)) {
         ArrayBuffer.isView = function (obj) {
-            return typeof obj === 'object' && obj.buffer && obj.buffer.constructor === ArrayBuffer;
+            return (typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === 'object' && obj.buffer && obj.buffer.constructor === ArrayBuffer;
         };
     }
 
@@ -2455,7 +2422,7 @@ module.exports = COS;
      * @example
      * md5.base64('The quick brown fox jumps over the lazy dog');
      */
-    var createOutputMethod = function (outputType) {
+    var createOutputMethod = function createOutputMethod(outputType) {
         return function (message) {
             return new Md5(true).update(message)[outputType]();
         };
@@ -2481,7 +2448,7 @@ module.exports = COS;
      * var hash = md5.create();
      * hash.update('The quick brown fox jumps over the lazy dog');
      */
-    var createMethod = function () {
+    var createMethod = function createMethod() {
         var method = createOutputMethod('hex');
         if (NODE_JS) {
             method = nodeWrap(method);
@@ -2499,10 +2466,10 @@ module.exports = COS;
         return method;
     };
 
-    var nodeWrap = function (method) {
+    var nodeWrap = function nodeWrap(method) {
         var crypto = eval("require('crypto')");
         var Buffer = eval("require('buffer').Buffer");
-        var nodeMethod = function (message) {
+        var nodeMethod = function nodeMethod(message) {
             if (typeof message === 'string') {
                 return crypto.createHash('md5').update(message, 'utf8').digest('hex');
             } else {
@@ -2512,8 +2479,7 @@ module.exports = COS;
                     message = new Uint8Array(message);
                 }
             }
-            if (Array.isArray(message) || ArrayBuffer.isView(message) ||
-                message.constructor === Buffer) {
+            if (Array.isArray(message) || ArrayBuffer.isView(message) || message.constructor === Buffer) {
                 return crypto.createHash('md5').update(new Buffer(message)).digest('hex');
             } else {
                 return method(message);
@@ -2530,10 +2496,7 @@ module.exports = COS;
      */
     function Md5(sharedMemory) {
         if (sharedMemory) {
-            blocks[0] = blocks[16] = blocks[1] = blocks[2] = blocks[3] =
-                blocks[4] = blocks[5] = blocks[6] = blocks[7] =
-                    blocks[8] = blocks[9] = blocks[10] = blocks[11] =
-                        blocks[12] = blocks[13] = blocks[14] = blocks[15] = 0;
+            blocks[0] = blocks[16] = blocks[1] = blocks[2] = blocks[3] = blocks[4] = blocks[5] = blocks[6] = blocks[7] = blocks[8] = blocks[9] = blocks[10] = blocks[11] = blocks[12] = blocks[13] = blocks[14] = blocks[15] = 0;
             this.blocks = blocks;
             this.buffer8 = buffer8;
         } else {
@@ -2564,7 +2527,8 @@ module.exports = COS;
             return;
         }
 
-        var notString, type = typeof message;
+        var notString,
+            type = typeof message === 'undefined' ? 'undefined' : _typeof(message);
         if (type !== 'string') {
             if (type === 'object') {
                 if (message === null) {
@@ -2581,17 +2545,18 @@ module.exports = COS;
             }
             notString = true;
         }
-        var code, index = 0, i, length = message.length, blocks = this.blocks;
+        var code,
+            index = 0,
+            i,
+            length = message.length,
+            blocks = this.blocks;
         var buffer8 = this.buffer8;
 
         while (index < length) {
             if (this.hashed) {
                 this.hashed = false;
                 blocks[0] = blocks[16];
-                blocks[16] = blocks[1] = blocks[2] = blocks[3] =
-                    blocks[4] = blocks[5] = blocks[6] = blocks[7] =
-                        blocks[8] = blocks[9] = blocks[10] = blocks[11] =
-                            blocks[12] = blocks[13] = blocks[14] = blocks[15] = 0;
+                blocks[16] = blocks[1] = blocks[2] = blocks[3] = blocks[4] = blocks[5] = blocks[6] = blocks[7] = blocks[8] = blocks[9] = blocks[10] = blocks[11] = blocks[12] = blocks[13] = blocks[14] = blocks[15] = 0;
             }
 
             if (notString) {
@@ -2611,18 +2576,18 @@ module.exports = COS;
                         if (code < 0x80) {
                             buffer8[i++] = code;
                         } else if (code < 0x800) {
-                            buffer8[i++] = 0xc0 | (code >> 6);
-                            buffer8[i++] = 0x80 | (code & 0x3f);
+                            buffer8[i++] = 0xc0 | code >> 6;
+                            buffer8[i++] = 0x80 | code & 0x3f;
                         } else if (code < 0xd800 || code >= 0xe000) {
-                            buffer8[i++] = 0xe0 | (code >> 12);
-                            buffer8[i++] = 0x80 | ((code >> 6) & 0x3f);
-                            buffer8[i++] = 0x80 | (code & 0x3f);
+                            buffer8[i++] = 0xe0 | code >> 12;
+                            buffer8[i++] = 0x80 | code >> 6 & 0x3f;
+                            buffer8[i++] = 0x80 | code & 0x3f;
                         } else {
-                            code = 0x10000 + (((code & 0x3ff) << 10) | (message.charCodeAt(++index) & 0x3ff));
-                            buffer8[i++] = 0xf0 | (code >> 18);
-                            buffer8[i++] = 0x80 | ((code >> 12) & 0x3f);
-                            buffer8[i++] = 0x80 | ((code >> 6) & 0x3f);
-                            buffer8[i++] = 0x80 | (code & 0x3f);
+                            code = 0x10000 + ((code & 0x3ff) << 10 | message.charCodeAt(++index) & 0x3ff);
+                            buffer8[i++] = 0xf0 | code >> 18;
+                            buffer8[i++] = 0x80 | code >> 12 & 0x3f;
+                            buffer8[i++] = 0x80 | code >> 6 & 0x3f;
+                            buffer8[i++] = 0x80 | code & 0x3f;
                         }
                     }
                 } else {
@@ -2631,18 +2596,18 @@ module.exports = COS;
                         if (code < 0x80) {
                             blocks[i >> 2] |= code << SHIFT[i++ & 3];
                         } else if (code < 0x800) {
-                            blocks[i >> 2] |= (0xc0 | (code >> 6)) << SHIFT[i++ & 3];
-                            blocks[i >> 2] |= (0x80 | (code & 0x3f)) << SHIFT[i++ & 3];
+                            blocks[i >> 2] |= (0xc0 | code >> 6) << SHIFT[i++ & 3];
+                            blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT[i++ & 3];
                         } else if (code < 0xd800 || code >= 0xe000) {
-                            blocks[i >> 2] |= (0xe0 | (code >> 12)) << SHIFT[i++ & 3];
-                            blocks[i >> 2] |= (0x80 | ((code >> 6) & 0x3f)) << SHIFT[i++ & 3];
-                            blocks[i >> 2] |= (0x80 | (code & 0x3f)) << SHIFT[i++ & 3];
+                            blocks[i >> 2] |= (0xe0 | code >> 12) << SHIFT[i++ & 3];
+                            blocks[i >> 2] |= (0x80 | code >> 6 & 0x3f) << SHIFT[i++ & 3];
+                            blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT[i++ & 3];
                         } else {
-                            code = 0x10000 + (((code & 0x3ff) << 10) | (message.charCodeAt(++index) & 0x3ff));
-                            blocks[i >> 2] |= (0xf0 | (code >> 18)) << SHIFT[i++ & 3];
-                            blocks[i >> 2] |= (0x80 | ((code >> 12) & 0x3f)) << SHIFT[i++ & 3];
-                            blocks[i >> 2] |= (0x80 | ((code >> 6) & 0x3f)) << SHIFT[i++ & 3];
-                            blocks[i >> 2] |= (0x80 | (code & 0x3f)) << SHIFT[i++ & 3];
+                            code = 0x10000 + ((code & 0x3ff) << 10 | message.charCodeAt(++index) & 0x3ff);
+                            blocks[i >> 2] |= (0xf0 | code >> 18) << SHIFT[i++ & 3];
+                            blocks[i >> 2] |= (0x80 | code >> 12 & 0x3f) << SHIFT[i++ & 3];
+                            blocks[i >> 2] |= (0x80 | code >> 6 & 0x3f) << SHIFT[i++ & 3];
+                            blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT[i++ & 3];
                         }
                     }
                 }
@@ -2669,17 +2634,15 @@ module.exports = COS;
             return;
         }
         this.finalized = true;
-        var blocks = this.blocks, i = this.lastByteIndex;
+        var blocks = this.blocks,
+            i = this.lastByteIndex;
         blocks[i >> 2] |= EXTRA[i & 3];
         if (i >= 56) {
             if (!this.hashed) {
                 this.hash();
             }
             blocks[0] = blocks[16];
-            blocks[16] = blocks[1] = blocks[2] = blocks[3] =
-                blocks[4] = blocks[5] = blocks[6] = blocks[7] =
-                    blocks[8] = blocks[9] = blocks[10] = blocks[11] =
-                        blocks[12] = blocks[13] = blocks[14] = blocks[15] = 0;
+            blocks[16] = blocks[1] = blocks[2] = blocks[3] = blocks[4] = blocks[5] = blocks[6] = blocks[7] = blocks[8] = blocks[9] = blocks[10] = blocks[11] = blocks[12] = blocks[13] = blocks[14] = blocks[15] = 0;
         }
         blocks[14] = this.bytes << 3;
         blocks[15] = this.hBytes << 3 | this.bytes >>> 29;
@@ -2687,87 +2650,93 @@ module.exports = COS;
     };
 
     Md5.prototype.hash = function () {
-        var a, b, c, d, bc, da, blocks = this.blocks;
+        var a,
+            b,
+            c,
+            d,
+            bc,
+            da,
+            blocks = this.blocks;
 
         if (this.first) {
             a = blocks[0] - 680876937;
             a = (a << 7 | a >>> 25) - 271733879 << 0;
             d = (-1732584194 ^ a & 2004318071) + blocks[1] - 117830708;
             d = (d << 12 | d >>> 20) + a << 0;
-            c = (-271733879 ^ (d & (a ^ -271733879))) + blocks[2] - 1126478375;
+            c = (-271733879 ^ d & (a ^ -271733879)) + blocks[2] - 1126478375;
             c = (c << 17 | c >>> 15) + d << 0;
-            b = (a ^ (c & (d ^ a))) + blocks[3] - 1316259209;
+            b = (a ^ c & (d ^ a)) + blocks[3] - 1316259209;
             b = (b << 22 | b >>> 10) + c << 0;
         } else {
             a = this.h0;
             b = this.h1;
             c = this.h2;
             d = this.h3;
-            a += (d ^ (b & (c ^ d))) + blocks[0] - 680876936;
+            a += (d ^ b & (c ^ d)) + blocks[0] - 680876936;
             a = (a << 7 | a >>> 25) + b << 0;
-            d += (c ^ (a & (b ^ c))) + blocks[1] - 389564586;
+            d += (c ^ a & (b ^ c)) + blocks[1] - 389564586;
             d = (d << 12 | d >>> 20) + a << 0;
-            c += (b ^ (d & (a ^ b))) + blocks[2] + 606105819;
+            c += (b ^ d & (a ^ b)) + blocks[2] + 606105819;
             c = (c << 17 | c >>> 15) + d << 0;
-            b += (a ^ (c & (d ^ a))) + blocks[3] - 1044525330;
+            b += (a ^ c & (d ^ a)) + blocks[3] - 1044525330;
             b = (b << 22 | b >>> 10) + c << 0;
         }
 
-        a += (d ^ (b & (c ^ d))) + blocks[4] - 176418897;
+        a += (d ^ b & (c ^ d)) + blocks[4] - 176418897;
         a = (a << 7 | a >>> 25) + b << 0;
-        d += (c ^ (a & (b ^ c))) + blocks[5] + 1200080426;
+        d += (c ^ a & (b ^ c)) + blocks[5] + 1200080426;
         d = (d << 12 | d >>> 20) + a << 0;
-        c += (b ^ (d & (a ^ b))) + blocks[6] - 1473231341;
+        c += (b ^ d & (a ^ b)) + blocks[6] - 1473231341;
         c = (c << 17 | c >>> 15) + d << 0;
-        b += (a ^ (c & (d ^ a))) + blocks[7] - 45705983;
+        b += (a ^ c & (d ^ a)) + blocks[7] - 45705983;
         b = (b << 22 | b >>> 10) + c << 0;
-        a += (d ^ (b & (c ^ d))) + blocks[8] + 1770035416;
+        a += (d ^ b & (c ^ d)) + blocks[8] + 1770035416;
         a = (a << 7 | a >>> 25) + b << 0;
-        d += (c ^ (a & (b ^ c))) + blocks[9] - 1958414417;
+        d += (c ^ a & (b ^ c)) + blocks[9] - 1958414417;
         d = (d << 12 | d >>> 20) + a << 0;
-        c += (b ^ (d & (a ^ b))) + blocks[10] - 42063;
+        c += (b ^ d & (a ^ b)) + blocks[10] - 42063;
         c = (c << 17 | c >>> 15) + d << 0;
-        b += (a ^ (c & (d ^ a))) + blocks[11] - 1990404162;
+        b += (a ^ c & (d ^ a)) + blocks[11] - 1990404162;
         b = (b << 22 | b >>> 10) + c << 0;
-        a += (d ^ (b & (c ^ d))) + blocks[12] + 1804603682;
+        a += (d ^ b & (c ^ d)) + blocks[12] + 1804603682;
         a = (a << 7 | a >>> 25) + b << 0;
-        d += (c ^ (a & (b ^ c))) + blocks[13] - 40341101;
+        d += (c ^ a & (b ^ c)) + blocks[13] - 40341101;
         d = (d << 12 | d >>> 20) + a << 0;
-        c += (b ^ (d & (a ^ b))) + blocks[14] - 1502002290;
+        c += (b ^ d & (a ^ b)) + blocks[14] - 1502002290;
         c = (c << 17 | c >>> 15) + d << 0;
-        b += (a ^ (c & (d ^ a))) + blocks[15] + 1236535329;
+        b += (a ^ c & (d ^ a)) + blocks[15] + 1236535329;
         b = (b << 22 | b >>> 10) + c << 0;
-        a += (c ^ (d & (b ^ c))) + blocks[1] - 165796510;
+        a += (c ^ d & (b ^ c)) + blocks[1] - 165796510;
         a = (a << 5 | a >>> 27) + b << 0;
-        d += (b ^ (c & (a ^ b))) + blocks[6] - 1069501632;
+        d += (b ^ c & (a ^ b)) + blocks[6] - 1069501632;
         d = (d << 9 | d >>> 23) + a << 0;
-        c += (a ^ (b & (d ^ a))) + blocks[11] + 643717713;
+        c += (a ^ b & (d ^ a)) + blocks[11] + 643717713;
         c = (c << 14 | c >>> 18) + d << 0;
-        b += (d ^ (a & (c ^ d))) + blocks[0] - 373897302;
+        b += (d ^ a & (c ^ d)) + blocks[0] - 373897302;
         b = (b << 20 | b >>> 12) + c << 0;
-        a += (c ^ (d & (b ^ c))) + blocks[5] - 701558691;
+        a += (c ^ d & (b ^ c)) + blocks[5] - 701558691;
         a = (a << 5 | a >>> 27) + b << 0;
-        d += (b ^ (c & (a ^ b))) + blocks[10] + 38016083;
+        d += (b ^ c & (a ^ b)) + blocks[10] + 38016083;
         d = (d << 9 | d >>> 23) + a << 0;
-        c += (a ^ (b & (d ^ a))) + blocks[15] - 660478335;
+        c += (a ^ b & (d ^ a)) + blocks[15] - 660478335;
         c = (c << 14 | c >>> 18) + d << 0;
-        b += (d ^ (a & (c ^ d))) + blocks[4] - 405537848;
+        b += (d ^ a & (c ^ d)) + blocks[4] - 405537848;
         b = (b << 20 | b >>> 12) + c << 0;
-        a += (c ^ (d & (b ^ c))) + blocks[9] + 568446438;
+        a += (c ^ d & (b ^ c)) + blocks[9] + 568446438;
         a = (a << 5 | a >>> 27) + b << 0;
-        d += (b ^ (c & (a ^ b))) + blocks[14] - 1019803690;
+        d += (b ^ c & (a ^ b)) + blocks[14] - 1019803690;
         d = (d << 9 | d >>> 23) + a << 0;
-        c += (a ^ (b & (d ^ a))) + blocks[3] - 187363961;
+        c += (a ^ b & (d ^ a)) + blocks[3] - 187363961;
         c = (c << 14 | c >>> 18) + d << 0;
-        b += (d ^ (a & (c ^ d))) + blocks[8] + 1163531501;
+        b += (d ^ a & (c ^ d)) + blocks[8] + 1163531501;
         b = (b << 20 | b >>> 12) + c << 0;
-        a += (c ^ (d & (b ^ c))) + blocks[13] - 1444681467;
+        a += (c ^ d & (b ^ c)) + blocks[13] - 1444681467;
         a = (a << 5 | a >>> 27) + b << 0;
-        d += (b ^ (c & (a ^ b))) + blocks[2] - 51403784;
+        d += (b ^ c & (a ^ b)) + blocks[2] - 51403784;
         d = (d << 9 | d >>> 23) + a << 0;
-        c += (a ^ (b & (d ^ a))) + blocks[7] + 1735328473;
+        c += (a ^ b & (d ^ a)) + blocks[7] + 1735328473;
         c = (c << 14 | c >>> 18) + d << 0;
-        b += (d ^ (a & (c ^ d))) + blocks[12] - 1926607734;
+        b += (d ^ a & (c ^ d)) + blocks[12] - 1926607734;
         b = (b << 20 | b >>> 12) + c << 0;
         bc = b ^ c;
         a += (bc ^ d) + blocks[5] - 378558;
@@ -2869,24 +2838,12 @@ module.exports = COS;
     Md5.prototype.hex = function () {
         this.finalize();
 
-        var h0 = this.h0, h1 = this.h1, h2 = this.h2, h3 = this.h3;
+        var h0 = this.h0,
+            h1 = this.h1,
+            h2 = this.h2,
+            h3 = this.h3;
 
-        return HEX_CHARS[(h0 >> 4) & 0x0F] + HEX_CHARS[h0 & 0x0F] +
-            HEX_CHARS[(h0 >> 12) & 0x0F] + HEX_CHARS[(h0 >> 8) & 0x0F] +
-            HEX_CHARS[(h0 >> 20) & 0x0F] + HEX_CHARS[(h0 >> 16) & 0x0F] +
-            HEX_CHARS[(h0 >> 28) & 0x0F] + HEX_CHARS[(h0 >> 24) & 0x0F] +
-            HEX_CHARS[(h1 >> 4) & 0x0F] + HEX_CHARS[h1 & 0x0F] +
-            HEX_CHARS[(h1 >> 12) & 0x0F] + HEX_CHARS[(h1 >> 8) & 0x0F] +
-            HEX_CHARS[(h1 >> 20) & 0x0F] + HEX_CHARS[(h1 >> 16) & 0x0F] +
-            HEX_CHARS[(h1 >> 28) & 0x0F] + HEX_CHARS[(h1 >> 24) & 0x0F] +
-            HEX_CHARS[(h2 >> 4) & 0x0F] + HEX_CHARS[h2 & 0x0F] +
-            HEX_CHARS[(h2 >> 12) & 0x0F] + HEX_CHARS[(h2 >> 8) & 0x0F] +
-            HEX_CHARS[(h2 >> 20) & 0x0F] + HEX_CHARS[(h2 >> 16) & 0x0F] +
-            HEX_CHARS[(h2 >> 28) & 0x0F] + HEX_CHARS[(h2 >> 24) & 0x0F] +
-            HEX_CHARS[(h3 >> 4) & 0x0F] + HEX_CHARS[h3 & 0x0F] +
-            HEX_CHARS[(h3 >> 12) & 0x0F] + HEX_CHARS[(h3 >> 8) & 0x0F] +
-            HEX_CHARS[(h3 >> 20) & 0x0F] + HEX_CHARS[(h3 >> 16) & 0x0F] +
-            HEX_CHARS[(h3 >> 28) & 0x0F] + HEX_CHARS[(h3 >> 24) & 0x0F];
+        return HEX_CHARS[h0 >> 4 & 0x0F] + HEX_CHARS[h0 & 0x0F] + HEX_CHARS[h0 >> 12 & 0x0F] + HEX_CHARS[h0 >> 8 & 0x0F] + HEX_CHARS[h0 >> 20 & 0x0F] + HEX_CHARS[h0 >> 16 & 0x0F] + HEX_CHARS[h0 >> 28 & 0x0F] + HEX_CHARS[h0 >> 24 & 0x0F] + HEX_CHARS[h1 >> 4 & 0x0F] + HEX_CHARS[h1 & 0x0F] + HEX_CHARS[h1 >> 12 & 0x0F] + HEX_CHARS[h1 >> 8 & 0x0F] + HEX_CHARS[h1 >> 20 & 0x0F] + HEX_CHARS[h1 >> 16 & 0x0F] + HEX_CHARS[h1 >> 28 & 0x0F] + HEX_CHARS[h1 >> 24 & 0x0F] + HEX_CHARS[h2 >> 4 & 0x0F] + HEX_CHARS[h2 & 0x0F] + HEX_CHARS[h2 >> 12 & 0x0F] + HEX_CHARS[h2 >> 8 & 0x0F] + HEX_CHARS[h2 >> 20 & 0x0F] + HEX_CHARS[h2 >> 16 & 0x0F] + HEX_CHARS[h2 >> 28 & 0x0F] + HEX_CHARS[h2 >> 24 & 0x0F] + HEX_CHARS[h3 >> 4 & 0x0F] + HEX_CHARS[h3 & 0x0F] + HEX_CHARS[h3 >> 12 & 0x0F] + HEX_CHARS[h3 >> 8 & 0x0F] + HEX_CHARS[h3 >> 20 & 0x0F] + HEX_CHARS[h3 >> 16 & 0x0F] + HEX_CHARS[h3 >> 28 & 0x0F] + HEX_CHARS[h3 >> 24 & 0x0F];
     };
 
     /**
@@ -2914,13 +2871,11 @@ module.exports = COS;
     Md5.prototype.digest = function () {
         this.finalize();
 
-        var h0 = this.h0, h1 = this.h1, h2 = this.h2, h3 = this.h3;
-        return [
-            h0 & 0xFF, (h0 >> 8) & 0xFF, (h0 >> 16) & 0xFF, (h0 >> 24) & 0xFF,
-            h1 & 0xFF, (h1 >> 8) & 0xFF, (h1 >> 16) & 0xFF, (h1 >> 24) & 0xFF,
-            h2 & 0xFF, (h2 >> 8) & 0xFF, (h2 >> 16) & 0xFF, (h2 >> 24) & 0xFF,
-            h3 & 0xFF, (h3 >> 8) & 0xFF, (h3 >> 16) & 0xFF, (h3 >> 24) & 0xFF
-        ];
+        var h0 = this.h0,
+            h1 = this.h1,
+            h2 = this.h2,
+            h3 = this.h3;
+        return [h0 & 0xFF, h0 >> 8 & 0xFF, h0 >> 16 & 0xFF, h0 >> 24 & 0xFF, h1 & 0xFF, h1 >> 8 & 0xFF, h1 >> 16 & 0xFF, h1 >> 24 & 0xFF, h2 & 0xFF, h2 >> 8 & 0xFF, h2 >> 16 & 0xFF, h2 >> 24 & 0xFF, h3 & 0xFF, h3 >> 8 & 0xFF, h3 >> 16 & 0xFF, h3 >> 24 & 0xFF];
     };
 
     /**
@@ -2981,20 +2936,19 @@ module.exports = COS;
      * hash.base64();
      */
     Md5.prototype.base64 = function () {
-        var v1, v2, v3, base64Str = '', bytes = this.array();
+        var v1,
+            v2,
+            v3,
+            base64Str = '',
+            bytes = this.array();
         for (var i = 0; i < 15;) {
             v1 = bytes[i++];
             v2 = bytes[i++];
             v3 = bytes[i++];
-            base64Str += BASE64_ENCODE_CHAR[v1 >>> 2] +
-                BASE64_ENCODE_CHAR[(v1 << 4 | v2 >>> 4) & 63] +
-                BASE64_ENCODE_CHAR[(v2 << 2 | v3 >>> 6) & 63] +
-                BASE64_ENCODE_CHAR[v3 & 63];
+            base64Str += BASE64_ENCODE_CHAR[v1 >>> 2] + BASE64_ENCODE_CHAR[(v1 << 4 | v2 >>> 4) & 63] + BASE64_ENCODE_CHAR[(v2 << 2 | v3 >>> 6) & 63] + BASE64_ENCODE_CHAR[v3 & 63];
         }
         v1 = bytes[i];
-        base64Str += BASE64_ENCODE_CHAR[v1 >>> 2] +
-            BASE64_ENCODE_CHAR[(v1 << 4) & 63] +
-            '==';
+        base64Str += BASE64_ENCODE_CHAR[v1 >>> 2] + BASE64_ENCODE_CHAR[v1 << 4 & 63] + '==';
         return base64Str;
     };
 
@@ -3029,12 +2983,14 @@ module.exports = COS;
         }
     }
 })();
-
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(9), __webpack_require__(1)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(9), __webpack_require__(1), __webpack_require__(10)(module)))
 
 /***/ }),
 /* 9 */
-/***/ (function(module, exports) {
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 
 // shim for using process in browser
 var process = module.exports = {};
@@ -3050,7 +3006,7 @@ var cachedClearTimeout;
 function defaultSetTimout() {
     throw new Error('setTimeout has not been defined');
 }
-function defaultClearTimeout () {
+function defaultClearTimeout() {
     throw new Error('clearTimeout has not been defined');
 }
 (function () {
@@ -3072,7 +3028,7 @@ function defaultClearTimeout () {
     } catch (e) {
         cachedClearTimeout = defaultClearTimeout;
     }
-} ())
+})();
 function runTimeout(fun) {
     if (cachedSetTimeout === setTimeout) {
         //normal enviroments in sane situations
@@ -3086,17 +3042,15 @@ function runTimeout(fun) {
     try {
         // when when somebody has screwed with setTimeout but no I.E. maddness
         return cachedSetTimeout(fun, 0);
-    } catch(e){
+    } catch (e) {
         try {
             // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
             return cachedSetTimeout.call(null, fun, 0);
-        } catch(e){
+        } catch (e) {
             // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
             return cachedSetTimeout.call(this, fun, 0);
         }
     }
-
-
 }
 function runClearTimeout(marker) {
     if (cachedClearTimeout === clearTimeout) {
@@ -3111,19 +3065,16 @@ function runClearTimeout(marker) {
     try {
         // when when somebody has screwed with setTimeout but no I.E. maddness
         return cachedClearTimeout(marker);
-    } catch (e){
+    } catch (e) {
         try {
             // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
             return cachedClearTimeout.call(null, marker);
-        } catch (e){
+        } catch (e) {
             // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
             // Some versions of I.E. have different rules for clearTimeout vs setTimeout
             return cachedClearTimeout.call(this, marker);
         }
     }
-
-
-
 }
 var queue = [];
 var draining = false;
@@ -3153,7 +3104,7 @@ function drainQueue() {
     draining = true;
 
     var len = queue.length;
-    while(len) {
+    while (len) {
         currentQueue = queue;
         queue = [];
         while (++queueIndex < len) {
@@ -3209,21 +3160,56 @@ process.emit = noop;
 process.prependListener = noop;
 process.prependOnceListener = noop;
 
-process.listeners = function (name) { return [] }
+process.listeners = function (name) {
+    return [];
+};
 
 process.binding = function (name) {
     throw new Error('process.binding is not supported');
 };
 
-process.cwd = function () { return '/' };
+process.cwd = function () {
+    return '/';
+};
 process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
-process.umask = function() { return 0; };
-
+process.umask = function () {
+    return 0;
+};
 
 /***/ }),
 /* 10 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+module.exports = function (module) {
+	if (!module.webpackPolyfill) {
+		module.deprecate = function () {};
+		module.paths = [];
+		// module.parent = undefined by default
+		if (!module.children) module.children = [];
+		Object.defineProperty(module, "loaded", {
+			enumerable: true,
+			get: function get() {
+				return module.l;
+			}
+		});
+		Object.defineProperty(module, "id", {
+			enumerable: true,
+			get: function get() {
+				return module.i;
+			}
+		});
+		module.webpackPolyfill = 1;
+	}
+	return module;
+};
+
+/***/ }),
+/* 11 */
 /***/ (function(module, exports) {
 
 /* WEBPACK VAR INJECTION */(function(__webpack_amd_options__) {/* globals __webpack_amd_options__ */
@@ -3232,8 +3218,11 @@ module.exports = __webpack_amd_options__;
 /* WEBPACK VAR INJECTION */}.call(exports, {}))
 
 /***/ }),
-/* 11 */
-/***/ (function(module, exports) {
+/* 12 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 
 /*
  CryptoJS v3.1.2
@@ -3241,18 +3230,147 @@ module.exports = __webpack_amd_options__;
  (c) 2009-2013 by Jeff Mott. All rights reserved.
  code.google.com/p/crypto-js/wiki/License
  */
-var CryptoJS=CryptoJS||function(g,l){var e={},d=e.lib={},m=function(){},k=d.Base={extend:function(a){m.prototype=this;var c=new m;a&&c.mixIn(a);c.hasOwnProperty("init")||(c.init=function(){c.$super.init.apply(this,arguments)});c.init.prototype=c;c.$super=this;return c},create:function(){var a=this.extend();a.init.apply(a,arguments);return a},init:function(){},mixIn:function(a){for(var c in a)a.hasOwnProperty(c)&&(this[c]=a[c]);a.hasOwnProperty("toString")&&(this.toString=a.toString)},clone:function(){return this.init.prototype.extend(this)}},
-        p=d.WordArray=k.extend({init:function(a,c){a=this.words=a||[];this.sigBytes=c!=l?c:4*a.length},toString:function(a){return(a||n).stringify(this)},concat:function(a){var c=this.words,q=a.words,f=this.sigBytes;a=a.sigBytes;this.clamp();if(f%4)for(var b=0;b<a;b++)c[f+b>>>2]|=(q[b>>>2]>>>24-8*(b%4)&255)<<24-8*((f+b)%4);else if(65535<q.length)for(b=0;b<a;b+=4)c[f+b>>>2]=q[b>>>2];else c.push.apply(c,q);this.sigBytes+=a;return this},clamp:function(){var a=this.words,c=this.sigBytes;a[c>>>2]&=4294967295<<
-            32-8*(c%4);a.length=g.ceil(c/4)},clone:function(){var a=k.clone.call(this);a.words=this.words.slice(0);return a},random:function(a){for(var c=[],b=0;b<a;b+=4)c.push(4294967296*g.random()|0);return new p.init(c,a)}}),b=e.enc={},n=b.Hex={stringify:function(a){var c=a.words;a=a.sigBytes;for(var b=[],f=0;f<a;f++){var d=c[f>>>2]>>>24-8*(f%4)&255;b.push((d>>>4).toString(16));b.push((d&15).toString(16))}return b.join("")},parse:function(a){for(var c=a.length,b=[],f=0;f<c;f+=2)b[f>>>3]|=parseInt(a.substr(f,
-                2),16)<<24-4*(f%8);return new p.init(b,c/2)}},j=b.Latin1={stringify:function(a){var c=a.words;a=a.sigBytes;for(var b=[],f=0;f<a;f++)b.push(String.fromCharCode(c[f>>>2]>>>24-8*(f%4)&255));return b.join("")},parse:function(a){for(var c=a.length,b=[],f=0;f<c;f++)b[f>>>2]|=(a.charCodeAt(f)&255)<<24-8*(f%4);return new p.init(b,c)}},h=b.Utf8={stringify:function(a){try{return decodeURIComponent(escape(j.stringify(a)))}catch(c){throw Error("Malformed UTF-8 data");}},parse:function(a){return j.parse(unescape(encodeURIComponent(a)))}},
-        r=d.BufferedBlockAlgorithm=k.extend({reset:function(){this._data=new p.init;this._nDataBytes=0},_append:function(a){"string"==typeof a&&(a=h.parse(a));this._data.concat(a);this._nDataBytes+=a.sigBytes},_process:function(a){var c=this._data,b=c.words,f=c.sigBytes,d=this.blockSize,e=f/(4*d),e=a?g.ceil(e):g.max((e|0)-this._minBufferSize,0);a=e*d;f=g.min(4*a,f);if(a){for(var k=0;k<a;k+=d)this._doProcessBlock(b,k);k=b.splice(0,a);c.sigBytes-=f}return new p.init(k,f)},clone:function(){var a=k.clone.call(this);
-            a._data=this._data.clone();return a},_minBufferSize:0});d.Hasher=r.extend({cfg:k.extend(),init:function(a){this.cfg=this.cfg.extend(a);this.reset()},reset:function(){r.reset.call(this);this._doReset()},update:function(a){this._append(a);this._process();return this},finalize:function(a){a&&this._append(a);return this._doFinalize()},blockSize:16,_createHelper:function(a){return function(b,d){return(new a.init(d)).finalize(b)}},_createHmacHelper:function(a){return function(b,d){return(new s.HMAC.init(a,
-        d)).finalize(b)}}});var s=e.algo={};return e}(Math);
-(function(){var g=CryptoJS,l=g.lib,e=l.WordArray,d=l.Hasher,m=[],l=g.algo.SHA1=d.extend({_doReset:function(){this._hash=new e.init([1732584193,4023233417,2562383102,271733878,3285377520])},_doProcessBlock:function(d,e){for(var b=this._hash.words,n=b[0],j=b[1],h=b[2],g=b[3],l=b[4],a=0;80>a;a++){if(16>a)m[a]=d[e+a]|0;else{var c=m[a-3]^m[a-8]^m[a-14]^m[a-16];m[a]=c<<1|c>>>31}c=(n<<5|n>>>27)+l+m[a];c=20>a?c+((j&h|~j&g)+1518500249):40>a?c+((j^h^g)+1859775393):60>a?c+((j&h|j&g|h&g)-1894007588):c+((j^h^
-g)-899497514);l=g;g=h;h=j<<30|j>>>2;j=n;n=c}b[0]=b[0]+n|0;b[1]=b[1]+j|0;b[2]=b[2]+h|0;b[3]=b[3]+g|0;b[4]=b[4]+l|0},_doFinalize:function(){var d=this._data,e=d.words,b=8*this._nDataBytes,g=8*d.sigBytes;e[g>>>5]|=128<<24-g%32;e[(g+64>>>9<<4)+14]=Math.floor(b/4294967296);e[(g+64>>>9<<4)+15]=b;d.sigBytes=4*e.length;this._process();return this._hash},clone:function(){var e=d.clone.call(this);e._hash=this._hash.clone();return e}});g.SHA1=d._createHelper(l);g.HmacSHA1=d._createHmacHelper(l)})();
-(function(){var g=CryptoJS,l=g.enc.Utf8;g.algo.HMAC=g.lib.Base.extend({init:function(e,d){e=this._hasher=new e.init;"string"==typeof d&&(d=l.parse(d));var g=e.blockSize,k=4*g;d.sigBytes>k&&(d=e.finalize(d));d.clamp();for(var p=this._oKey=d.clone(),b=this._iKey=d.clone(),n=p.words,j=b.words,h=0;h<g;h++)n[h]^=1549556828,j[h]^=909522486;p.sigBytes=b.sigBytes=k;this.reset()},reset:function(){var e=this._hasher;e.reset();e.update(this._iKey)},update:function(e){this._hasher.update(e);return this},finalize:function(e){var d=
-    this._hasher;e=d.finalize(e);d.reset();return d.finalize(this._oKey.clone().concat(e))}})})();
-
+var CryptoJS = CryptoJS || function (g, l) {
+    var e = {},
+        d = e.lib = {},
+        m = function m() {},
+        k = d.Base = { extend: function extend(a) {
+            m.prototype = this;var c = new m();a && c.mixIn(a);c.hasOwnProperty("init") || (c.init = function () {
+                c.$super.init.apply(this, arguments);
+            });c.init.prototype = c;c.$super = this;return c;
+        }, create: function create() {
+            var a = this.extend();a.init.apply(a, arguments);return a;
+        }, init: function init() {}, mixIn: function mixIn(a) {
+            for (var c in a) {
+                a.hasOwnProperty(c) && (this[c] = a[c]);
+            }a.hasOwnProperty("toString") && (this.toString = a.toString);
+        }, clone: function clone() {
+            return this.init.prototype.extend(this);
+        } },
+        p = d.WordArray = k.extend({ init: function init(a, c) {
+            a = this.words = a || [];this.sigBytes = c != l ? c : 4 * a.length;
+        }, toString: function toString(a) {
+            return (a || n).stringify(this);
+        }, concat: function concat(a) {
+            var c = this.words,
+                q = a.words,
+                f = this.sigBytes;a = a.sigBytes;this.clamp();if (f % 4) for (var b = 0; b < a; b++) {
+                c[f + b >>> 2] |= (q[b >>> 2] >>> 24 - 8 * (b % 4) & 255) << 24 - 8 * ((f + b) % 4);
+            } else if (65535 < q.length) for (b = 0; b < a; b += 4) {
+                c[f + b >>> 2] = q[b >>> 2];
+            } else c.push.apply(c, q);this.sigBytes += a;return this;
+        }, clamp: function clamp() {
+            var a = this.words,
+                c = this.sigBytes;a[c >>> 2] &= 4294967295 << 32 - 8 * (c % 4);a.length = g.ceil(c / 4);
+        }, clone: function clone() {
+            var a = k.clone.call(this);a.words = this.words.slice(0);return a;
+        }, random: function random(a) {
+            for (var c = [], b = 0; b < a; b += 4) {
+                c.push(4294967296 * g.random() | 0);
+            }return new p.init(c, a);
+        } }),
+        b = e.enc = {},
+        n = b.Hex = { stringify: function stringify(a) {
+            var c = a.words;a = a.sigBytes;for (var b = [], f = 0; f < a; f++) {
+                var d = c[f >>> 2] >>> 24 - 8 * (f % 4) & 255;b.push((d >>> 4).toString(16));b.push((d & 15).toString(16));
+            }return b.join("");
+        }, parse: function parse(a) {
+            for (var c = a.length, b = [], f = 0; f < c; f += 2) {
+                b[f >>> 3] |= parseInt(a.substr(f, 2), 16) << 24 - 4 * (f % 8);
+            }return new p.init(b, c / 2);
+        } },
+        j = b.Latin1 = { stringify: function stringify(a) {
+            var c = a.words;a = a.sigBytes;for (var b = [], f = 0; f < a; f++) {
+                b.push(String.fromCharCode(c[f >>> 2] >>> 24 - 8 * (f % 4) & 255));
+            }return b.join("");
+        }, parse: function parse(a) {
+            for (var c = a.length, b = [], f = 0; f < c; f++) {
+                b[f >>> 2] |= (a.charCodeAt(f) & 255) << 24 - 8 * (f % 4);
+            }return new p.init(b, c);
+        } },
+        h = b.Utf8 = { stringify: function stringify(a) {
+            try {
+                return decodeURIComponent(escape(j.stringify(a)));
+            } catch (c) {
+                throw Error("Malformed UTF-8 data");
+            }
+        }, parse: function parse(a) {
+            return j.parse(unescape(encodeURIComponent(a)));
+        } },
+        r = d.BufferedBlockAlgorithm = k.extend({ reset: function reset() {
+            this._data = new p.init();this._nDataBytes = 0;
+        }, _append: function _append(a) {
+            "string" == typeof a && (a = h.parse(a));this._data.concat(a);this._nDataBytes += a.sigBytes;
+        }, _process: function _process(a) {
+            var c = this._data,
+                b = c.words,
+                f = c.sigBytes,
+                d = this.blockSize,
+                e = f / (4 * d),
+                e = a ? g.ceil(e) : g.max((e | 0) - this._minBufferSize, 0);a = e * d;f = g.min(4 * a, f);if (a) {
+                for (var k = 0; k < a; k += d) {
+                    this._doProcessBlock(b, k);
+                }k = b.splice(0, a);c.sigBytes -= f;
+            }return new p.init(k, f);
+        }, clone: function clone() {
+            var a = k.clone.call(this);
+            a._data = this._data.clone();return a;
+        }, _minBufferSize: 0 });d.Hasher = r.extend({ cfg: k.extend(), init: function init(a) {
+            this.cfg = this.cfg.extend(a);this.reset();
+        }, reset: function reset() {
+            r.reset.call(this);this._doReset();
+        }, update: function update(a) {
+            this._append(a);this._process();return this;
+        }, finalize: function finalize(a) {
+            a && this._append(a);return this._doFinalize();
+        }, blockSize: 16, _createHelper: function _createHelper(a) {
+            return function (b, d) {
+                return new a.init(d).finalize(b);
+            };
+        }, _createHmacHelper: function _createHmacHelper(a) {
+            return function (b, d) {
+                return new s.HMAC.init(a, d).finalize(b);
+            };
+        } });var s = e.algo = {};return e;
+}(Math);
+(function () {
+    var g = CryptoJS,
+        l = g.lib,
+        e = l.WordArray,
+        d = l.Hasher,
+        m = [],
+        l = g.algo.SHA1 = d.extend({ _doReset: function _doReset() {
+            this._hash = new e.init([1732584193, 4023233417, 2562383102, 271733878, 3285377520]);
+        }, _doProcessBlock: function _doProcessBlock(d, e) {
+            for (var b = this._hash.words, n = b[0], j = b[1], h = b[2], g = b[3], l = b[4], a = 0; 80 > a; a++) {
+                if (16 > a) m[a] = d[e + a] | 0;else {
+                    var c = m[a - 3] ^ m[a - 8] ^ m[a - 14] ^ m[a - 16];m[a] = c << 1 | c >>> 31;
+                }c = (n << 5 | n >>> 27) + l + m[a];c = 20 > a ? c + ((j & h | ~j & g) + 1518500249) : 40 > a ? c + ((j ^ h ^ g) + 1859775393) : 60 > a ? c + ((j & h | j & g | h & g) - 1894007588) : c + ((j ^ h ^ g) - 899497514);l = g;g = h;h = j << 30 | j >>> 2;j = n;n = c;
+            }b[0] = b[0] + n | 0;b[1] = b[1] + j | 0;b[2] = b[2] + h | 0;b[3] = b[3] + g | 0;b[4] = b[4] + l | 0;
+        }, _doFinalize: function _doFinalize() {
+            var d = this._data,
+                e = d.words,
+                b = 8 * this._nDataBytes,
+                g = 8 * d.sigBytes;e[g >>> 5] |= 128 << 24 - g % 32;e[(g + 64 >>> 9 << 4) + 14] = Math.floor(b / 4294967296);e[(g + 64 >>> 9 << 4) + 15] = b;d.sigBytes = 4 * e.length;this._process();return this._hash;
+        }, clone: function clone() {
+            var e = d.clone.call(this);e._hash = this._hash.clone();return e;
+        } });g.SHA1 = d._createHelper(l);g.HmacSHA1 = d._createHmacHelper(l);
+})();
+(function () {
+    var g = CryptoJS,
+        l = g.enc.Utf8;g.algo.HMAC = g.lib.Base.extend({ init: function init(e, d) {
+            e = this._hasher = new e.init();"string" == typeof d && (d = l.parse(d));var g = e.blockSize,
+                k = 4 * g;d.sigBytes > k && (d = e.finalize(d));d.clamp();for (var p = this._oKey = d.clone(), b = this._iKey = d.clone(), n = p.words, j = b.words, h = 0; h < g; h++) {
+                n[h] ^= 1549556828, j[h] ^= 909522486;
+            }p.sigBytes = b.sigBytes = k;this.reset();
+        }, reset: function reset() {
+            var e = this._hasher;e.reset();e.update(this._iKey);
+        }, update: function update(e) {
+            this._hasher.update(e);return this;
+        }, finalize: function finalize(e) {
+            var d = this._hasher;e = d.finalize(e);d.reset();return d.finalize(this._oKey.clone().concat(e));
+        } });
+})();
 
 (function () {
     // Shortcuts
@@ -3278,7 +3396,7 @@ g)-899497514);l=g;g=h;h=j<<30|j>>>2;j=n;n=c}b[0]=b[0]+n|0;b[1]=b[1]+j|0;b[2]=b[2
          *
          *     var base64String = CryptoJS.enc.Base64.stringify(wordArray);
          */
-        stringify: function (wordArray) {
+        stringify: function stringify(wordArray) {
             // Shortcuts
             var words = wordArray.words;
             var sigBytes = wordArray.sigBytes;
@@ -3290,14 +3408,14 @@ g)-899497514);l=g;g=h;h=j<<30|j>>>2;j=n;n=c}b[0]=b[0]+n|0;b[1]=b[1]+j|0;b[2]=b[2
             // Convert
             var base64Chars = [];
             for (var i = 0; i < sigBytes; i += 3) {
-                var byte1 = (words[i >>> 2]       >>> (24 - (i % 4) * 8))       & 0xff;
-                var byte2 = (words[(i + 1) >>> 2] >>> (24 - ((i + 1) % 4) * 8)) & 0xff;
-                var byte3 = (words[(i + 2) >>> 2] >>> (24 - ((i + 2) % 4) * 8)) & 0xff;
+                var byte1 = words[i >>> 2] >>> 24 - i % 4 * 8 & 0xff;
+                var byte2 = words[i + 1 >>> 2] >>> 24 - (i + 1) % 4 * 8 & 0xff;
+                var byte3 = words[i + 2 >>> 2] >>> 24 - (i + 2) % 4 * 8 & 0xff;
 
-                var triplet = (byte1 << 16) | (byte2 << 8) | byte3;
+                var triplet = byte1 << 16 | byte2 << 8 | byte3;
 
-                for (var j = 0; (j < 4) && (i + j * 0.75 < sigBytes); j++) {
-                    base64Chars.push(map.charAt((triplet >>> (6 * (3 - j))) & 0x3f));
+                for (var j = 0; j < 4 && i + j * 0.75 < sigBytes; j++) {
+                    base64Chars.push(map.charAt(triplet >>> 6 * (3 - j) & 0x3f));
                 }
             }
 
@@ -3325,7 +3443,7 @@ g)-899497514);l=g;g=h;h=j<<30|j>>>2;j=n;n=c}b[0]=b[0]+n|0;b[1]=b[1]+j|0;b[2]=b[2
          *
          *     var wordArray = CryptoJS.enc.Base64.parse(base64String);
          */
-        parse: function (base64Str) {
+        parse: function parse(base64Str) {
             // Shortcuts
             var base64StrLength = base64Str.length;
             var map = this._map;
@@ -3344,9 +3462,9 @@ g)-899497514);l=g;g=h;h=j<<30|j>>>2;j=n;n=c}b[0]=b[0]+n|0;b[1]=b[1]+j|0;b[2]=b[2
             var nBytes = 0;
             for (var i = 0; i < base64StrLength; i++) {
                 if (i % 4) {
-                    var bits1 = map.indexOf(base64Str.charAt(i - 1)) << ((i % 4) * 2);
-                    var bits2 = map.indexOf(base64Str.charAt(i)) >>> (6 - (i % 4) * 2);
-                    words[nBytes >>> 2] |= (bits1 | bits2) << (24 - (nBytes % 4) * 8);
+                    var bits1 = map.indexOf(base64Str.charAt(i - 1)) << i % 4 * 2;
+                    var bits2 = map.indexOf(base64Str.charAt(i)) >>> 6 - i % 4 * 2;
+                    words[nBytes >>> 2] |= (bits1 | bits2) << 24 - nBytes % 4 * 8;
                     nBytes++;
                 }
             }
@@ -3356,14 +3474,16 @@ g)-899497514);l=g;g=h;h=j<<30|j>>>2;j=n;n=c}b[0]=b[0]+n|0;b[1]=b[1]+j|0;b[2]=b[2
 
         _map: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/='
     };
-}());
+})();
 
 module.exports = CryptoJS;
 
-
 /***/ }),
-/* 12 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 
 /*
  Copyright 2011-2013 Abdulla Abdurakhmanov
@@ -3381,9 +3501,9 @@ module.exports = CryptoJS;
  See the License for the specific language governing permissions and
  limitations under the License.
  */
-var DOMParser = __webpack_require__(13).DOMParser;
+var DOMParser = __webpack_require__(14).DOMParser;
 
-var x2js = function (config) {
+var x2js = function x2js(config) {
     'use strict';
 
     var VERSION = "1.2.0";
@@ -3393,7 +3513,7 @@ var x2js = function (config) {
     initRequiredPolyfills();
 
     function initConfigDefaults() {
-        if(config.escapeMode === undefined) {
+        if (config.escapeMode === undefined) {
             config.escapeMode = true;
         }
 
@@ -3401,46 +3521,45 @@ var x2js = function (config) {
         config.arrayAccessForm = config.arrayAccessForm || "none";
         config.emptyNodeForm = config.emptyNodeForm || "text";
 
-        if(config.enableToStringFunc === undefined) {
+        if (config.enableToStringFunc === undefined) {
             config.enableToStringFunc = true;
         }
         config.arrayAccessFormPaths = config.arrayAccessFormPaths || [];
-        if(config.skipEmptyTextNodesForObj === undefined) {
+        if (config.skipEmptyTextNodesForObj === undefined) {
             config.skipEmptyTextNodesForObj = true;
         }
-        if(config.stripWhitespaces === undefined) {
+        if (config.stripWhitespaces === undefined) {
             config.stripWhitespaces = true;
         }
         config.datetimeAccessFormPaths = config.datetimeAccessFormPaths || [];
 
-        if(config.useDoubleQuotes === undefined) {
+        if (config.useDoubleQuotes === undefined) {
             config.useDoubleQuotes = false;
         }
 
         config.xmlElementsFilter = config.xmlElementsFilter || [];
         config.jsonPropertiesFilter = config.jsonPropertiesFilter || [];
 
-        if(config.keepCData === undefined) {
+        if (config.keepCData === undefined) {
             config.keepCData = false;
         }
     }
 
     var DOMNodeTypes = {
-        ELEMENT_NODE 	   : 1,
-        TEXT_NODE    	   : 3,
-        CDATA_SECTION_NODE : 4,
-        COMMENT_NODE	   : 8,
-        DOCUMENT_NODE 	   : 9
+        ELEMENT_NODE: 1,
+        TEXT_NODE: 3,
+        CDATA_SECTION_NODE: 4,
+        COMMENT_NODE: 8,
+        DOCUMENT_NODE: 9
     };
 
-    function initRequiredPolyfills() {
-    }
+    function initRequiredPolyfills() {}
 
-    function getNodeLocalName( node ) {
+    function getNodeLocalName(node) {
         var nodeLocalName = node.localName;
-        if(nodeLocalName == null) // Yeah, this is IE!!
+        if (nodeLocalName == null) // Yeah, this is IE!!
             nodeLocalName = node.baseName;
-        if(nodeLocalName == null || nodeLocalName=="") // =="" is IE too
+        if (nodeLocalName == null || nodeLocalName == "") // =="" is IE too
             nodeLocalName = node.nodeName;
         return nodeLocalName;
     }
@@ -3450,10 +3569,7 @@ var x2js = function (config) {
     }
 
     function escapeXmlChars(str) {
-        if(typeof(str) == "string")
-            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
-        else
-            return str;
+        if (typeof str == "string") return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');else return str;
     }
 
     function unescapeXmlChars(str) {
@@ -3462,40 +3578,30 @@ var x2js = function (config) {
 
     function checkInStdFiltersArrayForm(stdFiltersArrayForm, obj, name, path) {
         var idx = 0;
-        for(; idx < stdFiltersArrayForm.length; idx++) {
+        for (; idx < stdFiltersArrayForm.length; idx++) {
             var filterPath = stdFiltersArrayForm[idx];
-            if( typeof filterPath === "string" ) {
-                if(filterPath == path)
-                    break;
-            }
-            else
-            if( filterPath instanceof RegExp) {
-                if(filterPath.test(path))
-                    break;
-            }
-            else
-            if( typeof filterPath === "function") {
-                if(filterPath(obj, name, path))
-                    break;
+            if (typeof filterPath === "string") {
+                if (filterPath == path) break;
+            } else if (filterPath instanceof RegExp) {
+                if (filterPath.test(path)) break;
+            } else if (typeof filterPath === "function") {
+                if (filterPath(obj, name, path)) break;
             }
         }
-        return idx!=stdFiltersArrayForm.length;
+        return idx != stdFiltersArrayForm.length;
     }
 
     function toArrayAccessForm(obj, childName, path) {
-        switch(config.arrayAccessForm) {
+        switch (config.arrayAccessForm) {
             case "property":
-                if(!(obj[childName] instanceof Array))
-                    obj[childName+"_asArray"] = [obj[childName]];
-                else
-                    obj[childName+"_asArray"] = obj[childName];
+                if (!(obj[childName] instanceof Array)) obj[childName + "_asArray"] = [obj[childName]];else obj[childName + "_asArray"] = obj[childName];
                 break;
             /*case "none":
              break;*/
         }
 
-        if(!(obj[childName] instanceof Array) && config.arrayAccessFormPaths.length > 0) {
-            if(checkInStdFiltersArrayForm(config.arrayAccessFormPaths, obj, childName, path)) {
+        if (!(obj[childName] instanceof Array) && config.arrayAccessFormPaths.length > 0) {
+            if (checkInStdFiltersArrayForm(config.arrayAccessFormPaths, obj, childName, path)) {
                 obj[childName] = [obj[childName]];
             }
         }
@@ -3506,25 +3612,22 @@ var x2js = function (config) {
         // Improved to support full spec and optional parts
         var bits = prop.split(/[-T:+Z]/g);
 
-        var d = new Date(bits[0], bits[1]-1, bits[2]);
+        var d = new Date(bits[0], bits[1] - 1, bits[2]);
         var secondBits = bits[5].split("\.");
         d.setHours(bits[3], bits[4], secondBits[0]);
-        if(secondBits.length>1)
-            d.setMilliseconds(secondBits[1]);
+        if (secondBits.length > 1) d.setMilliseconds(secondBits[1]);
 
         // Get supplied time zone offset in minutes
-        if(bits[6] && bits[7]) {
+        if (bits[6] && bits[7]) {
             var offsetMinutes = bits[6] * 60 + Number(bits[7]);
-            var sign = /\d\d-\d\d:\d\d$/.test(prop)? '-' : '+';
+            var sign = /\d\d-\d\d:\d\d$/.test(prop) ? '-' : '+';
 
             // Apply the sign
-            offsetMinutes = 0 + (sign == '-'? -1 * offsetMinutes : offsetMinutes);
+            offsetMinutes = 0 + (sign == '-' ? -1 * offsetMinutes : offsetMinutes);
 
             // Apply offset and local timezone
-            d.setMinutes(d.getMinutes() - offsetMinutes - d.getTimezoneOffset())
-        }
-        else
-        if(prop.indexOf("Z", prop.length - 1) !== -1) {
+            d.setMinutes(d.getMinutes() - offsetMinutes - d.getTimezoneOffset());
+        } else if (prop.indexOf("Z", prop.length - 1) !== -1) {
             d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds()));
         }
 
@@ -3533,187 +3636,153 @@ var x2js = function (config) {
     }
 
     function checkFromXmlDateTimePaths(value, childName, fullPath) {
-        if(config.datetimeAccessFormPaths.length > 0) {
+        if (config.datetimeAccessFormPaths.length > 0) {
             var path = fullPath.split("\.#")[0];
-            if(checkInStdFiltersArrayForm(config.datetimeAccessFormPaths, value, childName, path)) {
+            if (checkInStdFiltersArrayForm(config.datetimeAccessFormPaths, value, childName, path)) {
                 return fromXmlDateTime(value);
-            }
-            else
-                return value;
-        }
-        else
-            return value;
+            } else return value;
+        } else return value;
     }
 
     function checkXmlElementsFilter(obj, childType, childName, childPath) {
-        if( childType == DOMNodeTypes.ELEMENT_NODE && config.xmlElementsFilter.length > 0) {
+        if (childType == DOMNodeTypes.ELEMENT_NODE && config.xmlElementsFilter.length > 0) {
             return checkInStdFiltersArrayForm(config.xmlElementsFilter, obj, childName, childPath);
-        }
-        else
-            return true;
+        } else return true;
     }
 
-    function parseDOMChildren( node, path ) {
-        if(node.nodeType == DOMNodeTypes.DOCUMENT_NODE) {
-            var result = new Object;
+    function parseDOMChildren(node, path) {
+        if (node.nodeType == DOMNodeTypes.DOCUMENT_NODE) {
+            var result = new Object();
             var nodeChildren = node.childNodes;
             // Alternative for firstElementChild which is not supported in some environments
-            for(var cidx=0; cidx <nodeChildren.length; cidx++) {
+            for (var cidx = 0; cidx < nodeChildren.length; cidx++) {
                 var child = nodeChildren.item(cidx);
-                if(child.nodeType == DOMNodeTypes.ELEMENT_NODE) {
+                if (child.nodeType == DOMNodeTypes.ELEMENT_NODE) {
                     var childName = getNodeLocalName(child);
                     result[childName] = parseDOMChildren(child, childName);
                 }
             }
             return result;
-        }
-        else
-        if(node.nodeType == DOMNodeTypes.ELEMENT_NODE) {
-            var result = new Object;
-            result.__cnt=0;
+        } else if (node.nodeType == DOMNodeTypes.ELEMENT_NODE) {
+            var result = new Object();
+            result.__cnt = 0;
 
             var nodeChildren = node.childNodes;
 
             // Children nodes
-            for(var cidx=0; cidx <nodeChildren.length; cidx++) {
+            for (var cidx = 0; cidx < nodeChildren.length; cidx++) {
                 var child = nodeChildren.item(cidx); // nodeChildren[cidx];
                 var childName = getNodeLocalName(child);
 
-                if(child.nodeType!= DOMNodeTypes.COMMENT_NODE) {
-                    var childPath = path+"."+childName;
-                    if (checkXmlElementsFilter(result,child.nodeType,childName,childPath)) {
+                if (child.nodeType != DOMNodeTypes.COMMENT_NODE) {
+                    var childPath = path + "." + childName;
+                    if (checkXmlElementsFilter(result, child.nodeType, childName, childPath)) {
                         result.__cnt++;
-                        if(result[childName] == null) {
+                        if (result[childName] == null) {
                             result[childName] = parseDOMChildren(child, childPath);
                             toArrayAccessForm(result, childName, childPath);
-                        }
-                        else {
-                            if(result[childName] != null) {
-                                if( !(result[childName] instanceof Array)) {
+                        } else {
+                            if (result[childName] != null) {
+                                if (!(result[childName] instanceof Array)) {
                                     result[childName] = [result[childName]];
                                     toArrayAccessForm(result, childName, childPath);
                                 }
                             }
-                            (result[childName])[result[childName].length] = parseDOMChildren(child, childPath);
+                            result[childName][result[childName].length] = parseDOMChildren(child, childPath);
                         }
                     }
                 }
             }
 
             // Attributes
-            for(var aidx=0; aidx <node.attributes.length; aidx++) {
+            for (var aidx = 0; aidx < node.attributes.length; aidx++) {
                 var attr = node.attributes.item(aidx); // [aidx];
                 result.__cnt++;
-                result[config.attributePrefix+attr.name]=attr.value;
+                result[config.attributePrefix + attr.name] = attr.value;
             }
 
             // Node namespace prefix
             var nodePrefix = getNodePrefix(node);
-            if(nodePrefix!=null && nodePrefix!="") {
+            if (nodePrefix != null && nodePrefix != "") {
                 result.__cnt++;
-                result.__prefix=nodePrefix;
+                result.__prefix = nodePrefix;
             }
 
-            if(result["#text"]!=null) {
+            if (result["#text"] != null) {
                 result.__text = result["#text"];
-                if(result.__text instanceof Array) {
+                if (result.__text instanceof Array) {
                     result.__text = result.__text.join("\n");
                 }
                 //if(config.escapeMode)
                 //	result.__text = unescapeXmlChars(result.__text);
-                if(config.stripWhitespaces)
-                    result.__text = result.__text.trim();
+                if (config.stripWhitespaces) result.__text = result.__text.trim();
                 delete result["#text"];
-                if(config.arrayAccessForm=="property")
-                    delete result["#text_asArray"];
-                result.__text = checkFromXmlDateTimePaths(result.__text, childName, path+"."+childName);
+                if (config.arrayAccessForm == "property") delete result["#text_asArray"];
+                result.__text = checkFromXmlDateTimePaths(result.__text, childName, path + "." + childName);
             }
-            if(result["#cdata-section"]!=null) {
+            if (result["#cdata-section"] != null) {
                 result.__cdata = result["#cdata-section"];
                 delete result["#cdata-section"];
-                if(config.arrayAccessForm=="property")
-                    delete result["#cdata-section_asArray"];
+                if (config.arrayAccessForm == "property") delete result["#cdata-section_asArray"];
             }
 
-            if( result.__cnt == 0 && config.emptyNodeForm=="text" ) {
+            if (result.__cnt == 0 && config.emptyNodeForm == "text") {
                 result = '';
-            }
-            else
-            if( result.__cnt == 1 && result.__text!=null  ) {
+            } else if (result.__cnt == 1 && result.__text != null) {
                 result = result.__text;
-            }
-            else
-            if( result.__cnt == 1 && result.__cdata!=null && !config.keepCData  ) {
+            } else if (result.__cnt == 1 && result.__cdata != null && !config.keepCData) {
                 result = result.__cdata;
-            }
-            else
-            if ( result.__cnt > 1 && result.__text!=null && config.skipEmptyTextNodesForObj) {
-                if( (config.stripWhitespaces && result.__text=="") || (result.__text.trim()=="")) {
+            } else if (result.__cnt > 1 && result.__text != null && config.skipEmptyTextNodesForObj) {
+                if (config.stripWhitespaces && result.__text == "" || result.__text.trim() == "") {
                     delete result.__text;
                 }
             }
             delete result.__cnt;
 
-            if( config.enableToStringFunc && (result.__text!=null || result.__cdata!=null )) {
-                result.toString = function() {
-                    return (this.__text!=null? this.__text:'')+( this.__cdata!=null ? this.__cdata:'');
+            if (config.enableToStringFunc && (result.__text != null || result.__cdata != null)) {
+                result.toString = function () {
+                    return (this.__text != null ? this.__text : '') + (this.__cdata != null ? this.__cdata : '');
                 };
             }
 
             return result;
-        }
-        else
-        if(node.nodeType == DOMNodeTypes.TEXT_NODE || node.nodeType == DOMNodeTypes.CDATA_SECTION_NODE) {
+        } else if (node.nodeType == DOMNodeTypes.TEXT_NODE || node.nodeType == DOMNodeTypes.CDATA_SECTION_NODE) {
             return node.nodeValue;
         }
     }
 
     function startTag(jsonObj, element, attrList, closed) {
-        var resultStr = "<"+ ( (jsonObj!=null && jsonObj.__prefix!=null)? (jsonObj.__prefix+":"):"") + element;
-        if(attrList!=null) {
-            for(var aidx = 0; aidx < attrList.length; aidx++) {
+        var resultStr = "<" + (jsonObj != null && jsonObj.__prefix != null ? jsonObj.__prefix + ":" : "") + element;
+        if (attrList != null) {
+            for (var aidx = 0; aidx < attrList.length; aidx++) {
                 var attrName = attrList[aidx];
                 var attrVal = jsonObj[attrName];
-                if(config.escapeMode)
-                    attrVal=escapeXmlChars(attrVal);
-                resultStr+=" "+attrName.substr(config.attributePrefix.length)+"=";
-                if(config.useDoubleQuotes)
-                    resultStr+='"'+attrVal+'"';
-                else
-                    resultStr+="'"+attrVal+"'";
+                if (config.escapeMode) attrVal = escapeXmlChars(attrVal);
+                resultStr += " " + attrName.substr(config.attributePrefix.length) + "=";
+                if (config.useDoubleQuotes) resultStr += '"' + attrVal + '"';else resultStr += "'" + attrVal + "'";
             }
         }
-        if(!closed)
-            resultStr+=">";
-        else
-            resultStr+="/>";
+        if (!closed) resultStr += ">";else resultStr += "/>";
         return resultStr;
     }
 
-    function endTag(jsonObj,elementName) {
-        return "</"+ (jsonObj.__prefix!=null? (jsonObj.__prefix+":"):"")+elementName+">";
+    function endTag(jsonObj, elementName) {
+        return "</" + (jsonObj.__prefix != null ? jsonObj.__prefix + ":" : "") + elementName + ">";
     }
 
     function endsWith(str, suffix) {
         return str.indexOf(suffix, str.length - suffix.length) !== -1;
     }
 
-    function jsonXmlSpecialElem ( jsonObj, jsonObjField ) {
-        if((config.arrayAccessForm=="property" && endsWith(jsonObjField.toString(),("_asArray")))
-            || jsonObjField.toString().indexOf(config.attributePrefix)==0
-            || jsonObjField.toString().indexOf("__")==0
-            || (jsonObj[jsonObjField] instanceof Function) )
-            return true;
-        else
-            return false;
+    function jsonXmlSpecialElem(jsonObj, jsonObjField) {
+        if (config.arrayAccessForm == "property" && endsWith(jsonObjField.toString(), "_asArray") || jsonObjField.toString().indexOf(config.attributePrefix) == 0 || jsonObjField.toString().indexOf("__") == 0 || jsonObj[jsonObjField] instanceof Function) return true;else return false;
     }
 
-    function jsonXmlElemCount ( jsonObj ) {
+    function jsonXmlElemCount(jsonObj) {
         var elementsCnt = 0;
-        if(jsonObj instanceof Object ) {
-            for( var it in jsonObj  ) {
-                if(jsonXmlSpecialElem ( jsonObj, it) )
-                    continue;
+        if (jsonObj instanceof Object) {
+            for (var it in jsonObj) {
+                if (jsonXmlSpecialElem(jsonObj, it)) continue;
                 elementsCnt++;
             }
         }
@@ -3721,16 +3790,14 @@ var x2js = function (config) {
     }
 
     function checkJsonObjPropertiesFilter(jsonObj, propertyName, jsonObjPath) {
-        return config.jsonPropertiesFilter.length == 0
-            || jsonObjPath==""
-            || checkInStdFiltersArrayForm(config.jsonPropertiesFilter, jsonObj, propertyName, jsonObjPath);
+        return config.jsonPropertiesFilter.length == 0 || jsonObjPath == "" || checkInStdFiltersArrayForm(config.jsonPropertiesFilter, jsonObj, propertyName, jsonObjPath);
     }
 
-    function parseJSONAttributes ( jsonObj ) {
+    function parseJSONAttributes(jsonObj) {
         var attrList = [];
-        if(jsonObj instanceof Object ) {
-            for( var ait in jsonObj  ) {
-                if(ait.toString().indexOf("__")== -1 && ait.toString().indexOf(config.attributePrefix)==0) {
+        if (jsonObj instanceof Object) {
+            for (var ait in jsonObj) {
+                if (ait.toString().indexOf("__") == -1 && ait.toString().indexOf(config.attributePrefix) == 0) {
                     attrList.push(ait);
                 }
             }
@@ -3738,116 +3805,98 @@ var x2js = function (config) {
         return attrList;
     }
 
-    function parseJSONTextAttrs ( jsonTxtObj ) {
-        var result ="";
+    function parseJSONTextAttrs(jsonTxtObj) {
+        var result = "";
 
-        if(jsonTxtObj.__cdata!=null) {
-            result+="<![CDATA["+jsonTxtObj.__cdata+"]]>";
+        if (jsonTxtObj.__cdata != null) {
+            result += "<![CDATA[" + jsonTxtObj.__cdata + "]]>";
         }
 
-        if(jsonTxtObj.__text!=null) {
-            if(config.escapeMode)
-                result+=escapeXmlChars(jsonTxtObj.__text);
-            else
-                result+=jsonTxtObj.__text;
+        if (jsonTxtObj.__text != null) {
+            if (config.escapeMode) result += escapeXmlChars(jsonTxtObj.__text);else result += jsonTxtObj.__text;
         }
         return result;
     }
 
-    function parseJSONTextObject ( jsonTxtObj ) {
-        var result ="";
+    function parseJSONTextObject(jsonTxtObj) {
+        var result = "";
 
-        if( jsonTxtObj instanceof Object ) {
-            result+=parseJSONTextAttrs ( jsonTxtObj );
-        }
-        else
-        if(jsonTxtObj!=null) {
-            if(config.escapeMode)
-                result+=escapeXmlChars(jsonTxtObj);
-            else
-                result+=jsonTxtObj;
+        if (jsonTxtObj instanceof Object) {
+            result += parseJSONTextAttrs(jsonTxtObj);
+        } else if (jsonTxtObj != null) {
+            if (config.escapeMode) result += escapeXmlChars(jsonTxtObj);else result += jsonTxtObj;
         }
 
         return result;
     }
 
     function getJsonPropertyPath(jsonObjPath, jsonPropName) {
-        if (jsonObjPath==="") {
+        if (jsonObjPath === "") {
             return jsonPropName;
-        }
-        else
-            return jsonObjPath+"."+jsonPropName;
+        } else return jsonObjPath + "." + jsonPropName;
     }
 
-    function parseJSONArray ( jsonArrRoot, jsonArrObj, attrList, jsonObjPath ) {
+    function parseJSONArray(jsonArrRoot, jsonArrObj, attrList, jsonObjPath) {
         var result = "";
-        if(jsonArrRoot.length == 0) {
-            result+=startTag(jsonArrRoot, jsonArrObj, attrList, true);
-        }
-        else {
-            for(var arIdx = 0; arIdx < jsonArrRoot.length; arIdx++) {
-                result+=startTag(jsonArrRoot[arIdx], jsonArrObj, parseJSONAttributes(jsonArrRoot[arIdx]), false);
-                result+=parseJSONObject(jsonArrRoot[arIdx], getJsonPropertyPath(jsonObjPath,jsonArrObj));
-                result+=endTag(jsonArrRoot[arIdx],jsonArrObj);
+        if (jsonArrRoot.length == 0) {
+            result += startTag(jsonArrRoot, jsonArrObj, attrList, true);
+        } else {
+            for (var arIdx = 0; arIdx < jsonArrRoot.length; arIdx++) {
+                result += startTag(jsonArrRoot[arIdx], jsonArrObj, parseJSONAttributes(jsonArrRoot[arIdx]), false);
+                result += parseJSONObject(jsonArrRoot[arIdx], getJsonPropertyPath(jsonObjPath, jsonArrObj));
+                result += endTag(jsonArrRoot[arIdx], jsonArrObj);
             }
         }
         return result;
     }
 
-    function parseJSONObject ( jsonObj, jsonObjPath ) {
+    function parseJSONObject(jsonObj, jsonObjPath) {
         var result = "";
 
-        var elementsCnt = jsonXmlElemCount ( jsonObj );
+        var elementsCnt = jsonXmlElemCount(jsonObj);
 
-        if(elementsCnt > 0) {
-            for( var it in jsonObj ) {
+        if (elementsCnt > 0) {
+            for (var it in jsonObj) {
 
-                if(jsonXmlSpecialElem ( jsonObj, it) || (jsonObjPath!="" && !checkJsonObjPropertiesFilter(jsonObj, it, getJsonPropertyPath(jsonObjPath,it))) )
-                    continue;
+                if (jsonXmlSpecialElem(jsonObj, it) || jsonObjPath != "" && !checkJsonObjPropertiesFilter(jsonObj, it, getJsonPropertyPath(jsonObjPath, it))) continue;
 
                 var subObj = jsonObj[it];
 
-                var attrList = parseJSONAttributes( subObj )
+                var attrList = parseJSONAttributes(subObj);
 
-                if(subObj == null || subObj == undefined) {
-                    result+=startTag(subObj, it, attrList, true);
-                }
-                else
-                if(subObj instanceof Object) {
+                if (subObj == null || subObj == undefined) {
+                    result += startTag(subObj, it, attrList, true);
+                } else if (subObj instanceof Object) {
 
-                    if(subObj instanceof Array) {
-                        result+=parseJSONArray( subObj, it, attrList, jsonObjPath );
-                    }
-                    else if(subObj instanceof Date) {
-                        result+=startTag(subObj, it, attrList, false);
-                        result+=subObj.toISOString();
-                        result+=endTag(subObj,it);
-                    }
-                    else {
-                        var subObjElementsCnt = jsonXmlElemCount ( subObj );
-                        if(subObjElementsCnt > 0 || subObj.__text!=null || subObj.__cdata!=null) {
-                            result+=startTag(subObj, it, attrList, false);
-                            result+=parseJSONObject(subObj, getJsonPropertyPath(jsonObjPath,it));
-                            result+=endTag(subObj,it);
-                        }
-                        else {
-                            result+=startTag(subObj, it, attrList, true);
+                    if (subObj instanceof Array) {
+                        result += parseJSONArray(subObj, it, attrList, jsonObjPath);
+                    } else if (subObj instanceof Date) {
+                        result += startTag(subObj, it, attrList, false);
+                        result += subObj.toISOString();
+                        result += endTag(subObj, it);
+                    } else {
+                        var subObjElementsCnt = jsonXmlElemCount(subObj);
+                        if (subObjElementsCnt > 0 || subObj.__text != null || subObj.__cdata != null) {
+                            result += startTag(subObj, it, attrList, false);
+                            result += parseJSONObject(subObj, getJsonPropertyPath(jsonObjPath, it));
+                            result += endTag(subObj, it);
+                        } else {
+                            result += startTag(subObj, it, attrList, true);
                         }
                     }
-                }
-                else {
-                    result+=startTag(subObj, it, attrList, false);
-                    result+=parseJSONTextObject(subObj);
-                    result+=endTag(subObj,it);
+                } else {
+                    result += startTag(subObj, it, attrList, false);
+                    result += parseJSONTextObject(subObj);
+                    result += endTag(subObj, it);
                 }
             }
         }
-        result+=parseJSONTextObject(jsonObj);
+        result += parseJSONTextObject(jsonObj);
 
         return result;
     }
 
-    this.parseXmlString = function(xmlDocStr) {
+    this.parseXmlString = function (xmlDocStr) {
         // var isIEParser = window.ActiveXObject || "ActiveXObject" in window;
         var isIEParser = false;
         if (xmlDocStr === undefined) {
@@ -3855,86 +3904,66 @@ var x2js = function (config) {
         }
         var xmlDoc;
         if (DOMParser) {
-            var parser=new DOMParser();
+            var parser = new DOMParser();
             var parsererrorNS = null;
             // IE9+ now is here
-            if(!isIEParser) {
+            if (!isIEParser) {
                 try {
                     parsererrorNS = parser.parseFromString("INVALID", "text/xml").getElementsByTagName("parsererror")[0].namespaceURI;
-                }
-                catch(err) {
+                } catch (err) {
                     parsererrorNS = null;
                 }
             }
             try {
-                xmlDoc = parser.parseFromString( xmlDocStr, "text/xml" );
-                if( parsererrorNS!= null && xmlDoc.getElementsByTagNameNS(parsererrorNS, "parsererror").length > 0) {
+                xmlDoc = parser.parseFromString(xmlDocStr, "text/xml");
+                if (parsererrorNS != null && xmlDoc.getElementsByTagNameNS(parsererrorNS, "parsererror").length > 0) {
                     //throw new Error('Error parsing XML: '+xmlDocStr);
                     xmlDoc = null;
                 }
-            }
-            catch(err) {
+            } catch (err) {
                 xmlDoc = null;
             }
-        }
-        else {
+        } else {
             // IE :(
-            if(xmlDocStr.indexOf("<?")==0) {
-                xmlDocStr = xmlDocStr.substr( xmlDocStr.indexOf("?>") + 2 );
+            if (xmlDocStr.indexOf("<?") == 0) {
+                xmlDocStr = xmlDocStr.substr(xmlDocStr.indexOf("?>") + 2);
             }
-            xmlDoc=new ActiveXObject("Microsoft.XMLDOM");
-            xmlDoc.async="false";
+            xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
+            xmlDoc.async = "false";
             xmlDoc.loadXML(xmlDocStr);
         }
         return xmlDoc;
     };
 
-    this.asArray = function(prop) {
-        if (prop === undefined || prop == null)
-            return [];
-        else
-        if(prop instanceof Array)
-            return prop;
-        else
-            return [prop];
+    this.asArray = function (prop) {
+        if (prop === undefined || prop == null) return [];else if (prop instanceof Array) return prop;else return [prop];
     };
 
-    this.toXmlDateTime = function(dt) {
-        if(dt instanceof Date)
-            return dt.toISOString();
-        else
-        if(typeof(dt) === 'number' )
-            return new Date(dt).toISOString();
-        else
-            return null;
+    this.toXmlDateTime = function (dt) {
+        if (dt instanceof Date) return dt.toISOString();else if (typeof dt === 'number') return new Date(dt).toISOString();else return null;
     };
 
-    this.asDateTime = function(prop) {
-        if(typeof(prop) == "string") {
+    this.asDateTime = function (prop) {
+        if (typeof prop == "string") {
             return fromXmlDateTime(prop);
-        }
-        else
-            return prop;
+        } else return prop;
     };
 
     this.xml2json = function (xmlDoc) {
-        return parseDOMChildren ( xmlDoc );
+        return parseDOMChildren(xmlDoc);
     };
 
     this.xml_str2json = function (xmlDocStr) {
         var xmlDoc = this.parseXmlString(xmlDocStr);
-        if(xmlDoc!=null)
-            return this.xml2json(xmlDoc);
-        else
-            return null;
+        if (xmlDoc != null) return this.xml2json(xmlDoc);else return null;
     };
 
     this.json2xml_str = function (jsonObj) {
-        return parseJSONObject ( jsonObj, "" );
+        return parseJSONObject(jsonObj, "");
     };
 
     this.json2xml = function (jsonObj) {
-        var xmlDocStr = this.json2xml_str (jsonObj);
+        var xmlDocStr = this.json2xml_str(jsonObj);
         return this.parseXmlString(xmlDocStr);
     };
 
@@ -3943,7 +3972,7 @@ var x2js = function (config) {
     };
 };
 
-var xml2json = function (str) {
+var xml2json = function xml2json(str) {
     if (!str) return null;
     var parser = new DOMParser();
     var xmlDoc = parser.parseFromString(str, "text/xml");
@@ -3956,67 +3985,70 @@ var xml2json = function (str) {
     }
 };
 
-var json2xml = function (data) {
+var json2xml = function json2xml(data) {
     var x2jsObj = new x2js();
     return x2jsObj.json2xml(data);
 };
 
 module.exports = xml2json;
 
-
 /***/ }),
-/* 13 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
-function DOMParser(options){
-	this.options = options ||{locator:{}};
-	
+"use strict";
+
+
+function DOMParser(options) {
+	this.options = options || { locator: {} };
 }
-DOMParser.prototype.parseFromString = function(source,mimeType){
+DOMParser.prototype.parseFromString = function (source, mimeType) {
 	var options = this.options;
-	var sax =  new XMLReader();
-	var domBuilder = options.domBuilder || new DOMHandler();//contentHandler and LexicalHandler
+	var sax = new XMLReader();
+	var domBuilder = options.domBuilder || new DOMHandler(); //contentHandler and LexicalHandler
 	var errorHandler = options.errorHandler;
 	var locator = options.locator;
-	var defaultNSMap = options.xmlns||{};
-	var entityMap = {'lt':'<','gt':'>','amp':'&','quot':'"','apos':"'"}
-	if(locator){
-		domBuilder.setDocumentLocator(locator)
+	var defaultNSMap = options.xmlns || {};
+	var entityMap = { 'lt': '<', 'gt': '>', 'amp': '&', 'quot': '"', 'apos': "'" };
+	if (locator) {
+		domBuilder.setDocumentLocator(locator);
 	}
-	
-	sax.errorHandler = buildErrorHandler(errorHandler,domBuilder,locator);
+
+	sax.errorHandler = buildErrorHandler(errorHandler, domBuilder, locator);
 	sax.domBuilder = options.domBuilder || domBuilder;
-	if(/\/x?html?$/.test(mimeType)){
+	if (/\/x?html?$/.test(mimeType)) {
 		entityMap.nbsp = '\xa0';
 		entityMap.copy = '\xa9';
-		defaultNSMap['']= 'http://www.w3.org/1999/xhtml';
+		defaultNSMap[''] = 'http://www.w3.org/1999/xhtml';
 	}
 	defaultNSMap.xml = defaultNSMap.xml || 'http://www.w3.org/XML/1998/namespace';
-	if(source){
-		sax.parse(source,defaultNSMap,entityMap);
-	}else{
+	if (source) {
+		sax.parse(source, defaultNSMap, entityMap);
+	} else {
 		sax.errorHandler.error("invalid doc source");
 	}
 	return domBuilder.doc;
-}
-function buildErrorHandler(errorImpl,domBuilder,locator){
-	if(!errorImpl){
-		if(domBuilder instanceof DOMHandler){
+};
+function buildErrorHandler(errorImpl, domBuilder, locator) {
+	if (!errorImpl) {
+		if (domBuilder instanceof DOMHandler) {
 			return domBuilder;
 		}
-		errorImpl = domBuilder ;
+		errorImpl = domBuilder;
 	}
-	var errorHandler = {}
+	var errorHandler = {};
 	var isCallback = errorImpl instanceof Function;
-	locator = locator||{}
-	function build(key){
+	locator = locator || {};
+	function build(key) {
 		var fn = errorImpl[key];
-		if(!fn && isCallback){
-			fn = errorImpl.length == 2?function(msg){errorImpl(key,msg)}:errorImpl;
+		if (!fn && isCallback) {
+			fn = errorImpl.length == 2 ? function (msg) {
+				errorImpl(key, msg);
+			} : errorImpl;
 		}
-		errorHandler[key] = fn && function(msg){
-			fn('[xmldom '+key+']\t'+msg+_locator(locator));
-		}||function(){};
+		errorHandler[key] = fn && function (msg) {
+			fn('[xmldom ' + key + ']\t' + msg + _locator(locator));
+		} || function () {};
 	}
 	build('warning');
 	build('error');
@@ -4035,135 +4067,133 @@ function buildErrorHandler(errorImpl,domBuilder,locator){
  * @link http://www.saxproject.org/apidoc/org/xml/sax/helpers/DefaultHandler.html
  */
 function DOMHandler() {
-    this.cdata = false;
+	this.cdata = false;
 }
-function position(locator,node){
+function position(locator, node) {
 	node.lineNumber = locator.lineNumber;
 	node.columnNumber = locator.columnNumber;
 }
 /**
  * @see org.xml.sax.ContentHandler#startDocument
  * @link http://www.saxproject.org/apidoc/org/xml/sax/ContentHandler.html
- */ 
+ */
 DOMHandler.prototype = {
-	startDocument : function() {
-    	this.doc = new DOMImplementation().createDocument(null, null, null);
-    	if (this.locator) {
-        	this.doc.documentURI = this.locator.systemId;
-    	}
+	startDocument: function startDocument() {
+		this.doc = new DOMImplementation().createDocument(null, null, null);
+		if (this.locator) {
+			this.doc.documentURI = this.locator.systemId;
+		}
 	},
-	startElement:function(namespaceURI, localName, qName, attrs) {
+	startElement: function startElement(namespaceURI, localName, qName, attrs) {
 		var doc = this.doc;
-	    var el = doc.createElementNS(namespaceURI, qName||localName);
-	    var len = attrs.length;
-	    appendElement(this, el);
-	    this.currentElement = el;
-	    
-		this.locator && position(this.locator,el)
-	    for (var i = 0 ; i < len; i++) {
-	        var namespaceURI = attrs.getURI(i);
-	        var value = attrs.getValue(i);
-	        var qName = attrs.getQName(i);
+		var el = doc.createElementNS(namespaceURI, qName || localName);
+		var len = attrs.length;
+		appendElement(this, el);
+		this.currentElement = el;
+
+		this.locator && position(this.locator, el);
+		for (var i = 0; i < len; i++) {
+			var namespaceURI = attrs.getURI(i);
+			var value = attrs.getValue(i);
+			var qName = attrs.getQName(i);
 			var attr = doc.createAttributeNS(namespaceURI, qName);
-			this.locator &&position(attrs.getLocator(i),attr);
+			this.locator && position(attrs.getLocator(i), attr);
 			attr.value = attr.nodeValue = value;
-			el.setAttributeNode(attr)
-	    }
+			el.setAttributeNode(attr);
+		}
 	},
-	endElement:function(namespaceURI, localName, qName) {
-		var current = this.currentElement
+	endElement: function endElement(namespaceURI, localName, qName) {
+		var current = this.currentElement;
 		var tagName = current.tagName;
 		this.currentElement = current.parentNode;
 	},
-	startPrefixMapping:function(prefix, uri) {
+	startPrefixMapping: function startPrefixMapping(prefix, uri) {},
+	endPrefixMapping: function endPrefixMapping(prefix) {},
+	processingInstruction: function processingInstruction(target, data) {
+		var ins = this.doc.createProcessingInstruction(target, data);
+		this.locator && position(this.locator, ins);
+		appendElement(this, ins);
 	},
-	endPrefixMapping:function(prefix) {
-	},
-	processingInstruction:function(target, data) {
-	    var ins = this.doc.createProcessingInstruction(target, data);
-	    this.locator && position(this.locator,ins)
-	    appendElement(this, ins);
-	},
-	ignorableWhitespace:function(ch, start, length) {
-	},
-	characters:function(chars, start, length) {
-		chars = _toString.apply(this,arguments)
+	ignorableWhitespace: function ignorableWhitespace(ch, start, length) {},
+	characters: function characters(chars, start, length) {
+		chars = _toString.apply(this, arguments);
 		//console.log(chars)
-		if(chars){
+		if (chars) {
 			if (this.cdata) {
 				var charNode = this.doc.createCDATASection(chars);
 			} else {
 				var charNode = this.doc.createTextNode(chars);
 			}
-			if(this.currentElement){
+			if (this.currentElement) {
 				this.currentElement.appendChild(charNode);
-			}else if(/^\s*$/.test(chars)){
+			} else if (/^\s*$/.test(chars)) {
 				this.doc.appendChild(charNode);
 				//process xml
 			}
-			this.locator && position(this.locator,charNode)
+			this.locator && position(this.locator, charNode);
 		}
 	},
-	skippedEntity:function(name) {
-	},
-	endDocument:function() {
+	skippedEntity: function skippedEntity(name) {},
+	endDocument: function endDocument() {
 		this.doc.normalize();
 	},
-	setDocumentLocator:function (locator) {
-	    if(this.locator = locator){// && !('lineNumber' in locator)){
-	    	locator.lineNumber = 0;
-	    }
+	setDocumentLocator: function setDocumentLocator(locator) {
+		if (this.locator = locator) {
+			// && !('lineNumber' in locator)){
+			locator.lineNumber = 0;
+		}
 	},
 	//LexicalHandler
-	comment:function(chars, start, length) {
-		chars = _toString.apply(this,arguments)
-	    var comm = this.doc.createComment(chars);
-	    this.locator && position(this.locator,comm)
-	    appendElement(this, comm);
+	comment: function comment(chars, start, length) {
+		chars = _toString.apply(this, arguments);
+		var comm = this.doc.createComment(chars);
+		this.locator && position(this.locator, comm);
+		appendElement(this, comm);
 	},
-	
-	startCDATA:function() {
-	    //used in characters() methods
-	    this.cdata = true;
+
+	startCDATA: function startCDATA() {
+		//used in characters() methods
+		this.cdata = true;
 	},
-	endCDATA:function() {
-	    this.cdata = false;
+	endCDATA: function endCDATA() {
+		this.cdata = false;
 	},
-	
-	startDTD:function(name, publicId, systemId) {
+
+	startDTD: function startDTD(name, publicId, systemId) {
 		var impl = this.doc.implementation;
-	    if (impl && impl.createDocumentType) {
-	        var dt = impl.createDocumentType(name, publicId, systemId);
-	        this.locator && position(this.locator,dt)
-	        appendElement(this, dt);
-	    }
+		if (impl && impl.createDocumentType) {
+			var dt = impl.createDocumentType(name, publicId, systemId);
+			this.locator && position(this.locator, dt);
+			appendElement(this, dt);
+		}
 	},
 	/**
-	 * @see org.xml.sax.ErrorHandler
-	 * @link http://www.saxproject.org/apidoc/org/xml/sax/ErrorHandler.html
-	 */
-	warning:function(error) {
-		console.warn('[xmldom warning]\t'+error,_locator(this.locator));
+  * @see org.xml.sax.ErrorHandler
+  * @link http://www.saxproject.org/apidoc/org/xml/sax/ErrorHandler.html
+  */
+	warning: function warning(error) {
+		console.warn('[xmldom warning]\t' + error, _locator(this.locator));
 	},
-	error:function(error) {
-		console.error('[xmldom error]\t'+error,_locator(this.locator));
+	error: function error(_error) {
+		console.error('[xmldom error]\t' + _error, _locator(this.locator));
 	},
-	fatalError:function(error) {
-		console.error('[xmldom fatalError]\t'+error,_locator(this.locator));
-	    throw error;
+	fatalError: function fatalError(error) {
+		console.error('[xmldom fatalError]\t' + error, _locator(this.locator));
+		throw error;
+	}
+};
+function _locator(l) {
+	if (l) {
+		return '\n@' + (l.systemId || '') + '#[line:' + l.lineNumber + ',col:' + l.columnNumber + ']';
 	}
 }
-function _locator(l){
-	if(l){
-		return '\n@'+(l.systemId ||'')+'#[line:'+l.lineNumber+',col:'+l.columnNumber+']'
-	}
-}
-function _toString(chars,start,length){
-	if(typeof chars == 'string'){
-		return chars.substr(start,length)
-	}else{//java sax connect width xmldom on rhino(what about: "? && !(chars instanceof String)")
-		if(chars.length >= start+length || start){
-			return new java.lang.String(chars,start,length)+'';
+function _toString(chars, start, length) {
+	if (typeof chars == 'string') {
+		return chars.substr(start, length);
+	} else {
+		//java sax connect width xmldom on rhino(what about: "? && !(chars instanceof String)")
+		if (chars.length >= start + length || start) {
+			return new java.lang.String(chars, start, length) + '';
 		}
 		return chars;
 	}
@@ -4200,234 +4230,235 @@ function _toString(chars,start,length){
  *  #notationDecl(name, publicId, systemId) {};
  *  #unparsedEntityDecl(name, publicId, systemId, notationName) {};
  */
-"endDTD,startEntity,endEntity,attributeDecl,elementDecl,externalEntityDecl,internalEntityDecl,resolveEntity,getExternalSubset,notationDecl,unparsedEntityDecl".replace(/\w+/g,function(key){
-	DOMHandler.prototype[key] = function(){return null}
-})
+"endDTD,startEntity,endEntity,attributeDecl,elementDecl,externalEntityDecl,internalEntityDecl,resolveEntity,getExternalSubset,notationDecl,unparsedEntityDecl".replace(/\w+/g, function (key) {
+	DOMHandler.prototype[key] = function () {
+		return null;
+	};
+});
 
 /* Private static helpers treated below as private instance methods, so don't need to add these to the public API; we might use a Relator to also get rid of non-standard public properties */
-function appendElement (hander,node) {
-    if (!hander.currentElement) {
-        hander.doc.appendChild(node);
-    } else {
-        hander.currentElement.appendChild(node);
-    }
-}//appendChild and setAttributeNS are preformance key
+function appendElement(hander, node) {
+	if (!hander.currentElement) {
+		hander.doc.appendChild(node);
+	} else {
+		hander.currentElement.appendChild(node);
+	}
+} //appendChild and setAttributeNS are preformance key
 
 //if(typeof require == 'function'){
-	var XMLReader = __webpack_require__(14).XMLReader;
-	var DOMImplementation = exports.DOMImplementation = __webpack_require__(2).DOMImplementation;
-	exports.XMLSerializer = __webpack_require__(2).XMLSerializer ;
-	exports.DOMParser = DOMParser;
+var XMLReader = __webpack_require__(15).XMLReader;
+var DOMImplementation = exports.DOMImplementation = __webpack_require__(2).DOMImplementation;
+exports.XMLSerializer = __webpack_require__(2).XMLSerializer;
+exports.DOMParser = DOMParser;
 //}
 
-
 /***/ }),
-/* 14 */
-/***/ (function(module, exports) {
+/* 15 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 
 //[4]   	NameStartChar	   ::=   	":" | [A-Z] | "_" | [a-z] | [#xC0-#xD6] | [#xD8-#xF6] | [#xF8-#x2FF] | [#x370-#x37D] | [#x37F-#x1FFF] | [#x200C-#x200D] | [#x2070-#x218F] | [#x2C00-#x2FEF] | [#x3001-#xD7FF] | [#xF900-#xFDCF] | [#xFDF0-#xFFFD] | [#x10000-#xEFFFF]
 //[4a]   	NameChar	   ::=   	NameStartChar | "-" | "." | [0-9] | #xB7 | [#x0300-#x036F] | [#x203F-#x2040]
 //[5]   	Name	   ::=   	NameStartChar (NameChar)*
-var nameStartChar = /[A-Z_a-z\xC0-\xD6\xD8-\xF6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD]///\u10000-\uEFFFF
-var nameChar = new RegExp("[\\-\\.0-9"+nameStartChar.source.slice(1,-1)+"\\u00B7\\u0300-\\u036F\\u203F-\\u2040]");
-var tagNamePattern = new RegExp('^'+nameStartChar.source+nameChar.source+'*(?:\:'+nameStartChar.source+nameChar.source+'*)?$');
+var nameStartChar = /[A-Z_a-z\xC0-\xD6\xD8-\xF6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD]/; //\u10000-\uEFFFF
+var nameChar = new RegExp("[\\-\\.0-9" + nameStartChar.source.slice(1, -1) + "\\u00B7\\u0300-\\u036F\\u203F-\\u2040]");
+var tagNamePattern = new RegExp('^' + nameStartChar.source + nameChar.source + '*(?:\:' + nameStartChar.source + nameChar.source + '*)?$');
 //var tagNamePattern = /^[a-zA-Z_][\w\-\.]*(?:\:[a-zA-Z_][\w\-\.]*)?$/
 //var handlers = 'resolveEntity,getExternalSubset,characters,endDocument,endElement,endPrefixMapping,ignorableWhitespace,processingInstruction,setDocumentLocator,skippedEntity,startDocument,startElement,startPrefixMapping,notationDecl,unparsedEntityDecl,error,fatalError,warning,attributeDecl,elementDecl,externalEntityDecl,internalEntityDecl,comment,endCDATA,endDTD,endEntity,startCDATA,startDTD,startEntity'.split(',')
 
 //S_TAG,	S_ATTR,	S_EQ,	S_ATTR_NOQUOT_VALUE
 //S_ATTR_SPACE,	S_ATTR_END,	S_TAG_SPACE, S_TAG_CLOSE
-var S_TAG = 0;//tag name offerring
-var S_ATTR = 1;//attr name offerring 
-var S_ATTR_SPACE=2;//attr name end and space offer
-var S_EQ = 3;//=space?
-var S_ATTR_NOQUOT_VALUE = 4;//attr value(no quot value only)
-var S_ATTR_END = 5;//attr value end and no space(quot end)
-var S_TAG_SPACE = 6;//(attr value end || tag end ) && (space offer)
-var S_TAG_CLOSE = 7;//closed el<el />
+var S_TAG = 0; //tag name offerring
+var S_ATTR = 1; //attr name offerring 
+var S_ATTR_SPACE = 2; //attr name end and space offer
+var S_EQ = 3; //=space?
+var S_ATTR_NOQUOT_VALUE = 4; //attr value(no quot value only)
+var S_ATTR_END = 5; //attr value end and no space(quot end)
+var S_TAG_SPACE = 6; //(attr value end || tag end ) && (space offer)
+var S_TAG_CLOSE = 7; //closed el<el />
 
-function XMLReader(){
-	
-}
+function XMLReader() {}
 
 XMLReader.prototype = {
-	parse:function(source,defaultNSMap,entityMap){
+	parse: function parse(source, defaultNSMap, entityMap) {
 		var domBuilder = this.domBuilder;
 		domBuilder.startDocument();
-		_copy(defaultNSMap ,defaultNSMap = {})
-		parse(source,defaultNSMap,entityMap,
-				domBuilder,this.errorHandler);
+		_copy(defaultNSMap, defaultNSMap = {});
+		_parse(source, defaultNSMap, entityMap, domBuilder, this.errorHandler);
 		domBuilder.endDocument();
 	}
-}
-function parse(source,defaultNSMapCopy,entityMap,domBuilder,errorHandler){
+};
+function _parse(source, defaultNSMapCopy, entityMap, domBuilder, errorHandler) {
 	function fixedFromCharCode(code) {
 		// String.prototype.fromCharCode does not supports
 		// > 2 bytes unicode chars directly
 		if (code > 0xffff) {
 			code -= 0x10000;
-			var surrogate1 = 0xd800 + (code >> 10)
-				, surrogate2 = 0xdc00 + (code & 0x3ff);
+			var surrogate1 = 0xd800 + (code >> 10),
+			    surrogate2 = 0xdc00 + (code & 0x3ff);
 
 			return String.fromCharCode(surrogate1, surrogate2);
 		} else {
 			return String.fromCharCode(code);
 		}
 	}
-	function entityReplacer(a){
-		var k = a.slice(1,-1);
-		if(k in entityMap){
-			return entityMap[k]; 
-		}else if(k.charAt(0) === '#'){
-			return fixedFromCharCode(parseInt(k.substr(1).replace('x','0x')))
-		}else{
-			errorHandler.error('entity not found:'+a);
+	function entityReplacer(a) {
+		var k = a.slice(1, -1);
+		if (k in entityMap) {
+			return entityMap[k];
+		} else if (k.charAt(0) === '#') {
+			return fixedFromCharCode(parseInt(k.substr(1).replace('x', '0x')));
+		} else {
+			errorHandler.error('entity not found:' + a);
 			return a;
 		}
 	}
-	function appendText(end){//has some bugs
-		if(end>start){
-			var xt = source.substring(start,end).replace(/&#?\w+;/g,entityReplacer);
-			locator&&position(start);
-			domBuilder.characters(xt,0,end-start);
-			start = end
+	function appendText(end) {
+		//has some bugs
+		if (end > start) {
+			var xt = source.substring(start, end).replace(/&#?\w+;/g, entityReplacer);
+			locator && position(start);
+			domBuilder.characters(xt, 0, end - start);
+			start = end;
 		}
 	}
-	function position(p,m){
-		while(p>=lineEnd && (m = linePattern.exec(source))){
+	function position(p, m) {
+		while (p >= lineEnd && (m = linePattern.exec(source))) {
 			lineStart = m.index;
 			lineEnd = lineStart + m[0].length;
 			locator.lineNumber++;
 			//console.log('line++:',locator,startPos,endPos)
 		}
-		locator.columnNumber = p-lineStart+1;
+		locator.columnNumber = p - lineStart + 1;
 	}
 	var lineStart = 0;
 	var lineEnd = 0;
-	var linePattern = /.*(?:\r\n?|\n)|.*$/g
+	var linePattern = /.*(?:\r\n?|\n)|.*$/g;
 	var locator = domBuilder.locator;
-	
-	var parseStack = [{currentNSMap:defaultNSMapCopy}]
+
+	var parseStack = [{ currentNSMap: defaultNSMapCopy }];
 	var closeMap = {};
 	var start = 0;
-	while(true){
-		try{
-			var tagStart = source.indexOf('<',start);
-			if(tagStart<0){
-				if(!source.substr(start).match(/^\s*$/)){
+	while (true) {
+		try {
+			var tagStart = source.indexOf('<', start);
+			if (tagStart < 0) {
+				if (!source.substr(start).match(/^\s*$/)) {
 					var doc = domBuilder.doc;
-	    			var text = doc.createTextNode(source.substr(start));
-	    			doc.appendChild(text);
-	    			domBuilder.currentElement = text;
+					var text = doc.createTextNode(source.substr(start));
+					doc.appendChild(text);
+					domBuilder.currentElement = text;
 				}
 				return;
 			}
-			if(tagStart>start){
+			if (tagStart > start) {
 				appendText(tagStart);
 			}
-			switch(source.charAt(tagStart+1)){
-			case '/':
-				var end = source.indexOf('>',tagStart+3);
-				var tagName = source.substring(tagStart+2,end);
-				var config = parseStack.pop();
-				if(end<0){
-					
-	        		tagName = source.substring(tagStart+2).replace(/[\s<].*/,'');
-	        		//console.error('#@@@@@@'+tagName)
-	        		errorHandler.error("end tag name: "+tagName+' is not complete:'+config.tagName);
-	        		end = tagStart+1+tagName.length;
-	        	}else if(tagName.match(/\s</)){
-	        		tagName = tagName.replace(/[\s<].*/,'');
-	        		errorHandler.error("end tag name: "+tagName+' maybe not complete');
-	        		end = tagStart+1+tagName.length;
-				}
-				//console.error(parseStack.length,parseStack)
-				//console.error(config);
-				var localNSMap = config.localNSMap;
-				var endMatch = config.tagName == tagName;
-				var endIgnoreCaseMach = endMatch || config.tagName&&config.tagName.toLowerCase() == tagName.toLowerCase()
-		        if(endIgnoreCaseMach){
-		        	domBuilder.endElement(config.uri,config.localName,tagName);
-					if(localNSMap){
-						for(var prefix in localNSMap){
-							domBuilder.endPrefixMapping(prefix) ;
+			switch (source.charAt(tagStart + 1)) {
+				case '/':
+					var end = source.indexOf('>', tagStart + 3);
+					var tagName = source.substring(tagStart + 2, end);
+					var config = parseStack.pop();
+					if (end < 0) {
+
+						tagName = source.substring(tagStart + 2).replace(/[\s<].*/, '');
+						//console.error('#@@@@@@'+tagName)
+						errorHandler.error("end tag name: " + tagName + ' is not complete:' + config.tagName);
+						end = tagStart + 1 + tagName.length;
+					} else if (tagName.match(/\s</)) {
+						tagName = tagName.replace(/[\s<].*/, '');
+						errorHandler.error("end tag name: " + tagName + ' maybe not complete');
+						end = tagStart + 1 + tagName.length;
+					}
+					//console.error(parseStack.length,parseStack)
+					//console.error(config);
+					var localNSMap = config.localNSMap;
+					var endMatch = config.tagName == tagName;
+					var endIgnoreCaseMach = endMatch || config.tagName && config.tagName.toLowerCase() == tagName.toLowerCase();
+					if (endIgnoreCaseMach) {
+						domBuilder.endElement(config.uri, config.localName, tagName);
+						if (localNSMap) {
+							for (var prefix in localNSMap) {
+								domBuilder.endPrefixMapping(prefix);
+							}
+						}
+						if (!endMatch) {
+							errorHandler.fatalError("end tag name: " + tagName + ' is not match the current start tagName:' + config.tagName);
+						}
+					} else {
+						parseStack.push(config);
+					}
+
+					end++;
+					break;
+				// end elment
+				case '?':
+					// <?...?>
+					locator && position(tagStart);
+					end = parseInstruction(source, tagStart, domBuilder);
+					break;
+				case '!':
+					// <!doctype,<![CDATA,<!--
+					locator && position(tagStart);
+					end = parseDCC(source, tagStart, domBuilder, errorHandler);
+					break;
+				default:
+					locator && position(tagStart);
+					var el = new ElementAttributes();
+					var currentNSMap = parseStack[parseStack.length - 1].currentNSMap;
+					//elStartEnd
+					var end = parseElementStartPart(source, tagStart, el, currentNSMap, entityReplacer, errorHandler);
+					var len = el.length;
+
+					if (!el.closed && fixSelfClosed(source, end, el.tagName, closeMap)) {
+						el.closed = true;
+						if (!entityMap.nbsp) {
+							errorHandler.warning('unclosed xml attribute');
 						}
 					}
-					if(!endMatch){
-		            	errorHandler.fatalError("end tag name: "+tagName+' is not match the current start tagName:'+config.tagName );
+					if (locator && len) {
+						var locator2 = copyLocator(locator, {});
+						//try{//attribute position fixed
+						for (var i = 0; i < len; i++) {
+							var a = el[i];
+							position(a.offset);
+							a.locator = copyLocator(locator, {});
+						}
+						//}catch(e){console.error('@@@@@'+e)}
+						domBuilder.locator = locator2;
+						if (appendElement(el, domBuilder, currentNSMap)) {
+							parseStack.push(el);
+						}
+						domBuilder.locator = locator;
+					} else {
+						if (appendElement(el, domBuilder, currentNSMap)) {
+							parseStack.push(el);
+						}
 					}
-		        }else{
-		        	parseStack.push(config)
-		        }
-				
-				end++;
-				break;
-				// end elment
-			case '?':// <?...?>
-				locator&&position(tagStart);
-				end = parseInstruction(source,tagStart,domBuilder);
-				break;
-			case '!':// <!doctype,<![CDATA,<!--
-				locator&&position(tagStart);
-				end = parseDCC(source,tagStart,domBuilder,errorHandler);
-				break;
-			default:
-				locator&&position(tagStart);
-				var el = new ElementAttributes();
-				var currentNSMap = parseStack[parseStack.length-1].currentNSMap;
-				//elStartEnd
-				var end = parseElementStartPart(source,tagStart,el,currentNSMap,entityReplacer,errorHandler);
-				var len = el.length;
-				
-				
-				if(!el.closed && fixSelfClosed(source,end,el.tagName,closeMap)){
-					el.closed = true;
-					if(!entityMap.nbsp){
-						errorHandler.warning('unclosed xml attribute');
+
+					if (el.uri === 'http://www.w3.org/1999/xhtml' && !el.closed) {
+						end = parseHtmlSpecialContent(source, end, el.tagName, entityReplacer, domBuilder);
+					} else {
+						end++;
 					}
-				}
-				if(locator && len){
-					var locator2 = copyLocator(locator,{});
-					//try{//attribute position fixed
-					for(var i = 0;i<len;i++){
-						var a = el[i];
-						position(a.offset);
-						a.locator = copyLocator(locator,{});
-					}
-					//}catch(e){console.error('@@@@@'+e)}
-					domBuilder.locator = locator2
-					if(appendElement(el,domBuilder,currentNSMap)){
-						parseStack.push(el)
-					}
-					domBuilder.locator = locator;
-				}else{
-					if(appendElement(el,domBuilder,currentNSMap)){
-						parseStack.push(el)
-					}
-				}
-				
-				
-				
-				if(el.uri === 'http://www.w3.org/1999/xhtml' && !el.closed){
-					end = parseHtmlSpecialContent(source,end,el.tagName,entityReplacer,domBuilder)
-				}else{
-					end++;
-				}
 			}
-		}catch(e){
-			errorHandler.error('element parse error: '+e)
+		} catch (e) {
+			errorHandler.error('element parse error: ' + e);
 			//errorHandler.error('element parse error: '+e);
 			end = -1;
 			//throw e;
 		}
-		if(end>start){
+		if (end > start) {
 			start = end;
-		}else{
+		} else {
 			//TODO: 这里有可能sax回退，有位置错误风险
-			appendText(Math.max(tagStart,start)+1);
+			appendText(Math.max(tagStart, start) + 1);
 		}
 	}
 }
-function copyLocator(f,t){
+function copyLocator(f, t) {
 	t.lineNumber = f.lineNumber;
 	t.columnNumber = f.columnNumber;
 	return t;
@@ -4437,174 +4468,179 @@ function copyLocator(f,t){
  * @see #appendElement(source,elStartEnd,el,selfClosed,entityReplacer,domBuilder,parseStack);
  * @return end of the elementStartPart(end of elementEndPart for selfClosed el)
  */
-function parseElementStartPart(source,start,el,currentNSMap,entityReplacer,errorHandler){
+function parseElementStartPart(source, start, el, currentNSMap, entityReplacer, errorHandler) {
 	var attrName;
 	var value;
 	var p = ++start;
-	var s = S_TAG;//status
-	while(true){
+	var s = S_TAG; //status
+	while (true) {
 		var c = source.charAt(p);
-		switch(c){
-		case '=':
-			if(s === S_ATTR){//attrName
-				attrName = source.slice(start,p);
-				s = S_EQ;
-			}else if(s === S_ATTR_SPACE){
-				s = S_EQ;
-			}else{
-				//fatalError: equal must after attrName or space after attrName
-				throw new Error('attribute equal must after attrName');
-			}
-			break;
-		case '\'':
-		case '"':
-			if(s === S_EQ || s === S_ATTR //|| s == S_ATTR_SPACE
-				){//equal
-				if(s === S_ATTR){
-					errorHandler.warning('attribute value must after "="')
-					attrName = source.slice(start,p)
+		switch (c) {
+			case '=':
+				if (s === S_ATTR) {
+					//attrName
+					attrName = source.slice(start, p);
+					s = S_EQ;
+				} else if (s === S_ATTR_SPACE) {
+					s = S_EQ;
+				} else {
+					//fatalError: equal must after attrName or space after attrName
+					throw new Error('attribute equal must after attrName');
 				}
-				start = p+1;
-				p = source.indexOf(c,start)
-				if(p>0){
-					value = source.slice(start,p).replace(/&#?\w+;/g,entityReplacer);
-					el.add(attrName,value,start-1);
+				break;
+			case '\'':
+			case '"':
+				if (s === S_EQ || s === S_ATTR //|| s == S_ATTR_SPACE
+				) {
+						//equal
+						if (s === S_ATTR) {
+							errorHandler.warning('attribute value must after "="');
+							attrName = source.slice(start, p);
+						}
+						start = p + 1;
+						p = source.indexOf(c, start);
+						if (p > 0) {
+							value = source.slice(start, p).replace(/&#?\w+;/g, entityReplacer);
+							el.add(attrName, value, start - 1);
+							s = S_ATTR_END;
+						} else {
+							//fatalError: no end quot match
+							throw new Error('attribute value no end \'' + c + '\' match');
+						}
+					} else if (s == S_ATTR_NOQUOT_VALUE) {
+					value = source.slice(start, p).replace(/&#?\w+;/g, entityReplacer);
+					//console.log(attrName,value,start,p)
+					el.add(attrName, value, start);
+					//console.dir(el)
+					errorHandler.warning('attribute "' + attrName + '" missed start quot(' + c + ')!!');
+					start = p + 1;
 					s = S_ATTR_END;
-				}else{
-					//fatalError: no end quot match
-					throw new Error('attribute value no end \''+c+'\' match');
+				} else {
+					//fatalError: no equal before
+					throw new Error('attribute value must after "="');
 				}
-			}else if(s == S_ATTR_NOQUOT_VALUE){
-				value = source.slice(start,p).replace(/&#?\w+;/g,entityReplacer);
-				//console.log(attrName,value,start,p)
-				el.add(attrName,value,start);
-				//console.dir(el)
-				errorHandler.warning('attribute "'+attrName+'" missed start quot('+c+')!!');
-				start = p+1;
-				s = S_ATTR_END
-			}else{
-				//fatalError: no equal before
-				throw new Error('attribute value must after "="');
-			}
-			break;
-		case '/':
-			switch(s){
-			case S_TAG:
-				el.setTagName(source.slice(start,p));
-			case S_ATTR_END:
-			case S_TAG_SPACE:
-			case S_TAG_CLOSE:
-				s =S_TAG_CLOSE;
-				el.closed = true;
-			case S_ATTR_NOQUOT_VALUE:
-			case S_ATTR:
-			case S_ATTR_SPACE:
 				break;
-			//case S_EQ:
+			case '/':
+				switch (s) {
+					case S_TAG:
+						el.setTagName(source.slice(start, p));
+					case S_ATTR_END:
+					case S_TAG_SPACE:
+					case S_TAG_CLOSE:
+						s = S_TAG_CLOSE;
+						el.closed = true;
+					case S_ATTR_NOQUOT_VALUE:
+					case S_ATTR:
+					case S_ATTR_SPACE:
+						break;
+					//case S_EQ:
+					default:
+						throw new Error("attribute invalid close char('/')");
+				}
+				break;
+			case '':
+				//end document
+				//throw new Error('unexpected end of input')
+				errorHandler.error('unexpected end of input');
+				if (s == S_TAG) {
+					el.setTagName(source.slice(start, p));
+				}
+				return p;
+			case '>':
+				switch (s) {
+					case S_TAG:
+						el.setTagName(source.slice(start, p));
+					case S_ATTR_END:
+					case S_TAG_SPACE:
+					case S_TAG_CLOSE:
+						break; //normal
+					case S_ATTR_NOQUOT_VALUE: //Compatible state
+					case S_ATTR:
+						value = source.slice(start, p);
+						if (value.slice(-1) === '/') {
+							el.closed = true;
+							value = value.slice(0, -1);
+						}
+					case S_ATTR_SPACE:
+						if (s === S_ATTR_SPACE) {
+							value = attrName;
+						}
+						if (s == S_ATTR_NOQUOT_VALUE) {
+							errorHandler.warning('attribute "' + value + '" missed quot(")!!');
+							el.add(attrName, value.replace(/&#?\w+;/g, entityReplacer), start);
+						} else {
+							if (currentNSMap[''] !== 'http://www.w3.org/1999/xhtml' || !value.match(/^(?:disabled|checked|selected)$/i)) {
+								errorHandler.warning('attribute "' + value + '" missed value!! "' + value + '" instead!!');
+							}
+							el.add(value, value, start);
+						}
+						break;
+					case S_EQ:
+						throw new Error('attribute value missed!!');
+				}
+				//			console.log(tagName,tagNamePattern,tagNamePattern.test(tagName))
+				return p;
+			/*xml space '\x20' | #x9 | #xD | #xA; */
+			case "\x80":
+				c = ' ';
 			default:
-				throw new Error("attribute invalid close char('/')")
-			}
-			break;
-		case ''://end document
-			//throw new Error('unexpected end of input')
-			errorHandler.error('unexpected end of input');
-			if(s == S_TAG){
-				el.setTagName(source.slice(start,p));
-			}
-			return p;
-		case '>':
-			switch(s){
-			case S_TAG:
-				el.setTagName(source.slice(start,p));
-			case S_ATTR_END:
-			case S_TAG_SPACE:
-			case S_TAG_CLOSE:
-				break;//normal
-			case S_ATTR_NOQUOT_VALUE://Compatible state
-			case S_ATTR:
-				value = source.slice(start,p);
-				if(value.slice(-1) === '/'){
-					el.closed  = true;
-					value = value.slice(0,-1)
-				}
-			case S_ATTR_SPACE:
-				if(s === S_ATTR_SPACE){
-					value = attrName;
-				}
-				if(s == S_ATTR_NOQUOT_VALUE){
-					errorHandler.warning('attribute "'+value+'" missed quot(")!!');
-					el.add(attrName,value.replace(/&#?\w+;/g,entityReplacer),start)
-				}else{
-					if(currentNSMap[''] !== 'http://www.w3.org/1999/xhtml' || !value.match(/^(?:disabled|checked|selected)$/i)){
-						errorHandler.warning('attribute "'+value+'" missed value!! "'+value+'" instead!!')
+				if (c <= ' ') {
+					//space
+					switch (s) {
+						case S_TAG:
+							el.setTagName(source.slice(start, p)); //tagName
+							s = S_TAG_SPACE;
+							break;
+						case S_ATTR:
+							attrName = source.slice(start, p);
+							s = S_ATTR_SPACE;
+							break;
+						case S_ATTR_NOQUOT_VALUE:
+							var value = source.slice(start, p).replace(/&#?\w+;/g, entityReplacer);
+							errorHandler.warning('attribute "' + value + '" missed quot(")!!');
+							el.add(attrName, value, start);
+						case S_ATTR_END:
+							s = S_TAG_SPACE;
+							break;
+						//case S_TAG_SPACE:
+						//case S_EQ:
+						//case S_ATTR_SPACE:
+						//	void();break;
+						//case S_TAG_CLOSE:
+						//ignore warning
 					}
-					el.add(value,value,start)
-				}
-				break;
-			case S_EQ:
-				throw new Error('attribute value missed!!');
-			}
-//			console.log(tagName,tagNamePattern,tagNamePattern.test(tagName))
-			return p;
-		/*xml space '\x20' | #x9 | #xD | #xA; */
-		case '\u0080':
-			c = ' ';
-		default:
-			if(c<= ' '){//space
-				switch(s){
-				case S_TAG:
-					el.setTagName(source.slice(start,p));//tagName
-					s = S_TAG_SPACE;
-					break;
-				case S_ATTR:
-					attrName = source.slice(start,p)
-					s = S_ATTR_SPACE;
-					break;
-				case S_ATTR_NOQUOT_VALUE:
-					var value = source.slice(start,p).replace(/&#?\w+;/g,entityReplacer);
-					errorHandler.warning('attribute "'+value+'" missed quot(")!!');
-					el.add(attrName,value,start)
-				case S_ATTR_END:
-					s = S_TAG_SPACE;
-					break;
-				//case S_TAG_SPACE:
-				//case S_EQ:
-				//case S_ATTR_SPACE:
-				//	void();break;
-				//case S_TAG_CLOSE:
-					//ignore warning
-				}
-			}else{//not space
-//S_TAG,	S_ATTR,	S_EQ,	S_ATTR_NOQUOT_VALUE
-//S_ATTR_SPACE,	S_ATTR_END,	S_TAG_SPACE, S_TAG_CLOSE
-				switch(s){
-				//case S_TAG:void();break;
-				//case S_ATTR:void();break;
-				//case S_ATTR_NOQUOT_VALUE:void();break;
-				case S_ATTR_SPACE:
-					var tagName =  el.tagName;
-					if(currentNSMap[''] !== 'http://www.w3.org/1999/xhtml' || !attrName.match(/^(?:disabled|checked|selected)$/i)){
-						errorHandler.warning('attribute "'+attrName+'" missed value!! "'+attrName+'" instead2!!')
+				} else {
+					//not space
+					//S_TAG,	S_ATTR,	S_EQ,	S_ATTR_NOQUOT_VALUE
+					//S_ATTR_SPACE,	S_ATTR_END,	S_TAG_SPACE, S_TAG_CLOSE
+					switch (s) {
+						//case S_TAG:void();break;
+						//case S_ATTR:void();break;
+						//case S_ATTR_NOQUOT_VALUE:void();break;
+						case S_ATTR_SPACE:
+							var tagName = el.tagName;
+							if (currentNSMap[''] !== 'http://www.w3.org/1999/xhtml' || !attrName.match(/^(?:disabled|checked|selected)$/i)) {
+								errorHandler.warning('attribute "' + attrName + '" missed value!! "' + attrName + '" instead2!!');
+							}
+							el.add(attrName, attrName, start);
+							start = p;
+							s = S_ATTR;
+							break;
+						case S_ATTR_END:
+							errorHandler.warning('attribute space is required"' + attrName + '"!!');
+						case S_TAG_SPACE:
+							s = S_ATTR;
+							start = p;
+							break;
+						case S_EQ:
+							s = S_ATTR_NOQUOT_VALUE;
+							start = p;
+							break;
+						case S_TAG_CLOSE:
+							throw new Error("elements closed character '/' and '>' must be connected to");
 					}
-					el.add(attrName,attrName,start);
-					start = p;
-					s = S_ATTR;
-					break;
-				case S_ATTR_END:
-					errorHandler.warning('attribute space is required"'+attrName+'"!!')
-				case S_TAG_SPACE:
-					s = S_ATTR;
-					start = p;
-					break;
-				case S_EQ:
-					s = S_ATTR_NOQUOT_VALUE;
-					start = p;
-					break;
-				case S_TAG_CLOSE:
-					throw new Error("elements closed character '/' and '>' must be connected to");
 				}
-			}
-		}//end outer switch
+		} //end outer switch
 		//console.log('p++',p)
 		p++;
 	}
@@ -4612,176 +4648,179 @@ function parseElementStartPart(source,start,el,currentNSMap,entityReplacer,error
 /**
  * @return true if has new namespace define
  */
-function appendElement(el,domBuilder,currentNSMap){
+function appendElement(el, domBuilder, currentNSMap) {
 	var tagName = el.tagName;
 	var localNSMap = null;
 	//var currentNSMap = parseStack[parseStack.length-1].currentNSMap;
 	var i = el.length;
-	while(i--){
+	while (i--) {
 		var a = el[i];
 		var qName = a.qName;
 		var value = a.value;
 		var nsp = qName.indexOf(':');
-		if(nsp>0){
-			var prefix = a.prefix = qName.slice(0,nsp);
-			var localName = qName.slice(nsp+1);
-			var nsPrefix = prefix === 'xmlns' && localName
-		}else{
+		if (nsp > 0) {
+			var prefix = a.prefix = qName.slice(0, nsp);
+			var localName = qName.slice(nsp + 1);
+			var nsPrefix = prefix === 'xmlns' && localName;
+		} else {
 			localName = qName;
-			prefix = null
-			nsPrefix = qName === 'xmlns' && ''
+			prefix = null;
+			nsPrefix = qName === 'xmlns' && '';
 		}
 		//can not set prefix,because prefix !== ''
-		a.localName = localName ;
+		a.localName = localName;
 		//prefix == null for no ns prefix attribute 
-		if(nsPrefix !== false){//hack!!
-			if(localNSMap == null){
-				localNSMap = {}
+		if (nsPrefix !== false) {
+			//hack!!
+			if (localNSMap == null) {
+				localNSMap = {};
 				//console.log(currentNSMap,0)
-				_copy(currentNSMap,currentNSMap={})
+				_copy(currentNSMap, currentNSMap = {});
 				//console.log(currentNSMap,1)
 			}
 			currentNSMap[nsPrefix] = localNSMap[nsPrefix] = value;
-			a.uri = 'http://www.w3.org/2000/xmlns/'
-			domBuilder.startPrefixMapping(nsPrefix, value) 
+			a.uri = 'http://www.w3.org/2000/xmlns/';
+			domBuilder.startPrefixMapping(nsPrefix, value);
 		}
 	}
 	var i = el.length;
-	while(i--){
+	while (i--) {
 		a = el[i];
 		var prefix = a.prefix;
-		if(prefix){//no prefix attribute has no namespace
-			if(prefix === 'xml'){
+		if (prefix) {
+			//no prefix attribute has no namespace
+			if (prefix === 'xml') {
 				a.uri = 'http://www.w3.org/XML/1998/namespace';
-			}if(prefix !== 'xmlns'){
-				a.uri = currentNSMap[prefix || '']
-				
+			}if (prefix !== 'xmlns') {
+				a.uri = currentNSMap[prefix || ''];
+
 				//{console.log('###'+a.qName,domBuilder.locator.systemId+'',currentNSMap,a.uri)}
 			}
 		}
 	}
 	var nsp = tagName.indexOf(':');
-	if(nsp>0){
-		prefix = el.prefix = tagName.slice(0,nsp);
-		localName = el.localName = tagName.slice(nsp+1);
-	}else{
-		prefix = null;//important!!
+	if (nsp > 0) {
+		prefix = el.prefix = tagName.slice(0, nsp);
+		localName = el.localName = tagName.slice(nsp + 1);
+	} else {
+		prefix = null; //important!!
 		localName = el.localName = tagName;
 	}
 	//no prefix element has default namespace
 	var ns = el.uri = currentNSMap[prefix || ''];
-	domBuilder.startElement(ns,localName,tagName,el);
+	domBuilder.startElement(ns, localName, tagName, el);
 	//endPrefixMapping and startPrefixMapping have not any help for dom builder
 	//localNSMap = null
-	if(el.closed){
-		domBuilder.endElement(ns,localName,tagName);
-		if(localNSMap){
-			for(prefix in localNSMap){
-				domBuilder.endPrefixMapping(prefix) 
+	if (el.closed) {
+		domBuilder.endElement(ns, localName, tagName);
+		if (localNSMap) {
+			for (prefix in localNSMap) {
+				domBuilder.endPrefixMapping(prefix);
 			}
 		}
-	}else{
+	} else {
 		el.currentNSMap = currentNSMap;
 		el.localNSMap = localNSMap;
 		//parseStack.push(el);
 		return true;
 	}
 }
-function parseHtmlSpecialContent(source,elStartEnd,tagName,entityReplacer,domBuilder){
-	if(/^(?:script|textarea)$/i.test(tagName)){
-		var elEndStart =  source.indexOf('</'+tagName+'>',elStartEnd);
-		var text = source.substring(elStartEnd+1,elEndStart);
-		if(/[&<]/.test(text)){
-			if(/^script$/i.test(tagName)){
+function parseHtmlSpecialContent(source, elStartEnd, tagName, entityReplacer, domBuilder) {
+	if (/^(?:script|textarea)$/i.test(tagName)) {
+		var elEndStart = source.indexOf('</' + tagName + '>', elStartEnd);
+		var text = source.substring(elStartEnd + 1, elEndStart);
+		if (/[&<]/.test(text)) {
+			if (/^script$/i.test(tagName)) {
 				//if(!/\]\]>/.test(text)){
-					//lexHandler.startCDATA();
-					domBuilder.characters(text,0,text.length);
-					//lexHandler.endCDATA();
-					return elEndStart;
-				//}
-			}//}else{//text area
-				text = text.replace(/&#?\w+;/g,entityReplacer);
-				domBuilder.characters(text,0,text.length);
+				//lexHandler.startCDATA();
+				domBuilder.characters(text, 0, text.length);
+				//lexHandler.endCDATA();
 				return elEndStart;
+				//}
+			} //}else{//text area
+			text = text.replace(/&#?\w+;/g, entityReplacer);
+			domBuilder.characters(text, 0, text.length);
+			return elEndStart;
 			//}
-			
 		}
 	}
-	return elStartEnd+1;
+	return elStartEnd + 1;
 }
-function fixSelfClosed(source,elStartEnd,tagName,closeMap){
+function fixSelfClosed(source, elStartEnd, tagName, closeMap) {
 	//if(tagName in closeMap){
 	var pos = closeMap[tagName];
-	if(pos == null){
+	if (pos == null) {
 		//console.log(tagName)
-		pos =  source.lastIndexOf('</'+tagName+'>')
-		if(pos<elStartEnd){//忘记闭合
-			pos = source.lastIndexOf('</'+tagName)
+		pos = source.lastIndexOf('</' + tagName + '>');
+		if (pos < elStartEnd) {
+			//忘记闭合
+			pos = source.lastIndexOf('</' + tagName);
 		}
-		closeMap[tagName] =pos
+		closeMap[tagName] = pos;
 	}
-	return pos<elStartEnd;
+	return pos < elStartEnd;
 	//} 
 }
-function _copy(source,target){
-	for(var n in source){target[n] = source[n]}
+function _copy(source, target) {
+	for (var n in source) {
+		target[n] = source[n];
+	}
 }
-function parseDCC(source,start,domBuilder,errorHandler){//sure start with '<!'
-	var next= source.charAt(start+2)
-	switch(next){
-	case '-':
-		if(source.charAt(start + 3) === '-'){
-			var end = source.indexOf('-->',start+4);
-			//append comment source.substring(4,end)//<!--
-			if(end>start){
-				domBuilder.comment(source,start+4,end-start-4);
-				return end+3;
-			}else{
-				errorHandler.error("Unclosed comment");
+function parseDCC(source, start, domBuilder, errorHandler) {
+	//sure start with '<!'
+	var next = source.charAt(start + 2);
+	switch (next) {
+		case '-':
+			if (source.charAt(start + 3) === '-') {
+				var end = source.indexOf('-->', start + 4);
+				//append comment source.substring(4,end)//<!--
+				if (end > start) {
+					domBuilder.comment(source, start + 4, end - start - 4);
+					return end + 3;
+				} else {
+					errorHandler.error("Unclosed comment");
+					return -1;
+				}
+			} else {
+				//error
 				return -1;
 			}
-		}else{
-			//error
-			return -1;
-		}
-	default:
-		if(source.substr(start+3,6) == 'CDATA['){
-			var end = source.indexOf(']]>',start+9);
-			domBuilder.startCDATA();
-			domBuilder.characters(source,start+9,end-start-9);
-			domBuilder.endCDATA() 
-			return end+3;
-		}
-		//<!DOCTYPE
-		//startDTD(java.lang.String name, java.lang.String publicId, java.lang.String systemId) 
-		var matchs = split(source,start);
-		var len = matchs.length;
-		if(len>1 && /!doctype/i.test(matchs[0][0])){
-			var name = matchs[1][0];
-			var pubid = len>3 && /^public$/i.test(matchs[2][0]) && matchs[3][0]
-			var sysid = len>4 && matchs[4][0];
-			var lastMatch = matchs[len-1]
-			domBuilder.startDTD(name,pubid && pubid.replace(/^(['"])(.*?)\1$/,'$2'),
-					sysid && sysid.replace(/^(['"])(.*?)\1$/,'$2'));
-			domBuilder.endDTD();
-			
-			return lastMatch.index+lastMatch[0].length
-		}
+		default:
+			if (source.substr(start + 3, 6) == 'CDATA[') {
+				var end = source.indexOf(']]>', start + 9);
+				domBuilder.startCDATA();
+				domBuilder.characters(source, start + 9, end - start - 9);
+				domBuilder.endCDATA();
+				return end + 3;
+			}
+			//<!DOCTYPE
+			//startDTD(java.lang.String name, java.lang.String publicId, java.lang.String systemId) 
+			var matchs = split(source, start);
+			var len = matchs.length;
+			if (len > 1 && /!doctype/i.test(matchs[0][0])) {
+				var name = matchs[1][0];
+				var pubid = len > 3 && /^public$/i.test(matchs[2][0]) && matchs[3][0];
+				var sysid = len > 4 && matchs[4][0];
+				var lastMatch = matchs[len - 1];
+				domBuilder.startDTD(name, pubid && pubid.replace(/^(['"])(.*?)\1$/, '$2'), sysid && sysid.replace(/^(['"])(.*?)\1$/, '$2'));
+				domBuilder.endDTD();
+
+				return lastMatch.index + lastMatch[0].length;
+			}
 	}
 	return -1;
 }
 
-
-
-function parseInstruction(source,start,domBuilder){
-	var end = source.indexOf('?>',start);
-	if(end){
-		var match = source.substring(start,end).match(/^<\?(\S*)\s*([\s\S]*?)\s*$/);
-		if(match){
+function parseInstruction(source, start, domBuilder) {
+	var end = source.indexOf('?>', start);
+	if (end) {
+		var match = source.substring(start, end).match(/^<\?(\S*)\s*([\s\S]*?)\s*$/);
+		if (match) {
 			var len = match[0].length;
-			domBuilder.processingInstruction(match[1], match[2]) ;
-			return end+2;
-		}else{//error
+			domBuilder.processingInstruction(match[1], match[2]);
+			return end + 2;
+		} else {
+			//error
 			return -1;
 		}
 	}
@@ -4791,88 +4830,95 @@ function parseInstruction(source,start,domBuilder){
 /**
  * @param source
  */
-function ElementAttributes(source){
-	
-}
+function ElementAttributes(source) {}
 ElementAttributes.prototype = {
-	setTagName:function(tagName){
-		if(!tagNamePattern.test(tagName)){
-			throw new Error('invalid tagName:'+tagName)
+	setTagName: function setTagName(tagName) {
+		if (!tagNamePattern.test(tagName)) {
+			throw new Error('invalid tagName:' + tagName);
 		}
-		this.tagName = tagName
+		this.tagName = tagName;
 	},
-	add:function(qName,value,offset){
-		if(!tagNamePattern.test(qName)){
-			throw new Error('invalid attribute:'+qName)
+	add: function add(qName, value, offset) {
+		if (!tagNamePattern.test(qName)) {
+			throw new Error('invalid attribute:' + qName);
 		}
-		this[this.length++] = {qName:qName,value:value,offset:offset}
+		this[this.length++] = { qName: qName, value: value, offset: offset };
 	},
-	length:0,
-	getLocalName:function(i){return this[i].localName},
-	getLocator:function(i){return this[i].locator},
-	getQName:function(i){return this[i].qName},
-	getURI:function(i){return this[i].uri},
-	getValue:function(i){return this[i].value}
-//	,getIndex:function(uri, localName)){
-//		if(localName){
-//			
-//		}else{
-//			var qName = uri
-//		}
-//	},
-//	getValue:function(){return this.getValue(this.getIndex.apply(this,arguments))},
-//	getType:function(uri,localName){}
-//	getType:function(i){},
-}
+	length: 0,
+	getLocalName: function getLocalName(i) {
+		return this[i].localName;
+	},
+	getLocator: function getLocator(i) {
+		return this[i].locator;
+	},
+	getQName: function getQName(i) {
+		return this[i].qName;
+	},
+	getURI: function getURI(i) {
+		return this[i].uri;
+	},
+	getValue: function getValue(i) {
+		return this[i].value;
+	}
+	//	,getIndex:function(uri, localName)){
+	//		if(localName){
+	//			
+	//		}else{
+	//			var qName = uri
+	//		}
+	//	},
+	//	getValue:function(){return this.getValue(this.getIndex.apply(this,arguments))},
+	//	getType:function(uri,localName){}
+	//	getType:function(i){},
+};
 
-
-
-
-function _set_proto_(thiz,parent){
+function _set_proto_(thiz, parent) {
 	thiz.__proto__ = parent;
 	return thiz;
 }
-if(!(_set_proto_({},_set_proto_.prototype) instanceof _set_proto_)){
-	_set_proto_ = function(thiz,parent){
-		function p(){};
+if (!(_set_proto_({}, _set_proto_.prototype) instanceof _set_proto_)) {
+	_set_proto_ = function _set_proto_(thiz, parent) {
+		function p() {};
 		p.prototype = parent;
 		p = new p();
-		for(parent in thiz){
+		for (parent in thiz) {
 			p[parent] = thiz[parent];
 		}
 		return p;
-	}
+	};
 }
 
-function split(source,start){
+function split(source, start) {
 	var match;
 	var buf = [];
 	var reg = /'[^']+'|"[^"]+"|[^\s<>\/=]+=?|(\/?\s*>|<)/g;
 	reg.lastIndex = start;
-	reg.exec(source);//skip <
-	while(match = reg.exec(source)){
+	reg.exec(source); //skip <
+	while (match = reg.exec(source)) {
 		buf.push(match);
-		if(match[1])return buf;
+		if (match[1]) return buf;
 	}
 }
 
 exports.XMLReader = XMLReader;
 
-
-
 /***/ }),
-/* 15 */
-/***/ (function(module, exports) {
+/* 16 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 //copyright Ryan Day 2010 <http://ryanday.org>, Joscha Feth 2013 <http://www.feth.com> [MIT Licensed]
 
-var element_start_char =
-    "a-zA-Z_\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u00FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FFF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD";
-var element_non_start_char = "\-.0-9\u00B7\u0300-\u036F\u203F\u2040";
+var element_start_char = "a-zA-Z_\xC0-\xD6\xD8-\xF6\xF8-\xFF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FFF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD";
+var element_non_start_char = "-.0-9\xB7\u0300-\u036F\u203F\u2040";
 var element_replace = new RegExp("^([^" + element_start_char + "])|^((x|X)(m|M)(l|L))|([^" + element_start_char + element_non_start_char + "])", "g");
 var not_safe_in_xml = /[^\x09\x0A\x0D\x20-\xFF\x85\xA0-\uD7FF\uE000-\uFDCF\uFDE0-\uFFFD]/gm;
 
-var objKeys = function (obj) {
+var objKeys = function objKeys(obj) {
     var l = [];
     if (obj instanceof Object) {
         for (var k in obj) {
@@ -4883,18 +4929,18 @@ var objKeys = function (obj) {
     }
     return l;
 };
-var process_to_xml = function (node_data, options) {
+var process_to_xml = function process_to_xml(node_data, options) {
 
-    var makeNode = function (name, content, attributes, level, hasSubNodes) {
+    var makeNode = function makeNode(name, content, attributes, level, hasSubNodes) {
         var indent_value = options.indent !== undefined ? options.indent : "\t";
         var indent = options.prettyPrint ? '\n' + new Array(level).join(indent_value) : '';
         if (options.removeIllegalNameCharacters) {
             name = name.replace(element_replace, '_');
         }
 
-        var node = [indent, '<', name, (attributes || '')];
+        var node = [indent, '<', name, attributes || ''];
         if (content && content.length > 0) {
-            node.push('>')
+            node.push('>');
             node.push(content);
             hasSubNodes && node.push(indent);
             node.push('</');
@@ -4906,9 +4952,9 @@ var process_to_xml = function (node_data, options) {
         return node.join('');
     };
 
-    return (function fn(node_data, node_descriptor, level) {
-        var type = typeof node_data;
-        if ((Array.isArray) ? Array.isArray(node_data) : node_data instanceof Array) {
+    return function fn(node_data, node_descriptor, level) {
+        var type = typeof node_data === "undefined" ? "undefined" : _typeof(node_data);
+        if (Array.isArray ? Array.isArray(node_data) : node_data instanceof Array) {
             type = 'array';
         } else if (node_data instanceof Date) {
             type = 'date';
@@ -4937,8 +4983,7 @@ var process_to_xml = function (node_data, options) {
                     if (node_data.hasOwnProperty(name)) {
                         if (node_data[name] instanceof Array) {
                             for (var j in node_data[name]) {
-                                if (node_data[name].hasOwnProperty(j))
-                                    nodes.push(makeNode(name, fn(node_data[name][j], 0, level + 1), null, level + 1, objKeys(node_data[name][j]).length));
+                                if (node_data[name].hasOwnProperty(j)) nodes.push(makeNode(name, fn(node_data[name][j], 0, level + 1), null, level + 1, objKeys(node_data[name][j]).length));
                             }
                         } else {
                             nodes.push(makeNode(name, fn(node_data[name], 0, level + 1), null, level + 1));
@@ -4956,12 +5001,10 @@ var process_to_xml = function (node_data, options) {
             default:
                 return options.escape ? esc(node_data) : '' + node_data;
         }
-
-    }(node_data, 0, 0))
+    }(node_data, 0, 0);
 };
 
-
-var xml_header = function (standalone) {
+var xml_header = function xml_header(standalone) {
     var ret = ['<?xml version="1.0" encoding="UTF-8"'];
 
     if (standalone) {
@@ -4973,15 +5016,10 @@ var xml_header = function (standalone) {
 };
 
 function esc(str) {
-    return ('' + str).replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/'/g, '&apos;')
-        .replace(/"/g, '&quot;')
-        .replace(not_safe_in_xml, '');
+    return ('' + str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&apos;').replace(/"/g, '&quot;').replace(not_safe_in_xml, '');
 }
 
-var json2xml = function (obj, options) {
+var json2xml = function json2xml(obj, options) {
 
     if (!options) {
         options = {
@@ -5004,7 +5042,7 @@ var json2xml = function (obj, options) {
     var xmlheader = '';
     var docType = '';
     if (options) {
-        if (typeof options == 'object') {
+        if ((typeof options === "undefined" ? "undefined" : _typeof(options)) == 'object') {
             // our config is an object
 
             if (options.xmlHeader) {
@@ -5013,36 +5051,33 @@ var json2xml = function (obj, options) {
             }
 
             if (typeof options.docType != 'undefined') {
-                docType = '<!DOCTYPE ' + options.docType + '>'
+                docType = '<!DOCTYPE ' + options.docType + '>';
             }
         } else {
             // our config is a boolean value, so just add xml header
             xmlheader = xml_header();
         }
     }
-    options = options || {}
+    options = options || {};
 
-    var ret = [
-        xmlheader,
-        (options.prettyPrint && docType ? '\n' : ''),
-        docType,
-        process_to_xml(obj, options)
-    ];
+    var ret = [xmlheader, options.prettyPrint && docType ? '\n' : '', docType, process_to_xml(obj, options)];
     return ret.join('').replace(/\n{2,}/g, '\n').replace(/\s+$/g, '');
 };
 
 module.exports = json2xml;
 
-
 /***/ }),
-/* 16 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 
 var session = __webpack_require__(5);
 var util = __webpack_require__(0);
 
 var originApiMap = {};
-var transferToTaskMethod = function (apiMap, apiName) {
+var transferToTaskMethod = function transferToTaskMethod(apiMap, apiName) {
     originApiMap[apiName] = apiMap[apiName];
     apiMap[apiName] = function (params, callback) {
         if (params.SkipTask) {
@@ -5053,7 +5088,7 @@ var transferToTaskMethod = function (apiMap, apiName) {
     };
 };
 
-var initTask = function (cos) {
+var initTask = function initTask(cos) {
 
     var queue = [];
     var tasks = {};
@@ -5061,7 +5096,7 @@ var initTask = function (cos) {
     var nextUploadIndex = 0;
 
     // 接口返回简略的任务信息
-    var formatTask = function (task) {
+    var formatTask = function formatTask(task) {
         var t = {
             id: task.id,
             Bucket: task.Bucket,
@@ -5074,34 +5109,33 @@ var initTask = function (cos) {
             speed: task.speed,
             percent: task.percent,
             hashPercent: task.hashPercent,
-            error: task.error,
+            error: task.error
         };
         if (task.FilePath) t.FilePath = task.FilePath;
         return t;
     };
 
-    var emitListUpdate = (function () {
+    var emitListUpdate = function () {
         var timer;
-        var emit = function () {
+        var emit = function emit() {
             timer = 0;
-            cos.emit('task-list-update', {list: util.map(queue, formatTask)});
-            cos.emit('list-update', {list: util.map(queue, formatTask)});
+            cos.emit('task-list-update', { list: util.map(queue, formatTask) });
+            cos.emit('list-update', { list: util.map(queue, formatTask) });
         };
         return function () {
             if (!timer) timer = setTimeout(emit);
-        }
-    })();
+        };
+    }();
 
-    var clearQueue = function () {
+    var clearQueue = function clearQueue() {
         if (queue.length <= cos.options.UploadQueueSize) return;
-        for (var i = 0;
-             i < nextUploadIndex && // 小于当前操作的 index 才清理
-             i < queue.length && // 大于队列才清理
-             queue.length > cos.options.UploadQueueSize // 如果还太多，才继续清理
-            ;) {
+        for (var i = 0; i < nextUploadIndex && // 小于当前操作的 index 才清理
+        i < queue.length && // 大于队列才清理
+        queue.length > cos.options.UploadQueueSize // 如果还太多，才继续清理
+        ;) {
             var isActive = queue[i].state === 'waiting' || queue[i].state === 'checking' || queue[i].state === 'uploading';
             if (!queue[i] || !isActive) {
-                tasks[queue[i].id] && (delete tasks[queue[i].id]);
+                tasks[queue[i].id] && delete tasks[queue[i].id];
                 queue.splice(i, 1);
                 nextUploadIndex--;
             } else {
@@ -5111,12 +5145,13 @@ var initTask = function (cos) {
         emitListUpdate();
     };
 
-    var startNextTask = function () {
+    var startNextTask = function startNextTask() {
         // 检查是否允许增加执行进程
         if (uploadingFileCount >= cos.options.FileParallelLimit) return;
         // 跳过不可执行的任务
-        while (queue[nextUploadIndex] && queue[nextUploadIndex].state !== 'waiting') nextUploadIndex++;
-        // 检查是否已遍历结束
+        while (queue[nextUploadIndex] && queue[nextUploadIndex].state !== 'waiting') {
+            nextUploadIndex++;
+        } // 检查是否已遍历结束
         if (nextUploadIndex >= queue.length) return;
         // 上传该遍历到的任务
         var task = queue[nextUploadIndex];
@@ -5151,24 +5186,22 @@ var initTask = function (cos) {
         setTimeout(startNextTask);
     };
 
-    var killTask = function (id, switchToState) {
+    var killTask = function killTask(id, switchToState) {
         var task = tasks[id];
         if (!task) return;
         var waiting = task && task.state === 'waiting';
         var running = task && (task.state === 'checking' || task.state === 'uploading');
-        if (switchToState === 'canceled' && task.state !== 'canceled' ||
-            switchToState === 'paused' && waiting ||
-            switchToState === 'paused' && running) {
+        if (switchToState === 'canceled' && task.state !== 'canceled' || switchToState === 'paused' && waiting || switchToState === 'paused' && running) {
             if (switchToState === 'paused' && task.params.Body && typeof task.params.Body.pipe === 'function') {
                 console.error('stream not support pause');
                 return;
             }
             task.state = switchToState;
-            cos.emit('inner-kill-task', {TaskId: id, toState: switchToState});
+            cos.emit('inner-kill-task', { TaskId: id, toState: switchToState });
             try {
-                var UploadId = task && task.params && task.params.UploadData.UploadId
-            } catch(e) {}
-            if (switchToState === 'canceled' && UploadId) session.removeUsing(UploadId)
+                var UploadId = task && task.params && task.params.UploadData.UploadId;
+            } catch (e) {}
+            if (switchToState === 'canceled' && UploadId) session.removeUsing(UploadId);
             emitListUpdate();
             if (running) {
                 uploadingFileCount--;
@@ -5224,7 +5257,7 @@ var initTask = function (cos) {
             speed: 0,
             percent: 0,
             hashPercent: 0,
-            error: null,
+            error: null
         };
         var onHashProgress = params.onHashProgress;
         params.onHashProgress = function (info) {
@@ -5248,7 +5281,8 @@ var initTask = function (cos) {
         // 异步获取 filesize
         util.getFileSize(api, params, function (err, size) {
             // 开始处理上传
-            if (err) { // 如果获取大小出错，不加入队列
+            if (err) {
+                // 如果获取大小出错，不加入队列
                 callback(err);
                 return;
             }
@@ -5287,24 +5321,22 @@ var initTask = function (cos) {
     cos.isUploadRunning = function () {
         return uploadingFileCount || nextUploadIndex < queue.length;
     };
-
 };
 
 module.exports.transferToTaskMethod = transferToTaskMethod;
 module.exports.init = initTask;
 
-
 /***/ }),
-/* 17 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
-var REQUEST = __webpack_require__(18);
+
+var REQUEST = __webpack_require__(19);
 var base64 = __webpack_require__(3);
 var util = __webpack_require__(0);
-var mime = __webpack_require__(19);
-
+var mime = __webpack_require__(20);
 
 // Bucket 相关
 
@@ -5337,22 +5369,26 @@ function getService(params, callback) {
         domain = protocol + '//service.cos.myqcloud.com';
     }
 
+    var SignHost = '';
+    var standardHost = region ? 'cos.' + region + '.myqcloud.com' : 'service.cos.myqcloud.com';
+    var urlHost = domain.replace(/^https?:\/\/([^/]+)(\/.*)?$/, '$1');
+    if (standardHost === urlHost) SignHost = standardHost;
+
     submitRequest.call(this, {
         Action: 'name/cos:GetService',
         url: domain,
         method: 'GET',
-        headers: params.Headers,
+        headers: params.Headers
     }, function (err, data) {
         if (err) return callback(err);
-        var buckets = (data && data.ListAllMyBucketsResult && data.ListAllMyBucketsResult.Buckets
-            && data.ListAllMyBucketsResult.Buckets.Bucket) || [];
+        var buckets = data && data.ListAllMyBucketsResult && data.ListAllMyBucketsResult.Buckets && data.ListAllMyBucketsResult.Buckets.Bucket || [];
         buckets = util.isArray(buckets) ? buckets : [buckets];
-        var owner = (data && data.ListAllMyBucketsResult && data.ListAllMyBucketsResult.Owner) || {};
+        var owner = data && data.ListAllMyBucketsResult && data.ListAllMyBucketsResult.Owner || {};
         callback(null, {
             Buckets: buckets,
             Owner: owner,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -5376,11 +5412,11 @@ function putBucket(params, callback) {
     var self = this;
 
     var xml = '';
-    if(params['BucketAZConfig']){
+    if (params['BucketAZConfig']) {
         var CreateBucketConfiguration = {
             BucketAZConfig: params.BucketAZConfig
         };
-        xml = util.json2xml({CreateBucketConfiguration: CreateBucketConfiguration});
+        xml = util.json2xml({ CreateBucketConfiguration: CreateBucketConfiguration });
     }
 
     submitRequest.call(this, {
@@ -5389,7 +5425,7 @@ function putBucket(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
-        body: xml,
+        body: xml
     }, function (err, data) {
         if (err) return callback(err);
         var url = getUrl({
@@ -5397,12 +5433,12 @@ function putBucket(params, callback) {
             domain: self.options.Domain,
             bucket: params.Bucket,
             region: params.Region,
-            isLocation: true,
+            isLocation: true
         });
         callback(null, {
             Location: url,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -5424,7 +5460,7 @@ function headBucket(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
-        method: 'HEAD',
+        method: 'HEAD'
     }, function (err, data) {
         callback(err, data);
     });
@@ -5460,7 +5496,7 @@ function getBucket(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
-        qs: reqParams,
+        qs: reqParams
     }, function (err, data) {
         if (err) return callback(err);
         var ListBucketResult = data.ListBucketResult || {};
@@ -5475,7 +5511,7 @@ function getBucket(params, callback) {
             Contents: Contents,
             CommonPrefixes: CommonPrefixes,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
 
         callback(null, result);
@@ -5498,16 +5534,16 @@ function deleteBucket(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
-        method: 'DELETE',
+        method: 'DELETE'
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -5535,8 +5571,8 @@ function putBucketAcl(params, callback) {
         Grants = util.isArray(Grants) ? Grants : [Grants];
         delete AccessControlPolicy.Grant;
         delete AccessControlPolicy.Grants;
-        AccessControlPolicy.AccessControlList = {Grant: Grants};
-        xml = util.json2xml({AccessControlPolicy: AccessControlPolicy});
+        AccessControlPolicy.AccessControlList = { Grant: Grants };
+        xml = util.json2xml({ AccessControlPolicy: AccessControlPolicy });
 
         headers['Content-Type'] = 'application/xml';
         headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
@@ -5556,12 +5592,12 @@ function putBucketAcl(params, callback) {
         Region: params.Region,
         headers: headers,
         action: 'acl',
-        body: xml,
+        body: xml
     }, function (err, data) {
         if (err) return callback(err);
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -5584,7 +5620,7 @@ function getBucketAcl(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
-        action: 'acl',
+        action: 'acl'
     }, function (err, data) {
         if (err) return callback(err);
         var AccessControlPolicy = data.AccessControlPolicy || {};
@@ -5599,7 +5635,7 @@ function getBucketAcl(params, callback) {
             Owner: Owner,
             Grants: Grant,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
         callback(null, result);
     });
@@ -5630,7 +5666,7 @@ function putBucketCors(params, callback) {
         });
     });
 
-    var xml = util.json2xml({CORSConfiguration: {CORSRule: CORSRules}});
+    var xml = util.json2xml({ CORSConfiguration: { CORSRule: CORSRules } });
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
@@ -5643,12 +5679,12 @@ function putBucketCors(params, callback) {
         Region: params.Region,
         body: xml,
         action: 'cors',
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         if (err) return callback(err);
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -5670,13 +5706,13 @@ function getBucketCors(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
-        action: 'cors',
+        action: 'cors'
     }, function (err, data) {
         if (err) {
             if (err.statusCode === 404 && err.error && err.error.Code === 'NoSuchCORSConfiguration') {
                 var result = {
                     CORSRules: [],
-                    statusCode: err.statusCode,
+                    statusCode: err.statusCode
                 };
                 err.headers && (result.headers = err.headers);
                 callback(null, result);
@@ -5701,7 +5737,7 @@ function getBucketCors(params, callback) {
         callback(null, {
             CORSRules: CORSRules,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -5722,16 +5758,16 @@ function deleteBucketCors(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
-        action: 'cors',
+        action: 'cors'
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode || err.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -5752,7 +5788,7 @@ function getBucketLocation(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
-        action: 'location',
+        action: 'location'
     }, function (err, data) {
         if (err) return callback(err);
         callback(null, data);
@@ -5769,7 +5805,7 @@ function putBucketPolicy(params, callback) {
             PolicyStr = JSON.stringify(Policy);
         }
     } catch (e) {
-        callback({error: 'Policy format error'});
+        callback({ error: 'Policy format error' });
     }
 
     var headers = params.Headers;
@@ -5784,16 +5820,16 @@ function putBucketPolicy(params, callback) {
         action: 'policy',
         body: PolicyStr,
         headers: headers,
-        json: true,
+        json: true
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -5815,29 +5851,28 @@ function getBucketPolicy(params, callback) {
         Region: params.Region,
         headers: params.Headers,
         action: 'policy',
-        rawBody: true,
+        rawBody: true
     }, function (err, data) {
         if (err) {
             if (err.statusCode && err.statusCode === 403) {
-                return callback({ErrorStatus: 'Access Denied'});
+                return callback({ ErrorStatus: 'Access Denied' });
             }
             if (err.statusCode && err.statusCode === 405) {
-                return callback({ErrorStatus: 'Method Not Allowed'});
+                return callback({ ErrorStatus: 'Method Not Allowed' });
             }
             if (err.statusCode && err.statusCode === 404) {
-                return callback({ErrorStatus: 'Policy Not Found'});
+                return callback({ ErrorStatus: 'Policy Not Found' });
             }
             return callback(err);
         }
         var Policy = {};
         try {
             Policy = JSON.parse(data.body);
-        } catch (e) {
-        }
+        } catch (e) {}
         callback(null, {
             Policy: Policy,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -5858,16 +5893,16 @@ function deleteBucketPolicy(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
-        action: 'policy',
+        action: 'policy'
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode || err.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -5887,7 +5922,7 @@ function putBucketTagging(params, callback) {
     var Tagging = params['Tagging'] || {};
     var Tags = Tagging.TagSet || Tagging.Tags || params['Tags'] || [];
     Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
-    var xml = util.json2xml({Tagging: {TagSet: {Tag: Tags}}});
+    var xml = util.json2xml({ Tagging: { TagSet: { Tag: Tags } } });
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
@@ -5900,16 +5935,16 @@ function putBucketTagging(params, callback) {
         Region: params.Region,
         body: xml,
         action: 'tagging',
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -5931,13 +5966,13 @@ function getBucketTagging(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
-        action: 'tagging',
+        action: 'tagging'
     }, function (err, data) {
         if (err) {
             if (err.statusCode === 404 && err.error && (err.error === "Not Found" || err.error.Code === 'NoSuchTagSet')) {
                 var result = {
                     Tags: [],
-                    statusCode: err.statusCode,
+                    statusCode: err.statusCode
                 };
                 err.headers && (result.headers = err.headers);
                 callback(null, result);
@@ -5949,13 +5984,12 @@ function getBucketTagging(params, callback) {
         var Tags = [];
         try {
             Tags = data.Tagging.TagSet.Tag || [];
-        } catch (e) {
-        }
+        } catch (e) {}
         Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
         callback(null, {
             Tags: Tags,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -5976,16 +6010,16 @@ function deleteBucketTagging(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
-        action: 'tagging',
+        action: 'tagging'
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -5995,7 +6029,7 @@ function putBucketLifecycle(params, callback) {
     var LifecycleConfiguration = params['LifecycleConfiguration'] || {};
     var Rules = LifecycleConfiguration.Rules || params.Rules || [];
     Rules = util.clone(Rules);
-    var xml = util.json2xml({LifecycleConfiguration: {Rule: Rules}});
+    var xml = util.json2xml({ LifecycleConfiguration: { Rule: Rules } });
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
@@ -6008,16 +6042,16 @@ function putBucketLifecycle(params, callback) {
         Region: params.Region,
         body: xml,
         action: 'lifecycle',
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -6029,13 +6063,13 @@ function getBucketLifecycle(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
-        action: 'lifecycle',
+        action: 'lifecycle'
     }, function (err, data) {
         if (err) {
             if (err.statusCode === 404 && err.error && err.error.Code === 'NoSuchLifecycleConfiguration') {
                 var result = {
                     Rules: [],
-                    statusCode: err.statusCode,
+                    statusCode: err.statusCode
                 };
                 err.headers && (result.headers = err.headers);
                 callback(null, result);
@@ -6047,13 +6081,12 @@ function getBucketLifecycle(params, callback) {
         var Rules = [];
         try {
             Rules = data.LifecycleConfiguration.Rule || [];
-        } catch (e) {
-        }
+        } catch (e) {}
         Rules = util.clone(util.isArray(Rules) ? Rules : [Rules]);
         callback(null, {
             Rules: Rules,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -6065,16 +6098,16 @@ function deleteBucketLifecycle(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
-        action: 'lifecycle',
+        action: 'lifecycle'
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -6082,11 +6115,11 @@ function deleteBucketLifecycle(params, callback) {
 function putBucketVersioning(params, callback) {
 
     if (!params['VersioningConfiguration']) {
-        callback({error: 'missing param VersioningConfiguration'});
+        callback({ error: 'missing param VersioningConfiguration' });
         return;
     }
     var VersioningConfiguration = params['VersioningConfiguration'] || {};
-    var xml = util.json2xml({VersioningConfiguration: VersioningConfiguration});
+    var xml = util.json2xml({ VersioningConfiguration: VersioningConfiguration });
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
@@ -6099,16 +6132,16 @@ function putBucketVersioning(params, callback) {
         Region: params.Region,
         body: xml,
         action: 'versioning',
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -6120,7 +6153,7 @@ function getBucketVersioning(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
-        action: 'versioning',
+        action: 'versioning'
     }, function (err, data) {
         if (!err) {
             !data.VersioningConfiguration && (data.VersioningConfiguration = {});
@@ -6131,7 +6164,7 @@ function getBucketVersioning(params, callback) {
 
 function putBucketReplication(params, callback) {
     var ReplicationConfiguration = util.clone(params.ReplicationConfiguration);
-    var xml = util.json2xml({ReplicationConfiguration: ReplicationConfiguration});
+    var xml = util.json2xml({ ReplicationConfiguration: ReplicationConfiguration });
     xml = xml.replace(/<(\/?)Rules>/ig, '<$1Rule>');
     xml = xml.replace(/<(\/?)Tags>/ig, '<$1Tag>');
 
@@ -6146,16 +6179,16 @@ function putBucketReplication(params, callback) {
         Region: params.Region,
         body: xml,
         action: 'replication',
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -6167,13 +6200,13 @@ function getBucketReplication(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
-        action: 'replication',
+        action: 'replication'
     }, function (err, data) {
         if (err) {
             if (err.statusCode === 404 && err.error && (err.error === 'Not Found' || err.error.Code === 'ReplicationConfigurationnotFoundError')) {
                 var result = {
-                    ReplicationConfiguration: {Rules: []},
-                    statusCode: err.statusCode,
+                    ReplicationConfiguration: { Rules: [] },
+                    statusCode: err.statusCode
                 };
                 err.headers && (result.headers = err.headers);
                 callback(null, result);
@@ -6200,16 +6233,16 @@ function deleteBucketReplication(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
-        action: 'replication',
+        action: 'replication'
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -6254,16 +6287,16 @@ function putBucketWebsite(params, callback) {
         Region: params.Region,
         body: xml,
         action: 'website',
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -6286,13 +6319,13 @@ function getBucketWebsite(params, callback) {
         Region: params.Region,
         Key: params.Key,
         headers: params.Headers,
-        action: 'website',
+        action: 'website'
     }, function (err, data) {
         if (err) {
-            if(err.statusCode === 404 && err.error.Code === 'NoSuchWebsiteConfiguration'){
+            if (err.statusCode === 404 && err.error.Code === 'NoSuchWebsiteConfiguration') {
                 var result = {
                     WebsiteConfiguration: {},
-                    statusCode: err.statusCode,
+                    statusCode: err.statusCode
                 };
                 err.headers && (result.headers = err.headers);
                 callback(null, result);
@@ -6312,7 +6345,7 @@ function getBucketWebsite(params, callback) {
         callback(null, {
             WebsiteConfiguration: WebsiteConfiguration,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -6334,16 +6367,16 @@ function deleteBucketWebsite(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
-        action: 'website',
+        action: 'website'
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -6373,7 +6406,7 @@ function putBucketReferer(params, callback) {
     var DomainList = RefererConfiguration['DomainList'] || {};
     var Domains = DomainList['Domains'] || DomainList['Domain'] || [];
     Domains = util.isArray(Domains) ? Domains : [Domains];
-    if (Domains.length) RefererConfiguration.DomainList = {Domain: Domains};
+    if (Domains.length) RefererConfiguration.DomainList = { Domain: Domains };
     var xml = util.json2xml({ RefererConfiguration: RefererConfiguration });
 
     var headers = params.Headers;
@@ -6387,16 +6420,16 @@ function putBucketReferer(params, callback) {
         Region: params.Region,
         body: xml,
         action: 'referer',
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -6419,13 +6452,13 @@ function getBucketReferer(params, callback) {
         Region: params.Region,
         Key: params.Key,
         headers: params.Headers,
-        action: 'referer',
+        action: 'referer'
     }, function (err, data) {
         if (err) {
-            if(err.statusCode === 404 && err.error.Code === 'NoSuchRefererConfiguration'){
+            if (err.statusCode === 404 && err.error.Code === 'NoSuchRefererConfiguration') {
                 var result = {
                     WebsiteConfiguration: {},
-                    statusCode: err.statusCode,
+                    statusCode: err.statusCode
                 };
                 err.headers && (result.headers = err.headers);
                 callback(null, result);
@@ -6437,14 +6470,14 @@ function getBucketReferer(params, callback) {
 
         var RefererConfiguration = data.RefererConfiguration || {};
         if (RefererConfiguration['DomainList']) {
-          var Domains = util.makeArray(RefererConfiguration['DomainList'].Domain || []);
-          RefererConfiguration.DomainList = {Domains: Domains};
+            var Domains = util.makeArray(RefererConfiguration['DomainList'].Domain || []);
+            RefererConfiguration.DomainList = { Domains: Domains };
         }
 
         callback(null, {
             RefererConfiguration: RefererConfiguration,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -6463,7 +6496,7 @@ function putBucketDomain(params, callback) {
     var DomainConfiguration = params['DomainConfiguration'] || {};
     var DomainRule = DomainConfiguration.DomainRule || params.DomainRule || [];
     DomainRule = util.clone(DomainRule);
-    var xml = util.json2xml({DomainConfiguration: {DomainRule: DomainRule}});
+    var xml = util.json2xml({ DomainConfiguration: { DomainRule: DomainRule } });
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
@@ -6476,16 +6509,16 @@ function putBucketDomain(params, callback) {
         Region: params.Region,
         body: xml,
         action: 'domain',
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -6507,20 +6540,19 @@ function getBucketDomain(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
-        action: 'domain',
+        action: 'domain'
     }, function (err, data) {
         if (err) return callback(err);
 
         var DomainRule = [];
         try {
             DomainRule = data.DomainConfiguration.DomainRule || [];
-        } catch (e) {
-        }
+        } catch (e) {}
         DomainRule = util.clone(util.isArray(DomainRule) ? DomainRule : [DomainRule]);
         callback(null, {
             DomainRule: DomainRule,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -6542,16 +6574,16 @@ function deleteBucketDomain(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
-        action: 'domain',
+        action: 'domain'
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -6565,11 +6597,11 @@ function deleteBucketDomain(params, callback) {
  * @return  {Object}  err                                                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                                                  返回数据
  */
-function putBucketOrigin(params, callback){
+function putBucketOrigin(params, callback) {
     var OriginConfiguration = params['OriginConfiguration'] || {};
     var OriginRule = OriginConfiguration.OriginRule || params.OriginRule || [];
     OriginRule = util.clone(OriginRule);
-    var xml = util.json2xml({OriginConfiguration: {OriginRule: OriginRule}});
+    var xml = util.json2xml({ OriginConfiguration: { OriginRule: OriginRule } });
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
@@ -6582,16 +6614,16 @@ function putBucketOrigin(params, callback){
         Region: params.Region,
         body: xml,
         action: 'origin',
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -6613,20 +6645,19 @@ function getBucketOrigin(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
-        action: 'origin',
+        action: 'origin'
     }, function (err, data) {
         if (err) return callback(err);
 
         var OriginRule = [];
         try {
             OriginRule = data.OriginConfiguration.OriginRule || [];
-        } catch (e) {
-        }
+        } catch (e) {}
         OriginRule = util.clone(util.isArray(OriginRule) ? OriginRule : [OriginRule]);
         callback(null, {
             OriginRule: OriginRule,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -6648,16 +6679,16 @@ function deleteBucketOrigin(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
-        action: 'origin',
+        action: 'origin'
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -6688,16 +6719,16 @@ function putBucketLogging(params, callback) {
         Region: params.Region,
         body: xml,
         action: 'logging',
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -6718,14 +6749,14 @@ function getBucketLogging(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
-        action: 'logging',
+        action: 'logging'
     }, function (err, data) {
         if (err) return callback(err);
         delete data.BucketLoggingStatus._xmlns;
         callback(null, {
             BucketLoggingStatus: data.BucketLoggingStatus,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -6751,10 +6782,7 @@ function putBucketInventory(params, callback) {
         };
     }
 
-    if (InventoryConfiguration.Destination
-        && InventoryConfiguration.Destination.COSBucketDestination
-        && InventoryConfiguration.Destination.COSBucketDestination.Encryption
-    ) {
+    if (InventoryConfiguration.Destination && InventoryConfiguration.Destination.COSBucketDestination && InventoryConfiguration.Destination.COSBucketDestination.Encryption) {
         var Encryption = InventoryConfiguration.Destination.COSBucketDestination.Encryption;
         if (Object.keys(Encryption).indexOf('SSECOS') > -1) {
             Encryption['SSE-COS'] = Encryption['SSECOS'];
@@ -6780,16 +6808,16 @@ function putBucketInventory(params, callback) {
         qs: {
             id: params['Id']
         },
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -6826,10 +6854,7 @@ function getBucketInventory(params, callback) {
             }
             InventoryConfiguration.OptionalFields = Field;
         }
-        if (InventoryConfiguration.Destination
-            && InventoryConfiguration.Destination.COSBucketDestination
-            && InventoryConfiguration.Destination.COSBucketDestination.Encryption
-        ) {
+        if (InventoryConfiguration.Destination && InventoryConfiguration.Destination.COSBucketDestination && InventoryConfiguration.Destination.COSBucketDestination.Encryption) {
             var Encryption = InventoryConfiguration.Destination.COSBucketDestination.Encryption;
             if (Object.keys(Encryption).indexOf('SSE-COS') > -1) {
                 Encryption['SSECOS'] = Encryption['SSE-COS'];
@@ -6840,7 +6865,7 @@ function getBucketInventory(params, callback) {
         callback(null, {
             InventoryConfiguration: InventoryConfiguration,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -6881,10 +6906,7 @@ function listBucketInventory(params, callback) {
                 InventoryConfiguration.OptionalFields = Field;
             }
 
-            if (InventoryConfiguration.Destination
-                && InventoryConfiguration.Destination.COSBucketDestination
-                && InventoryConfiguration.Destination.COSBucketDestination.Encryption
-            ) {
+            if (InventoryConfiguration.Destination && InventoryConfiguration.Destination.COSBucketDestination && InventoryConfiguration.Destination.COSBucketDestination.Encryption) {
                 var Encryption = InventoryConfiguration.Destination.COSBucketDestination.Encryption;
                 if (Object.keys(Encryption).indexOf('SSE-COS') > -1) {
                     Encryption['SSECOS'] = Encryption['SSE-COS'];
@@ -6895,7 +6917,7 @@ function listBucketInventory(params, callback) {
         ListInventoryConfigurationResult.InventoryConfigurations = InventoryConfigurations;
         util.extend(ListInventoryConfigurationResult, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
         callback(null, ListInventoryConfigurationResult);
     });
@@ -6924,13 +6946,13 @@ function deleteBucketInventory(params, callback) {
         }
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -6939,7 +6961,7 @@ function deleteBucketInventory(params, callback) {
 function putBucketAccelerate(params, callback) {
 
     if (!params['AccelerateConfiguration']) {
-        callback({error: 'missing param AccelerateConfiguration'});
+        callback({ error: 'missing param AccelerateConfiguration' });
         return;
     }
 
@@ -6959,12 +6981,12 @@ function putBucketAccelerate(params, callback) {
         Region: params.Region,
         body: xml,
         action: 'accelerate',
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         if (err) return callback(err);
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -6976,7 +6998,7 @@ function getBucketAccelerate(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        action: 'accelerate',
+        action: 'accelerate'
     }, function (err, data) {
         if (!err) {
             !data.AccelerateConfiguration && (data.AccelerateConfiguration = {});
@@ -7007,14 +7029,14 @@ function headObject(params, callback) {
         Region: params.Region,
         Key: params.Key,
         VersionId: params.VersionId,
-        headers: params.Headers,
+        headers: params.Headers
     }, function (err, data) {
         if (err) {
             var statusCode = err.statusCode;
             if (params.Headers['If-Modified-Since'] && statusCode && statusCode === 304) {
                 return callback(null, {
                     NotModified: true,
-                    statusCode: statusCode,
+                    statusCode: statusCode
                 });
             }
             return callback(err);
@@ -7023,7 +7045,6 @@ function headObject(params, callback) {
         callback(null, data);
     });
 }
-
 
 function listObjectVersions(params, callback) {
     var reqParams = {};
@@ -7042,7 +7063,7 @@ function listObjectVersions(params, callback) {
         Region: params.Region,
         headers: params.Headers,
         qs: reqParams,
-        action: 'versions',
+        action: 'versions'
     }, function (err, data) {
         if (err) return callback(err);
         var ListVersionsResult = data.ListVersionsResult || {};
@@ -7058,7 +7079,7 @@ function listObjectVersions(params, callback) {
             DeleteMarkers: DeleteMarkers,
             Versions: Versions,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
 
         callback(null, result);
@@ -7108,7 +7129,7 @@ function getObject(params, callback) {
         headers: params.Headers,
         qs: reqParams,
         qsStr: reqParamsStr,
-        rawBody: true,
+        rawBody: true
     }, function (err, data) {
         if (err) {
             var statusCode = err.statusCode;
@@ -7123,10 +7144,9 @@ function getObject(params, callback) {
             Body: data.body,
             ETag: util.attr(data.headers, 'etag', ''),
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
-
 }
 
 /**
@@ -7179,20 +7199,20 @@ function putObject(params, callback) {
             headers: params.Headers,
             qs: params.Query,
             body: params.Body,
-            onProgress: onProgress,
+            onProgress: onProgress
         }, function (err, data) {
             if (err) {
                 onProgress(null, true);
                 return callback(err);
             }
-            onProgress({loaded: FileSize, total: FileSize}, true);
+            onProgress({ loaded: FileSize, total: FileSize }, true);
             var url = getUrl({
                 ForcePathStyle: self.options.ForcePathStyle,
                 protocol: self.options.Protocol,
                 domain: self.options.Domain,
                 bucket: params.Bucket,
                 region: !self.options.UseAccelerate ? params.Region : 'accelerate',
-                object: params.Key,
+                object: params.Key
             });
             url = url.substr(url.indexOf('://') + 3);
             data.Location = url;
@@ -7220,7 +7240,7 @@ function postObject(params, callback) {
     var headers = {};
     var filePath = params.FilePath;
     if (!filePath) {
-        callback({error: 'missing param FilePath'});
+        callback({ error: 'missing param FilePath' });
         return;
     }
 
@@ -7261,7 +7281,7 @@ function postObject(params, callback) {
         headers: headers,
         qs: params.Query,
         filePath: filePath,
-        onProgress: onProgress,
+        onProgress: onProgress
     }, function (err, data) {
         onProgress(null, true);
         if (err) return callback(err);
@@ -7276,14 +7296,14 @@ function postObject(params, callback) {
                 bucket: params.Bucket,
                 region: params.Region,
                 object: params.Key.replace(/\$\{filename\}/g, filename),
-                isLocation: true,
+                isLocation: true
             });
 
             return callback(null, {
                 Location: url,
                 statusCode: data.statusCode,
                 headers: headers,
-                ETag: ETag,
+                ETag: ETag
             });
         }
         callback(null, data);
@@ -7308,21 +7328,21 @@ function deleteObject(params, callback) {
         Region: params.Region,
         Key: params.Key,
         headers: params.Headers,
-        VersionId: params.VersionId,
+        VersionId: params.VersionId
     }, function (err, data) {
         if (err) {
             var statusCode = err.statusCode;
             if (statusCode && statusCode === 204) {
-                return callback(null, {statusCode: statusCode});
+                return callback(null, { statusCode: statusCode });
             } else if (statusCode && statusCode === 404) {
-                return callback(null, {BucketNotFound: true, statusCode: statusCode,});
+                return callback(null, { BucketNotFound: true, statusCode: statusCode });
             } else {
                 return callback(err);
             }
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -7347,7 +7367,7 @@ function getObjectAcl(params, callback) {
         Region: params.Region,
         Key: params.Key,
         headers: params.Headers,
-        action: 'acl',
+        action: 'acl'
     }, function (err, data) {
         if (err) return callback(err);
         var AccessControlPolicy = data.AccessControlPolicy || {};
@@ -7362,7 +7382,7 @@ function getObjectAcl(params, callback) {
             Owner: Owner,
             Grants: Grant,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
         callback(null, result);
     });
@@ -7388,8 +7408,8 @@ function putObjectAcl(params, callback) {
         Grants = util.isArray(Grants) ? Grants : [Grants];
         delete AccessControlPolicy.Grant;
         delete AccessControlPolicy.Grants;
-        AccessControlPolicy.AccessControlList = {Grant: Grants};
-        xml = util.json2xml({AccessControlPolicy: AccessControlPolicy});
+        AccessControlPolicy.AccessControlList = { Grant: Grants };
+        xml = util.json2xml({ AccessControlPolicy: AccessControlPolicy });
 
         headers['Content-Type'] = 'application/xml';
         headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
@@ -7410,12 +7430,12 @@ function putObjectAcl(params, callback) {
         Key: params.Key,
         action: 'acl',
         headers: headers,
-        body: xml,
+        body: xml
     }, function (err, data) {
         if (err) return callback(err);
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -7443,7 +7463,7 @@ function optionsObject(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         Key: params.Key,
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         if (err) {
             if (err.statusCode && err.statusCode === 403) {
@@ -7463,7 +7483,7 @@ function optionsObject(params, callback) {
             AccessControlExposeHeaders: headers['access-control-expose-headers'],
             AccessControlMaxAge: headers['access-control-max-age'],
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -7504,7 +7524,7 @@ function putObjectCopy(params, callback) {
     var CopySource = params.CopySource || '';
     var m = CopySource.match(/^([^.]+-\d+)\.cos(v6)?\.([^.]+)\.[^/]+\/(.+)$/);
     if (!m) {
-        callback({error: 'CopySource format error'});
+        callback({ error: 'CopySource format error' });
         return;
     }
 
@@ -7517,25 +7537,25 @@ function putObjectCopy(params, callback) {
             action: 'name/cos:GetObject',
             bucket: SourceBucket,
             region: SourceRegion,
-            prefix: SourceKey,
+            prefix: SourceKey
         }, {
             action: 'name/cos:PutObject',
             bucket: params.Bucket,
             region: params.Region,
-            prefix: params.Key,
+            prefix: params.Key
         }],
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
         Key: params.Key,
         VersionId: params.VersionId,
-        headers: params.Headers,
+        headers: params.Headers
     }, function (err, data) {
         if (err) return callback(err);
         var result = util.clone(data.CopyObjectResult || {});
         util.extend(result, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
         callback(null, result);
     });
@@ -7546,7 +7566,7 @@ function uploadPartCopy(params, callback) {
     var CopySource = params.CopySource || '';
     var m = CopySource.match(/^([^.]+-\d+)\.cos(v6)?\.([^.]+)\.[^/]+\/(.+)$/);
     if (!m) {
-        callback({error: 'CopySource format error'});
+        callback({ error: 'CopySource format error' });
         return;
     }
 
@@ -7559,12 +7579,12 @@ function uploadPartCopy(params, callback) {
             action: 'name/cos:GetObject',
             bucket: SourceBucket,
             region: SourceRegion,
-            prefix: SourceKey,
+            prefix: SourceKey
         }, {
             action: 'name/cos:PutObject',
             bucket: params.Bucket,
             region: params.Region,
-            prefix: params.Key,
+            prefix: params.Key
         }],
         method: 'PUT',
         Bucket: params.Bucket,
@@ -7573,15 +7593,15 @@ function uploadPartCopy(params, callback) {
         VersionId: params.VersionId,
         qs: {
             partNumber: params['PartNumber'],
-            uploadId: params['UploadId'],
+            uploadId: params['UploadId']
         },
-        headers: params.Headers,
+        headers: params.Headers
     }, function (err, data) {
         if (err) return callback(err);
         var result = util.clone(data.CopyPartResult || {});
         util.extend(result, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
         callback(null, result);
     });
@@ -7592,7 +7612,7 @@ function deleteMultipleObject(params, callback) {
     var Quiet = params.Quiet;
     Objects = util.isArray(Objects) ? Objects : [Objects];
 
-    var xml = util.json2xml({Delete: {Object: Objects, Quiet: Quiet || false}});
+    var xml = util.json2xml({ Delete: { Object: Objects, Quiet: Quiet || false } });
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
@@ -7603,7 +7623,7 @@ function deleteMultipleObject(params, callback) {
             action: 'name/cos:DeleteObject',
             bucket: params.Bucket,
             region: params.Region,
-            prefix: v.Key,
+            prefix: v.Key
         };
     });
 
@@ -7614,7 +7634,7 @@ function deleteMultipleObject(params, callback) {
         Region: params.Region,
         body: xml,
         action: 'delete',
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         if (err) return callback(err);
         var DeleteResult = data.DeleteResult || {};
@@ -7629,7 +7649,7 @@ function deleteMultipleObject(params, callback) {
             Error: Errors,
             Deleted: Deleted,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
         callback(null, result);
     });
@@ -7638,12 +7658,12 @@ function deleteMultipleObject(params, callback) {
 function restoreObject(params, callback) {
     var headers = params.Headers;
     if (!params['RestoreRequest']) {
-        callback({error: 'missing param RestoreRequest'});
+        callback({ error: 'missing param RestoreRequest' });
         return;
     }
 
     var RestoreRequest = params.RestoreRequest || {};
-    var xml = util.json2xml({RestoreRequest: RestoreRequest});
+    var xml = util.json2xml({ RestoreRequest: RestoreRequest });
 
     headers['Content-Type'] = 'application/xml';
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
@@ -7657,7 +7677,7 @@ function restoreObject(params, callback) {
         VersionId: params.VersionId,
         body: xml,
         action: 'restore',
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         callback(err, data);
     });
@@ -7678,7 +7698,7 @@ function putObjectTagging(params, callback) {
     var Tagging = params['Tagging'] || {};
     var Tags = Tagging.TagSet || Tagging.Tags || params['Tags'] || [];
     Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
-    var xml = util.json2xml({Tagging: {TagSet: {Tag: Tags}}});
+    var xml = util.json2xml({ Tagging: { TagSet: { Tag: Tags } } });
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
@@ -7694,16 +7714,16 @@ function putObjectTagging(params, callback) {
         body: xml,
         action: 'tagging',
         headers: headers,
-        VersionId: params.VersionId,
+        VersionId: params.VersionId
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -7728,13 +7748,13 @@ function getObjectTagging(params, callback) {
         Region: params.Region,
         headers: params.Headers,
         action: 'tagging',
-        VersionId: params.VersionId,
+        VersionId: params.VersionId
     }, function (err, data) {
         if (err) {
             if (err.statusCode === 404 && err.error && (err.error === "Not Found" || err.error.Code === 'NoSuchTagSet')) {
                 var result = {
                     Tags: [],
-                    statusCode: err.statusCode,
+                    statusCode: err.statusCode
                 };
                 err.headers && (result.headers = err.headers);
                 callback(null, result);
@@ -7746,13 +7766,12 @@ function getObjectTagging(params, callback) {
         var Tags = [];
         try {
             Tags = data.Tagging.TagSet.Tag || [];
-        } catch (e) {
-        }
+        } catch (e) {}
         Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
         callback(null, {
             Tags: Tags,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -7776,20 +7795,19 @@ function deleteObjectTagging(params, callback) {
         Key: params.Key,
         headers: params.Headers,
         action: 'tagging',
-        VersionId: params.VersionId,
+        VersionId: params.VersionId
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
-
 
 // 分块上传
 
@@ -7833,14 +7851,14 @@ function multipartInit(params, callback) {
         Key: params.Key,
         action: 'uploads',
         headers: params.Headers,
-        qs: params.Query,
+        qs: params.Query
     }, function (err, data) {
         if (err) return callback(err);
         data = util.clone(data || {});
         if (data && data.InitiateMultipartUploadResult) {
             return callback(null, util.extend(data.InitiateMultipartUploadResult, {
                 statusCode: data.statusCode,
-                headers: data.headers,
+                headers: data.headers
             }));
         }
         callback(null, data);
@@ -7878,7 +7896,7 @@ function multipartUpload(params, callback) {
                 Key: params.Key,
                 qs: {
                     partNumber: params['PartNumber'],
-                    uploadId: params['UploadId'],
+                    uploadId: params['UploadId']
                 },
                 headers: params.Headers,
                 onProgress: params.onProgress,
@@ -7888,12 +7906,11 @@ function multipartUpload(params, callback) {
                 callback(null, {
                     ETag: util.attr(data.headers, 'etag', {}),
                     statusCode: data.statusCode,
-                    headers: data.headers,
+                    headers: data.headers
                 });
             });
         });
     });
-
 }
 
 /**
@@ -7924,7 +7941,7 @@ function multipartComplete(params, callback) {
         Parts[i]['ETag'] = '"' + Parts[i]['ETag'] + '"';
     }
 
-    var xml = util.json2xml({CompleteMultipartUpload: {Part: Parts}});
+    var xml = util.json2xml({ CompleteMultipartUpload: { Part: Parts } });
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
@@ -7940,7 +7957,7 @@ function multipartComplete(params, callback) {
             uploadId: UploadId
         },
         body: xml,
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         if (err) return callback(err);
         var url = getUrl({
@@ -7950,13 +7967,13 @@ function multipartComplete(params, callback) {
             bucket: params.Bucket,
             region: params.Region,
             object: params.Key,
-            isLocation: true,
+            isLocation: true
         });
         var CompleteMultipartUploadResult = data.CompleteMultipartUploadResult || {};
         var result = util.extend(CompleteMultipartUploadResult, {
             Location: url,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
         callback(null, result);
     });
@@ -8000,7 +8017,7 @@ function multipartList(params, callback) {
         Region: params.Region,
         headers: params.Headers,
         qs: reqParams,
-        action: 'uploads',
+        action: 'uploads'
     }, function (err, data) {
         if (err) return callback(err);
 
@@ -8018,7 +8035,7 @@ function multipartList(params, callback) {
         var result = util.clone(data.ListMultipartUploadsResult || {});
         util.extend(result, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
         callback(null, result);
     });
@@ -8054,7 +8071,7 @@ function multipartListPart(params, callback) {
         Region: params.Region,
         Key: params.Key,
         headers: params.Headers,
-        qs: reqParams,
+        qs: reqParams
     }, function (err, data) {
         if (err) return callback(err);
         var ListPartsResult = data.ListPartsResult || {};
@@ -8065,7 +8082,7 @@ function multipartListPart(params, callback) {
         var result = util.clone(ListPartsResult);
         util.extend(result, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
         callback(null, result);
     });
@@ -8093,12 +8110,12 @@ function multipartAbort(params, callback) {
         Region: params.Region,
         Key: params.Key,
         headers: params.Headers,
-        qs: reqParams,
+        qs: reqParams
     }, function (err, data) {
         if (err) return callback(err);
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -8131,7 +8148,7 @@ function multipartAbort(params, callback) {
  *     @return  {Object}    err                                     请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  *     @return  {Object}    data                                    返回的数据
  */
- function appendObject(params, callback) {
+function appendObject(params, callback) {
     submitRequest.call(this, {
         Action: 'name/cos:AppendObject',
         method: 'POST',
@@ -8141,15 +8158,14 @@ function multipartAbort(params, callback) {
         Key: params.Key,
         body: params.Body,
         qs: {
-          position: params.Position
+            position: params.Position
         },
-        headers: params.Headers,
+        headers: params.Headers
     }, function (err, data) {
-          if (err) return callback(err);
-          callback(null, data);
+        if (err) return callback(err);
+        callback(null, data);
     });
 }
-
 
 /**
  * cos 内置请求
@@ -8161,7 +8177,7 @@ function multipartAbort(params, callback) {
  *     @return  {Object}    err             请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  *     @return  {Object}    data            返回的数据
  */
- function request(params, callback) {
+function request(params, callback) {
     submitRequest.call(this, {
         method: params.Method,
         Bucket: params.Bucket,
@@ -8172,7 +8188,7 @@ function multipartAbort(params, callback) {
         qs: params.Query,
         body: params.Body,
         Url: params.Url,
-        rawBody: params.RawBody,
+        rawBody: params.RawBody
     }, function (err, data) {
         if (err) return callback(err);
         if (data && data.body) {
@@ -8196,12 +8212,14 @@ function getAuth(params) {
     return util.getAuth({
         SecretId: params.SecretId || this.options.SecretId || '',
         SecretKey: params.SecretKey || this.options.SecretKey || '',
+        Bucket: params.Bucket,
+        Region: params.Region,
         Method: params.Method,
         Key: params.Key,
         Query: params.Query,
         Headers: params.Headers,
         Expires: params.Expires,
-        SystemClockOffset: self.options.SystemClockOffset,
+        SystemClockOffset: self.options.SystemClockOffset
     });
 }
 
@@ -8225,61 +8243,72 @@ function getObjectUrl(params, callback) {
         domain: params.Domain || self.options.Domain,
         bucket: params.Bucket,
         region: params.Region,
-        object: params.Key,
+        object: params.Key
     });
 
     var queryParamsStr = '';
-    if(params.Query){
-      queryParamsStr += util.obj2str(params.Query);
+    if (params.Query) {
+        queryParamsStr += util.obj2str(params.Query);
     }
-    if(params.QueryString){
-      queryParamsStr += (queryParamsStr ? '&' : '') + params.QueryString;
+    if (params.QueryString) {
+        queryParamsStr += (queryParamsStr ? '&' : '') + params.QueryString;
     }
 
     var syncUrl = url;
     if (params.Sign !== undefined && !params.Sign) {
         queryParamsStr && (syncUrl += '?' + queryParamsStr);
-        callback(null, {Url: syncUrl});
+        callback(null, { Url: syncUrl });
         return syncUrl;
     }
+
+    // 签名加上 Host，避免跨桶访问
+    var SignHost = getSignHost.call(this, { Bucket: params.Bucket, Region: params.Region, Url: url });
     var AuthData = getAuthorizationAsync.call(this, {
-        Action: ((params.Method || '').toUpperCase() === 'PUT' ? 'name/cos:PutObject' : 'name/cos:GetObject'),
+        Action: (params.Method || '').toUpperCase() === 'PUT' ? 'name/cos:PutObject' : 'name/cos:GetObject',
         Bucket: params.Bucket || '',
         Region: params.Region || '',
         Method: params.Method || 'get',
         Key: params.Key,
         Expires: params.Expires,
         Headers: params.Headers,
-        Query: params.Query
+        Query: params.Query,
+        SignHost: SignHost
     }, function (err, AuthData) {
         if (!callback) return;
         if (err) {
             callback(err);
             return;
         }
+
+        // 兼容万象url qUrlParamList需要再encode一次
+        var replaceUrlParamList = function replaceUrlParamList(url) {
+            var urlParams = url.match(/q-url-param-list.*?(?=&)/g)[0];
+            var encodedParams = 'q-url-param-list=' + encodeURIComponent(urlParams.replace(/q-url-param-list=/, '')).toLowerCase();
+            var reg = new RegExp(urlParams, 'g');
+            var replacedUrl = url.replace(reg, encodedParams);
+            return replacedUrl;
+        };
+
         var signUrl = url;
-        signUrl += '?' + (AuthData.Authorization.indexOf('q-signature') > -1 ?
-            AuthData.Authorization : 'sign=' + encodeURIComponent(AuthData.Authorization));
+        signUrl += '?' + (AuthData.Authorization.indexOf('q-signature') > -1 ? replaceUrlParamList(AuthData.Authorization) : 'sign=' + encodeURIComponent(AuthData.Authorization));
         AuthData.XCosSecurityToken && (signUrl += '&x-cos-security-token=' + AuthData.XCosSecurityToken);
         AuthData.ClientIP && (signUrl += '&clientIP=' + AuthData.ClientIP);
         AuthData.ClientUA && (signUrl += '&clientUA=' + AuthData.ClientUA);
         AuthData.Token && (signUrl += '&token=' + AuthData.Token);
         queryParamsStr && (signUrl += '&' + queryParamsStr);
         setTimeout(function () {
-            callback(null, {Url: signUrl});
+            callback(null, { Url: signUrl });
         });
     });
 
     if (AuthData) {
-        syncUrl += '?' + AuthData.Authorization +
-            (AuthData.XCosSecurityToken ? '&x-cos-security-token=' + AuthData.XCosSecurityToken : '');
+        syncUrl += '?' + AuthData.Authorization + (AuthData.XCosSecurityToken ? '&x-cos-security-token=' + AuthData.XCosSecurityToken : '');
         queryParamsStr && (syncUrl += '&' + queryParamsStr);
     } else {
         queryParamsStr && (syncUrl += '?' + queryParamsStr);
     }
     return syncUrl;
 }
-
 
 /**
  * 私有方法
@@ -8291,21 +8320,21 @@ function decodeAcl(AccessControlPolicy) {
         GrantRead: [],
         GrantReadAcp: [],
         GrantWriteAcp: [],
-        ACL: '',
+        ACL: ''
     };
     var GrantMap = {
         'FULL_CONTROL': 'GrantFullControl',
         'WRITE': 'GrantWrite',
         'READ': 'GrantRead',
         'READ_ACP': 'GrantReadAcp',
-        'WRITE_ACP': 'GrantWriteAcp',
+        'WRITE_ACP': 'GrantWriteAcp'
     };
     var AccessControlList = AccessControlPolicy && AccessControlPolicy.AccessControlList || {};
     var Grant = AccessControlList.Grant;
     if (Grant) {
         Grant = util.isArray(Grant) ? Grant : [Grant];
     }
-    var PublicAcl = {READ: 0, WRITE: 0, FULL_CONTROL: 0};
+    var PublicAcl = { READ: 0, WRITE: 0, FULL_CONTROL: 0 };
     Grant && Grant.length && util.each(Grant, function (item) {
         if (item.Grantee.ID === 'qcs::cam::anyone:anyone' || item.Grantee.URI === 'http://cam.qcloud.com/groups/global/AllUsers') {
             PublicAcl[item.Permission] = 1;
@@ -8313,7 +8342,7 @@ function decodeAcl(AccessControlPolicy) {
             result[GrantMap[item.Permission]].push('id="' + item.Grantee.ID + '"');
         }
     });
-    if (PublicAcl.FULL_CONTROL || (PublicAcl.WRITE && PublicAcl.READ)) {
+    if (PublicAcl.FULL_CONTROL || PublicAcl.WRITE && PublicAcl.READ) {
         result.ACL = 'public-read-write';
     } else if (PublicAcl.READ) {
         result.ACL = 'public-read';
@@ -8331,7 +8360,7 @@ function uniqGrant(str) {
     var arr = str.split(',');
     var exist = {};
     var i, item;
-    for (i = 0; i < arr.length; ) {
+    for (i = 0; i < arr.length;) {
         item = arr[i].trim();
         if (exist[item]) {
             arr.splice(i, 1);
@@ -8363,15 +8392,8 @@ function getUrl(params) {
             domain = '{Bucket}.' + domain;
         }
     }
-    domain = domain.replace(/\{\{AppId\}\}/ig, appId)
-        .replace(/\{\{Bucket\}\}/ig, shortBucket)
-        .replace(/\{\{Region\}\}/ig, region)
-        .replace(/\{\{.*?\}\}/ig, '');
-    domain = domain.replace(/\{AppId\}/ig, appId)
-        .replace(/\{BucketName\}/ig, shortBucket)
-        .replace(/\{Bucket\}/ig, longBucket)
-        .replace(/\{Region\}/ig, region)
-        .replace(/\{.*?\}/ig, '');
+    domain = domain.replace(/\{\{AppId\}\}/ig, appId).replace(/\{\{Bucket\}\}/ig, shortBucket).replace(/\{\{Region\}\}/ig, region).replace(/\{\{.*?\}\}/ig, '');
+    domain = domain.replace(/\{AppId\}/ig, appId).replace(/\{BucketName\}/ig, shortBucket).replace(/\{Bucket\}/ig, longBucket).replace(/\{Region\}/ig, region).replace(/\{.*?\}/ig, '');
     if (!/^[a-zA-Z]+:\/\//.test(domain)) {
         domain = protocol + '//' + domain;
     }
@@ -8396,17 +8418,35 @@ function getUrl(params) {
     return url;
 }
 
+var getSignHost = function getSignHost(opt) {
+    if (!opt.Bucket || !opt.Bucket) return '';
+    var url = opt.Url || getUrl({
+        ForcePathStyle: this.options.ForcePathStyle,
+        protocol: this.options.Protocol,
+        domain: this.options.Domain,
+        bucket: opt.Bucket,
+        region: opt.Region
+    });
+    var urlHost = url.replace(/^https?:\/\/([^/]+)(\/.*)?$/, '$1');
+    var standardHostReg = new RegExp('^([a-z\\d-]+-\\d+\\.)?(cos|cosv6|ci|pic)\\.([a-z\\d-]+)\\.myqcloud\\.com$');
+    if (standardHostReg.test(urlHost)) return urlHost;
+    return '';
+};
+
 // 异步获取签名
 function getAuthorizationAsync(params, callback) {
 
     var headers = util.clone(params.Headers);
-    delete headers['Content-Type'];
-    delete headers['Cache-Control'];
+    var headerHost = '';
     util.each(headers, function (v, k) {
-        v === '' && delete headers[k];
+        (v === '' || ['content-type', 'cache-control'].indexOf(k.toLowerCase()) > -1) && delete headers[k];
+        if (k.toLowerCase() === 'host') headerHost = v;
     });
 
-    var cb = function (AuthData) {
+    // Host 加入签名计算
+    if (!headerHost && params.SignHost) headers.Host = params.SignHost;
+
+    var cb = function cb(AuthData) {
 
         // 检查签名格式
         var formatAllow = false;
@@ -8414,20 +8454,12 @@ function getAuthorizationAsync(params, callback) {
         if (auth) {
             if (auth.indexOf(' ') > -1) {
                 formatAllow = false;
-            } else if (auth.indexOf('q-sign-algorithm=') > -1 &&
-                auth.indexOf('q-ak=') > -1 &&
-                auth.indexOf('q-sign-time=') > -1 &&
-                auth.indexOf('q-key-time=') > -1 &&
-                auth.indexOf('q-url-param-list=') > -1) {
+            } else if (auth.indexOf('q-sign-algorithm=') > -1 && auth.indexOf('q-ak=') > -1 && auth.indexOf('q-sign-time=') > -1 && auth.indexOf('q-key-time=') > -1 && auth.indexOf('q-url-param-list=') > -1) {
                 formatAllow = true;
             } else {
                 try {
                     auth = base64.atob(auth);
-                    if (auth.indexOf('a=') > -1 &&
-                        auth.indexOf('k=') > -1 &&
-                        auth.indexOf('t=') > -1 &&
-                        auth.indexOf('r=') > -1 &&
-                        auth.indexOf('b=') > -1) {
+                    if (auth.indexOf('a=') > -1 && auth.indexOf('k=') > -1 && auth.indexOf('t=') > -1 && auth.indexOf('r=') > -1 && auth.indexOf('b=') > -1) {
                         formatAllow = true;
                     }
                 } catch (e) {}
@@ -8461,13 +8493,13 @@ function getAuthorizationAsync(params, callback) {
             action: Action,
             bucket: Bucket,
             region: Region,
-            prefix: ResourceKey,
+            prefix: ResourceKey
         }];
     }
-    var ScopeKey  = util.md5(JSON.stringify(Scope));
+    var ScopeKey = util.md5(JSON.stringify(Scope));
 
     // STS
-    self._StsCache = self._StsCache ||[];
+    self._StsCache = self._StsCache || [];
     (function () {
         var i, AuthData;
         for (i = self._StsCache.length - 1; i >= 0; i--) {
@@ -8484,7 +8516,7 @@ function getAuthorizationAsync(params, callback) {
         }
     })();
 
-    var calcAuthByTmpKey = function () {
+    var calcAuthByTmpKey = function calcAuthByTmpKey() {
         var KeyTime = StsData.StartTime && StsData.ExpiredTime ? StsData.StartTime + ';' + StsData.ExpiredTime : '';
         var Authorization = util.getAuth({
             SecretId: StsData.TmpSecretId,
@@ -8502,15 +8534,17 @@ function getAuthorizationAsync(params, callback) {
             XCosSecurityToken: StsData.XCosSecurityToken || '',
             Token: StsData.Token || '',
             ClientIP: StsData.ClientIP || '',
-            ClientUA: StsData.ClientUA || '',
+            ClientUA: StsData.ClientUA || ''
         };
         cb(AuthData);
     };
 
     // 先判断是否有临时密钥
-    if (StsData.ExpiredTime && StsData.ExpiredTime - (util.getSkewTime(self.options.SystemClockOffset) / 1000) > 60) { // 如果缓存的临时密钥有效，并还有超过60秒有效期就直接使用
+    if (StsData.ExpiredTime && StsData.ExpiredTime - util.getSkewTime(self.options.SystemClockOffset) / 1000 > 60) {
+        // 如果缓存的临时密钥有效，并还有超过60秒有效期就直接使用
         calcAuthByTmpKey();
-    } else if (self.options.getAuthorization) { // 外部计算签名或获取临时密钥
+    } else if (self.options.getAuthorization) {
+        // 外部计算签名或获取临时密钥
         self.options.getAuthorization.call(self, {
             Bucket: Bucket,
             Region: Region,
@@ -8520,15 +8554,12 @@ function getAuthorizationAsync(params, callback) {
             Query: params.Query,
             Headers: headers,
             Scope: Scope,
-            SystemClockOffset: self.options.SystemClockOffset,
+            SystemClockOffset: self.options.SystemClockOffset
         }, function (AuthData) {
             if (typeof AuthData === 'string') {
-                AuthData = {Authorization: AuthData};
+                AuthData = { Authorization: AuthData };
             }
-            if (AuthData.TmpSecretId &&
-                AuthData.TmpSecretKey &&
-                AuthData.XCosSecurityToken &&
-                AuthData.ExpiredTime) {
+            if (AuthData.TmpSecretId && AuthData.TmpSecretKey && AuthData.XCosSecurityToken && AuthData.ExpiredTime) {
                 StsData = AuthData || {};
                 StsData.Scope = Scope;
                 StsData.ScopeKey = ScopeKey;
@@ -8538,10 +8569,11 @@ function getAuthorizationAsync(params, callback) {
                 cb(AuthData);
             }
         });
-    } else if (self.options.getSTS) { // 外部获取临时密钥
+    } else if (self.options.getSTS) {
+        // 外部获取临时密钥
         self.options.getSTS.call(self, {
             Bucket: Bucket,
-            Region: Region,
+            Region: Region
         }, function (data) {
             StsData = data || {};
             StsData.Scope = Scope;
@@ -8551,8 +8583,9 @@ function getAuthorizationAsync(params, callback) {
             self._StsCache.push(StsData);
             calcAuthByTmpKey();
         });
-    } else { // 内部计算获取签名
-        return (function () {
+    } else {
+        // 内部计算获取签名
+        return function () {
             var Authorization = util.getAuth({
                 SecretId: params.SecretId || self.options.SecretId,
                 SecretKey: params.SecretKey || self.options.SecretKey,
@@ -8561,15 +8594,15 @@ function getAuthorizationAsync(params, callback) {
                 Query: params.Query,
                 Headers: headers,
                 Expires: params.Expires,
-                SystemClockOffset: self.options.SystemClockOffset,
+                SystemClockOffset: self.options.SystemClockOffset
             });
             var AuthData = {
                 Authorization: Authorization,
-                XCosSecurityToken: self.options.XCosSecurityToken,
+                XCosSecurityToken: self.options.XCosSecurityToken
             };
             cb(AuthData);
             return AuthData;
-        })();
+        }();
     }
     return '';
 }
@@ -8578,16 +8611,14 @@ function getAuthorizationAsync(params, callback) {
 function allowRetry(err) {
     var allowRetry = false;
     var isTimeError = false;
-    var serverDate = (err.headers && (err.headers.date || err.headers.Date)) || (err.error && err.error.ServerTime);
+    var serverDate = err.headers && (err.headers.date || err.headers.Date) || err.error && err.error.ServerTime;
     try {
         var errorCode = err.error.Code;
         var errorMessage = err.error.Message;
-        if (errorCode === 'RequestTimeTooSkewed' ||
-            (errorCode === 'AccessDenied' && errorMessage === 'Request has expired')) {
+        if (errorCode === 'RequestTimeTooSkewed' || errorCode === 'AccessDenied' && errorMessage === 'Request has expired') {
             isTimeError = true;
         }
-    } catch (e) {
-    }
+    } catch (e) {}
     if (err) {
         if (isTimeError && serverDate) {
             var serverTime = Date.parse(serverDate);
@@ -8622,7 +8653,9 @@ function submitRequest(params, callback) {
     var Query = util.clone(params.qs);
     params.action && (Query[params.action] = '');
 
-    var next = function (tryTimes) {
+    var paramsUrl = params.url || params.Url;
+    var SignHost = params.SignHost || getSignHost.call(this, { Bucket: params.Bucket, Region: params.Region, Url: paramsUrl });
+    var next = function next(tryTimes) {
         var oldClockOffset = self.options.SystemClockOffset;
         getAuthorizationAsync.call(self, {
             Bucket: params.Bucket || '',
@@ -8631,9 +8664,10 @@ function submitRequest(params, callback) {
             Key: params.Key,
             Query: Query,
             Headers: params.headers,
+            SignHost: SignHost,
             Action: params.Action,
             ResourceKey: params.ResourceKey,
-            Scope: params.Scope,
+            Scope: params.Scope
         }, function (err, AuthData) {
             if (err) {
                 callback(err);
@@ -8657,7 +8691,6 @@ function submitRequest(params, callback) {
         });
     };
     next(1);
-
 }
 
 // 发起请求
@@ -8685,16 +8718,16 @@ function _submitRequest(params, callback) {
         domain: self.options.Domain,
         bucket: bucket,
         region: region,
-        object: object,
+        object: object
     });
     if (params.action) {
         url = url + '?' + params.action;
     }
     if (params.qsStr) {
-        if(url.indexOf('?') > -1){
-          url = url + '&' + params.qsStr;
-        }else{
-          url = url + '?' + params.qsStr;
+        if (url.indexOf('?') > -1) {
+            url = url + '&' + params.qsStr;
+        } else {
+            url = url + '?' + params.qsStr;
         }
     }
 
@@ -8705,7 +8738,7 @@ function _submitRequest(params, callback) {
         qs: params.qs,
         filePath: params.filePath,
         body: body,
-        json: json,
+        json: json
     };
 
     // 兼容ci接口
@@ -8730,7 +8763,7 @@ function _submitRequest(params, callback) {
         opt.onProgress = function (e) {
             if (TaskId && !self._isRunningTask(TaskId)) return;
             var loaded = e ? e.loaded : 0;
-            params.onProgress({loaded: loaded, total: e.total});
+            params.onProgress({ loaded: loaded, total: e.total });
         };
     }
     if (this.options.Timeout) {
@@ -8744,7 +8777,7 @@ function _submitRequest(params, callback) {
 
         // 返回内容添加 状态码 和 headers
         var hasReturned;
-        var cb = function (err, data) {
+        var cb = function cb(err, data) {
             TaskId && self.off('inner-kill-task', killTask);
             if (hasReturned) return;
             hasReturned = true;
@@ -8764,7 +8797,7 @@ function _submitRequest(params, callback) {
 
         // 请求错误，发生网络错误
         if (err) {
-            cb({error: err});
+            cb({ error: err });
             return;
         }
 
@@ -8785,70 +8818,68 @@ function _submitRequest(params, callback) {
         var statusCode = response.statusCode;
         var statusSuccess = Math.floor(statusCode / 100) === 2; // 200 202 204 206
         if (!statusSuccess) {
-            cb({error: jsonRes.Error || jsonRes});
+            cb({ error: jsonRes.Error || jsonRes });
             return;
         }
 
         if (jsonRes.Error) {
-            cb({error: jsonRes.Error});
+            cb({ error: jsonRes.Error });
             return;
         }
         cb(null, jsonRes);
     });
 
     // kill task
-    var killTask = function (data) {
+    var killTask = function killTask(data) {
         if (data.TaskId === TaskId) {
             sender && sender.abort && sender.abort();
             self.off('inner-kill-task', killTask);
         }
     };
     TaskId && self.on('inner-kill-task', killTask);
-
 }
-
 
 var API_MAP = {
     // Bucket 相关方法
-    getService: getService,                      // Bucket
+    getService: getService, // Bucket
     putBucket: putBucket,
-    headBucket: headBucket,                      // Bucket
+    headBucket: headBucket, // Bucket
     getBucket: getBucket,
     deleteBucket: deleteBucket,
-    putBucketAcl: putBucketAcl,                  // BucketACL
+    putBucketAcl: putBucketAcl, // BucketACL
     getBucketAcl: getBucketAcl,
-    putBucketCors: putBucketCors,                // BucketCors
+    putBucketCors: putBucketCors, // BucketCors
     getBucketCors: getBucketCors,
     deleteBucketCors: deleteBucketCors,
-    getBucketLocation: getBucketLocation,        // BucketLocation
-    getBucketPolicy: getBucketPolicy,            // BucketPolicy
+    getBucketLocation: getBucketLocation, // BucketLocation
+    getBucketPolicy: getBucketPolicy, // BucketPolicy
     putBucketPolicy: putBucketPolicy,
     deleteBucketPolicy: deleteBucketPolicy,
-    putBucketTagging: putBucketTagging,          // BucketTagging
+    putBucketTagging: putBucketTagging, // BucketTagging
     getBucketTagging: getBucketTagging,
     deleteBucketTagging: deleteBucketTagging,
-    putBucketLifecycle: putBucketLifecycle,      // BucketLifecycle
+    putBucketLifecycle: putBucketLifecycle, // BucketLifecycle
     getBucketLifecycle: getBucketLifecycle,
     deleteBucketLifecycle: deleteBucketLifecycle,
-    putBucketVersioning: putBucketVersioning,    // BucketVersioning
+    putBucketVersioning: putBucketVersioning, // BucketVersioning
     getBucketVersioning: getBucketVersioning,
-    putBucketReplication: putBucketReplication,  // BucketReplication
+    putBucketReplication: putBucketReplication, // BucketReplication
     getBucketReplication: getBucketReplication,
     deleteBucketReplication: deleteBucketReplication,
-    putBucketWebsite: putBucketWebsite,          // BucketWebsite
+    putBucketWebsite: putBucketWebsite, // BucketWebsite
     getBucketWebsite: getBucketWebsite,
     deleteBucketWebsite: deleteBucketWebsite,
-    putBucketReferer: putBucketReferer,          // BucketReferer
+    putBucketReferer: putBucketReferer, // BucketReferer
     getBucketReferer: getBucketReferer,
-    putBucketDomain: putBucketDomain,            // BucketDomain
+    putBucketDomain: putBucketDomain, // BucketDomain
     getBucketDomain: getBucketDomain,
     deleteBucketDomain: deleteBucketDomain,
-    putBucketOrigin: putBucketOrigin,            // BucketOrigin
+    putBucketOrigin: putBucketOrigin, // BucketOrigin
     getBucketOrigin: getBucketOrigin,
     deleteBucketOrigin: deleteBucketOrigin,
-    putBucketLogging: putBucketLogging,             // BucketLogging
+    putBucketLogging: putBucketLogging, // BucketLogging
     getBucketLogging: getBucketLogging,
-    putBucketInventory: putBucketInventory,         // BucketInventory
+    putBucketInventory: putBucketInventory, // BucketInventory
     getBucketInventory: getBucketInventory,
     listBucketInventory: listBucketInventory,
     deleteBucketInventory: deleteBucketInventory,
@@ -8885,7 +8916,7 @@ var API_MAP = {
     // 工具方法
     request: request,
     getObjectUrl: getObjectUrl,
-    getAuth: getAuth,
+    getAuth: getAuth
 };
 
 module.exports.init = function (COS, task) {
@@ -8896,49 +8927,46 @@ module.exports.init = function (COS, task) {
     });
 };
 
-
 /***/ }),
-/* 18 */
-/***/ (function(module, exports) {
+/* 19 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 
 function camSafeUrlEncode(str) {
-  return encodeURIComponent(str)
-      .replace(/!/g, '%21')
-      .replace(/'/g, '%27')
-      .replace(/\(/g, '%28')
-      .replace(/\)/g, '%29')
-      .replace(/\*/g, '%2A');
+    return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/\*/g, '%2A');
 }
 
 function getObjectKeys(obj, forKey) {
-  var list = [];
-  for (var key in obj) {
-      if (obj.hasOwnProperty(key)) {
-          list.push(forKey ? camSafeUrlEncode(key).toLowerCase() : key);
-      }
-  }
-  return list.sort(function (a, b) {
-      a = a.toLowerCase();
-      b = b.toLowerCase();
-      return a === b ? 0 : (a > b ? 1 : -1);
-  });
+    var list = [];
+    for (var key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            list.push(forKey ? camSafeUrlEncode(key).toLowerCase() : key);
+        }
+    }
+    return list.sort(function (a, b) {
+        a = a.toLowerCase();
+        b = b.toLowerCase();
+        return a === b ? 0 : a > b ? 1 : -1;
+    });
 };
 
-var obj2str = function (obj) {
-  var i, key, val;
-  var list = [];
-  var keyList = getObjectKeys(obj);
-  for (i = 0; i < keyList.length; i++) {
-      key = keyList[i];
-      val = (obj[key] === undefined || obj[key] === null) ? '' : ('' + obj[key]);
-      key = camSafeUrlEncode(key).toLowerCase();
-      val = camSafeUrlEncode(val) || '';
-      list.push(key + '=' + val)
-  }
-  return list.join('&');
+var obj2str = function obj2str(obj, lowerCaseKey) {
+    var i, key, val;
+    var list = [];
+    var keyList = getObjectKeys(obj);
+    for (i = 0; i < keyList.length; i++) {
+        key = keyList[i];
+        val = obj[key] === undefined || obj[key] === null ? '' : '' + obj[key];
+        key = lowerCaseKey ? camSafeUrlEncode(key).toLowerCase() : camSafeUrlEncode(key);
+        val = camSafeUrlEncode(val) || '';
+        list.push(key + '=' + val);
+    }
+    return list.join('&');
 };
 
-var request = function (params, callback) {
+var request = function request(params, callback) {
     var filePath = params.filePath;
     var headers = params.headers || {};
     var url = params.url || params.Url;
@@ -8946,13 +8974,13 @@ var request = function (params, callback) {
     var onProgress = params.onProgress;
     var requestTask;
 
-    var cb = function (err, response) {
-        var H = response.header
+    var cb = function cb(err, response) {
+        var H = response.header;
         var headers = {};
         if (H) for (var key in H) {
             if (H.hasOwnProperty(key)) headers[key.toLowerCase()] = H[key];
         }
-        callback(err, {statusCode: response.statusCode, headers: headers}, response.data);
+        callback(err, { statusCode: response.statusCode, headers: headers }, response.data);
     };
 
     if (filePath) {
@@ -8970,18 +8998,9 @@ var request = function (params, callback) {
         var formData = {
             'key': fileKey,
             'success_action_status': 200,
-            'Signature': headers.Authorization,
+            'Signature': headers.Authorization
         };
-        var headerKeys = [
-            'Cache-Control',
-            'Content-Type',
-            'Content-Disposition',
-            'Content-Encoding',
-            'Expires',
-            'x-cos-storage-class',
-            'x-cos-security-token',
-            'x-ci-security-token',
-        ];
+        var headerKeys = ['Cache-Control', 'Content-Type', 'Content-Disposition', 'Content-Encoding', 'Expires', 'x-cos-storage-class', 'x-cos-security-token', 'x-ci-security-token'];
         for (var i in params.headers) {
             if (params.headers.hasOwnProperty(i) && (i.indexOf('x-cos-meta-') > -1 || headerKeys.indexOf(i) > -1)) {
                 formData[i] = params.headers[i];
@@ -8998,10 +9017,10 @@ var request = function (params, callback) {
             filePath: filePath,
             formData: formData,
             timeout: params.timeout,
-            success: function (response) {
+            success: function success(response) {
                 cb(null, response);
             },
-            fail: function (response) {
+            fail: function fail(response) {
                 cb(response.errMsg, response);
             }
         });
@@ -9017,7 +9036,7 @@ var request = function (params, callback) {
         if (qsStr) {
             url += (url.indexOf('?') > -1 ? '&' : '?') + qsStr;
         }
-        headers['Content-Length'] && (delete headers['Content-Length']);
+        headers['Content-Length'] && delete headers['Content-Length'];
         requestTask = wx.request({
             url: url,
             method: method,
@@ -9025,10 +9044,10 @@ var request = function (params, callback) {
             dataType: 'text',
             data: params.body,
             timeout: params.timeout,
-            success: function (response) {
+            success: function success(response) {
                 cb(null, response);
             },
-            fail: function (response) {
+            fail: function fail(response) {
                 cb(response.errMsg, response);
             }
         });
@@ -9039,20 +9058,18 @@ var request = function (params, callback) {
 
 module.exports = request;
 
-
 /***/ }),
-/* 19 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-let Mime = __webpack_require__(20);
-module.exports = new Mime(__webpack_require__(21), __webpack_require__(22));
-
+var Mime = __webpack_require__(21);
+module.exports = new Mime(__webpack_require__(22), __webpack_require__(23));
 
 /***/ }),
-/* 20 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -9062,11 +9079,12 @@ module.exports = new Mime(__webpack_require__(21), __webpack_require__(22));
  * @param typeMap [Object] Map of MIME type -> Array[extensions]
  * @param ...
  */
+
 function Mime() {
   this._types = Object.create(null);
   this._extensions = Object.create(null);
 
-  for (let i = 0; i < arguments.length; i++) {
+  for (var i = 0; i < arguments.length; i++) {
     this.define(arguments[i]);
   }
 
@@ -9094,15 +9112,15 @@ function Mime() {
  * @param map (Object) type definitions
  * @param force (Boolean) if true, force overriding of existing definitions
  */
-Mime.prototype.define = function(typeMap, force) {
-  for (let type in typeMap) {
-    let extensions = typeMap[type].map(function(t) {
+Mime.prototype.define = function (typeMap, force) {
+  for (var type in typeMap) {
+    var extensions = typeMap[type].map(function (t) {
       return t.toLowerCase();
     });
     type = type.toLowerCase();
 
-    for (let i = 0; i < extensions.length; i++) {
-      const ext = extensions[i];
+    for (var i = 0; i < extensions.length; i++) {
+      var ext = extensions[i];
 
       // '*' prefix = not the preferred type for this extension.  So fixup the
       // extension, and skip it.
@@ -9110,13 +9128,8 @@ Mime.prototype.define = function(typeMap, force) {
         continue;
       }
 
-      if (!force && (ext in this._types)) {
-        throw new Error(
-          'Attempt to change mapping for "' + ext +
-          '" extension from "' + this._types[ext] + '" to "' + type +
-          '". Pass `force=true` to allow this, otherwise remove "' + ext +
-          '" from the list of extensions for "' + type + '".'
-        );
+      if (!force && ext in this._types) {
+        throw new Error('Attempt to change mapping for "' + ext + '" extension from "' + this._types[ext] + '" to "' + type + '". Pass `force=true` to allow this, otherwise remove "' + ext + '" from the list of extensions for "' + type + '".');
       }
 
       this._types[ext] = type;
@@ -9124,8 +9137,8 @@ Mime.prototype.define = function(typeMap, force) {
 
     // Use first extension as default
     if (force || !this._extensions[type]) {
-      const ext = extensions[0];
-      this._extensions[type] = (ext[0] !== '*') ? ext : ext.substr(1);
+      var _ext = extensions[0];
+      this._extensions[type] = _ext[0] !== '*' ? _ext : _ext.substr(1);
     }
   }
 };
@@ -9133,13 +9146,13 @@ Mime.prototype.define = function(typeMap, force) {
 /**
  * Lookup a mime type based on extension
  */
-Mime.prototype.getType = function(path) {
+Mime.prototype.getType = function (path) {
   path = String(path);
-  let last = path.replace(/^.*[/\\]/, '').toLowerCase();
-  let ext = last.replace(/^.*\./, '').toLowerCase();
+  var last = path.replace(/^.*[/\\]/, '').toLowerCase();
+  var ext = last.replace(/^.*\./, '').toLowerCase();
 
-  let hasPath = last.length < path.length;
-  let hasDot = ext.length < last.length - 1;
+  var hasPath = last.length < path.length;
+  var hasDot = ext.length < last.length - 1;
 
   return (hasDot || !hasPath) && this._types[ext] || null;
 };
@@ -9147,32 +9160,42 @@ Mime.prototype.getType = function(path) {
 /**
  * Return file extension associated with a mime type
  */
-Mime.prototype.getExtension = function(type) {
+Mime.prototype.getExtension = function (type) {
   type = /^\s*([^;\s]*)/.test(type) && RegExp.$1;
   return type && this._extensions[type.toLowerCase()] || null;
 };
 
 module.exports = Mime;
 
-
-/***/ }),
-/* 21 */
-/***/ (function(module, exports) {
-
-module.exports = {"application/andrew-inset":["ez"],"application/applixware":["aw"],"application/atom+xml":["atom"],"application/atomcat+xml":["atomcat"],"application/atomdeleted+xml":["atomdeleted"],"application/atomsvc+xml":["atomsvc"],"application/atsc-dwd+xml":["dwd"],"application/atsc-held+xml":["held"],"application/atsc-rsat+xml":["rsat"],"application/bdoc":["bdoc"],"application/calendar+xml":["xcs"],"application/ccxml+xml":["ccxml"],"application/cdfx+xml":["cdfx"],"application/cdmi-capability":["cdmia"],"application/cdmi-container":["cdmic"],"application/cdmi-domain":["cdmid"],"application/cdmi-object":["cdmio"],"application/cdmi-queue":["cdmiq"],"application/cu-seeme":["cu"],"application/dash+xml":["mpd"],"application/davmount+xml":["davmount"],"application/docbook+xml":["dbk"],"application/dssc+der":["dssc"],"application/dssc+xml":["xdssc"],"application/ecmascript":["ecma","es"],"application/emma+xml":["emma"],"application/emotionml+xml":["emotionml"],"application/epub+zip":["epub"],"application/exi":["exi"],"application/fdt+xml":["fdt"],"application/font-tdpfr":["pfr"],"application/geo+json":["geojson"],"application/gml+xml":["gml"],"application/gpx+xml":["gpx"],"application/gxf":["gxf"],"application/gzip":["gz"],"application/hjson":["hjson"],"application/hyperstudio":["stk"],"application/inkml+xml":["ink","inkml"],"application/ipfix":["ipfix"],"application/its+xml":["its"],"application/java-archive":["jar","war","ear"],"application/java-serialized-object":["ser"],"application/java-vm":["class"],"application/javascript":["js","mjs"],"application/json":["json","map"],"application/json5":["json5"],"application/jsonml+json":["jsonml"],"application/ld+json":["jsonld"],"application/lgr+xml":["lgr"],"application/lost+xml":["lostxml"],"application/mac-binhex40":["hqx"],"application/mac-compactpro":["cpt"],"application/mads+xml":["mads"],"application/manifest+json":["webmanifest"],"application/marc":["mrc"],"application/marcxml+xml":["mrcx"],"application/mathematica":["ma","nb","mb"],"application/mathml+xml":["mathml"],"application/mbox":["mbox"],"application/mediaservercontrol+xml":["mscml"],"application/metalink+xml":["metalink"],"application/metalink4+xml":["meta4"],"application/mets+xml":["mets"],"application/mmt-aei+xml":["maei"],"application/mmt-usd+xml":["musd"],"application/mods+xml":["mods"],"application/mp21":["m21","mp21"],"application/mp4":["mp4s","m4p"],"application/mrb-consumer+xml":["*xdf"],"application/mrb-publish+xml":["*xdf"],"application/msword":["doc","dot"],"application/mxf":["mxf"],"application/n-quads":["nq"],"application/n-triples":["nt"],"application/node":["cjs"],"application/octet-stream":["bin","dms","lrf","mar","so","dist","distz","pkg","bpk","dump","elc","deploy","exe","dll","deb","dmg","iso","img","msi","msp","msm","buffer"],"application/oda":["oda"],"application/oebps-package+xml":["opf"],"application/ogg":["ogx"],"application/omdoc+xml":["omdoc"],"application/onenote":["onetoc","onetoc2","onetmp","onepkg"],"application/oxps":["oxps"],"application/p2p-overlay+xml":["relo"],"application/patch-ops-error+xml":["*xer"],"application/pdf":["pdf"],"application/pgp-encrypted":["pgp"],"application/pgp-signature":["asc","sig"],"application/pics-rules":["prf"],"application/pkcs10":["p10"],"application/pkcs7-mime":["p7m","p7c"],"application/pkcs7-signature":["p7s"],"application/pkcs8":["p8"],"application/pkix-attr-cert":["ac"],"application/pkix-cert":["cer"],"application/pkix-crl":["crl"],"application/pkix-pkipath":["pkipath"],"application/pkixcmp":["pki"],"application/pls+xml":["pls"],"application/postscript":["ai","eps","ps"],"application/provenance+xml":["provx"],"application/pskc+xml":["pskcxml"],"application/raml+yaml":["raml"],"application/rdf+xml":["rdf","owl"],"application/reginfo+xml":["rif"],"application/relax-ng-compact-syntax":["rnc"],"application/resource-lists+xml":["rl"],"application/resource-lists-diff+xml":["rld"],"application/rls-services+xml":["rs"],"application/route-apd+xml":["rapd"],"application/route-s-tsid+xml":["sls"],"application/route-usd+xml":["rusd"],"application/rpki-ghostbusters":["gbr"],"application/rpki-manifest":["mft"],"application/rpki-roa":["roa"],"application/rsd+xml":["rsd"],"application/rss+xml":["rss"],"application/rtf":["rtf"],"application/sbml+xml":["sbml"],"application/scvp-cv-request":["scq"],"application/scvp-cv-response":["scs"],"application/scvp-vp-request":["spq"],"application/scvp-vp-response":["spp"],"application/sdp":["sdp"],"application/senml+xml":["senmlx"],"application/sensml+xml":["sensmlx"],"application/set-payment-initiation":["setpay"],"application/set-registration-initiation":["setreg"],"application/shf+xml":["shf"],"application/sieve":["siv","sieve"],"application/smil+xml":["smi","smil"],"application/sparql-query":["rq"],"application/sparql-results+xml":["srx"],"application/srgs":["gram"],"application/srgs+xml":["grxml"],"application/sru+xml":["sru"],"application/ssdl+xml":["ssdl"],"application/ssml+xml":["ssml"],"application/swid+xml":["swidtag"],"application/tei+xml":["tei","teicorpus"],"application/thraud+xml":["tfi"],"application/timestamped-data":["tsd"],"application/toml":["toml"],"application/ttml+xml":["ttml"],"application/ubjson":["ubj"],"application/urc-ressheet+xml":["rsheet"],"application/urc-targetdesc+xml":["td"],"application/voicexml+xml":["vxml"],"application/wasm":["wasm"],"application/widget":["wgt"],"application/winhlp":["hlp"],"application/wsdl+xml":["wsdl"],"application/wspolicy+xml":["wspolicy"],"application/xaml+xml":["xaml"],"application/xcap-att+xml":["xav"],"application/xcap-caps+xml":["xca"],"application/xcap-diff+xml":["xdf"],"application/xcap-el+xml":["xel"],"application/xcap-error+xml":["xer"],"application/xcap-ns+xml":["xns"],"application/xenc+xml":["xenc"],"application/xhtml+xml":["xhtml","xht"],"application/xliff+xml":["xlf"],"application/xml":["xml","xsl","xsd","rng"],"application/xml-dtd":["dtd"],"application/xop+xml":["xop"],"application/xproc+xml":["xpl"],"application/xslt+xml":["*xsl","xslt"],"application/xspf+xml":["xspf"],"application/xv+xml":["mxml","xhvml","xvml","xvm"],"application/yang":["yang"],"application/yin+xml":["yin"],"application/zip":["zip"],"audio/3gpp":["*3gpp"],"audio/adpcm":["adp"],"audio/amr":["amr"],"audio/basic":["au","snd"],"audio/midi":["mid","midi","kar","rmi"],"audio/mobile-xmf":["mxmf"],"audio/mp3":["*mp3"],"audio/mp4":["m4a","mp4a"],"audio/mpeg":["mpga","mp2","mp2a","mp3","m2a","m3a"],"audio/ogg":["oga","ogg","spx","opus"],"audio/s3m":["s3m"],"audio/silk":["sil"],"audio/wav":["wav"],"audio/wave":["*wav"],"audio/webm":["weba"],"audio/xm":["xm"],"font/collection":["ttc"],"font/otf":["otf"],"font/ttf":["ttf"],"font/woff":["woff"],"font/woff2":["woff2"],"image/aces":["exr"],"image/apng":["apng"],"image/avif":["avif"],"image/bmp":["bmp"],"image/cgm":["cgm"],"image/dicom-rle":["drle"],"image/emf":["emf"],"image/fits":["fits"],"image/g3fax":["g3"],"image/gif":["gif"],"image/heic":["heic"],"image/heic-sequence":["heics"],"image/heif":["heif"],"image/heif-sequence":["heifs"],"image/hej2k":["hej2"],"image/hsj2":["hsj2"],"image/ief":["ief"],"image/jls":["jls"],"image/jp2":["jp2","jpg2"],"image/jpeg":["jpeg","jpg","jpe"],"image/jph":["jph"],"image/jphc":["jhc"],"image/jpm":["jpm"],"image/jpx":["jpx","jpf"],"image/jxr":["jxr"],"image/jxra":["jxra"],"image/jxrs":["jxrs"],"image/jxs":["jxs"],"image/jxsc":["jxsc"],"image/jxsi":["jxsi"],"image/jxss":["jxss"],"image/ktx":["ktx"],"image/ktx2":["ktx2"],"image/png":["png"],"image/sgi":["sgi"],"image/svg+xml":["svg","svgz"],"image/t38":["t38"],"image/tiff":["tif","tiff"],"image/tiff-fx":["tfx"],"image/webp":["webp"],"image/wmf":["wmf"],"message/disposition-notification":["disposition-notification"],"message/global":["u8msg"],"message/global-delivery-status":["u8dsn"],"message/global-disposition-notification":["u8mdn"],"message/global-headers":["u8hdr"],"message/rfc822":["eml","mime"],"model/3mf":["3mf"],"model/gltf+json":["gltf"],"model/gltf-binary":["glb"],"model/iges":["igs","iges"],"model/mesh":["msh","mesh","silo"],"model/mtl":["mtl"],"model/obj":["obj"],"model/stl":["stl"],"model/vrml":["wrl","vrml"],"model/x3d+binary":["*x3db","x3dbz"],"model/x3d+fastinfoset":["x3db"],"model/x3d+vrml":["*x3dv","x3dvz"],"model/x3d+xml":["x3d","x3dz"],"model/x3d-vrml":["x3dv"],"text/cache-manifest":["appcache","manifest"],"text/calendar":["ics","ifb"],"text/coffeescript":["coffee","litcoffee"],"text/css":["css"],"text/csv":["csv"],"text/html":["html","htm","shtml"],"text/jade":["jade"],"text/jsx":["jsx"],"text/less":["less"],"text/markdown":["markdown","md"],"text/mathml":["mml"],"text/mdx":["mdx"],"text/n3":["n3"],"text/plain":["txt","text","conf","def","list","log","in","ini"],"text/richtext":["rtx"],"text/rtf":["*rtf"],"text/sgml":["sgml","sgm"],"text/shex":["shex"],"text/slim":["slim","slm"],"text/spdx":["spdx"],"text/stylus":["stylus","styl"],"text/tab-separated-values":["tsv"],"text/troff":["t","tr","roff","man","me","ms"],"text/turtle":["ttl"],"text/uri-list":["uri","uris","urls"],"text/vcard":["vcard"],"text/vtt":["vtt"],"text/xml":["*xml"],"text/yaml":["yaml","yml"],"video/3gpp":["3gp","3gpp"],"video/3gpp2":["3g2"],"video/h261":["h261"],"video/h263":["h263"],"video/h264":["h264"],"video/iso.segment":["m4s"],"video/jpeg":["jpgv"],"video/jpm":["*jpm","jpgm"],"video/mj2":["mj2","mjp2"],"video/mp2t":["ts"],"video/mp4":["mp4","mp4v","mpg4"],"video/mpeg":["mpeg","mpg","mpe","m1v","m2v"],"video/ogg":["ogv"],"video/quicktime":["qt","mov"],"video/webm":["webm"]};
-
 /***/ }),
 /* 22 */
-/***/ (function(module, exports) {
+/***/ (function(module, exports, __webpack_require__) {
 
-module.exports = {"application/prs.cww":["cww"],"application/vnd.1000minds.decision-model+xml":["1km"],"application/vnd.3gpp.pic-bw-large":["plb"],"application/vnd.3gpp.pic-bw-small":["psb"],"application/vnd.3gpp.pic-bw-var":["pvb"],"application/vnd.3gpp2.tcap":["tcap"],"application/vnd.3m.post-it-notes":["pwn"],"application/vnd.accpac.simply.aso":["aso"],"application/vnd.accpac.simply.imp":["imp"],"application/vnd.acucobol":["acu"],"application/vnd.acucorp":["atc","acutc"],"application/vnd.adobe.air-application-installer-package+zip":["air"],"application/vnd.adobe.formscentral.fcdt":["fcdt"],"application/vnd.adobe.fxp":["fxp","fxpl"],"application/vnd.adobe.xdp+xml":["xdp"],"application/vnd.adobe.xfdf":["xfdf"],"application/vnd.ahead.space":["ahead"],"application/vnd.airzip.filesecure.azf":["azf"],"application/vnd.airzip.filesecure.azs":["azs"],"application/vnd.amazon.ebook":["azw"],"application/vnd.americandynamics.acc":["acc"],"application/vnd.amiga.ami":["ami"],"application/vnd.android.package-archive":["apk"],"application/vnd.anser-web-certificate-issue-initiation":["cii"],"application/vnd.anser-web-funds-transfer-initiation":["fti"],"application/vnd.antix.game-component":["atx"],"application/vnd.apple.installer+xml":["mpkg"],"application/vnd.apple.keynote":["key"],"application/vnd.apple.mpegurl":["m3u8"],"application/vnd.apple.numbers":["numbers"],"application/vnd.apple.pages":["pages"],"application/vnd.apple.pkpass":["pkpass"],"application/vnd.aristanetworks.swi":["swi"],"application/vnd.astraea-software.iota":["iota"],"application/vnd.audiograph":["aep"],"application/vnd.balsamiq.bmml+xml":["bmml"],"application/vnd.blueice.multipass":["mpm"],"application/vnd.bmi":["bmi"],"application/vnd.businessobjects":["rep"],"application/vnd.chemdraw+xml":["cdxml"],"application/vnd.chipnuts.karaoke-mmd":["mmd"],"application/vnd.cinderella":["cdy"],"application/vnd.citationstyles.style+xml":["csl"],"application/vnd.claymore":["cla"],"application/vnd.cloanto.rp9":["rp9"],"application/vnd.clonk.c4group":["c4g","c4d","c4f","c4p","c4u"],"application/vnd.cluetrust.cartomobile-config":["c11amc"],"application/vnd.cluetrust.cartomobile-config-pkg":["c11amz"],"application/vnd.commonspace":["csp"],"application/vnd.contact.cmsg":["cdbcmsg"],"application/vnd.cosmocaller":["cmc"],"application/vnd.crick.clicker":["clkx"],"application/vnd.crick.clicker.keyboard":["clkk"],"application/vnd.crick.clicker.palette":["clkp"],"application/vnd.crick.clicker.template":["clkt"],"application/vnd.crick.clicker.wordbank":["clkw"],"application/vnd.criticaltools.wbs+xml":["wbs"],"application/vnd.ctc-posml":["pml"],"application/vnd.cups-ppd":["ppd"],"application/vnd.curl.car":["car"],"application/vnd.curl.pcurl":["pcurl"],"application/vnd.dart":["dart"],"application/vnd.data-vision.rdz":["rdz"],"application/vnd.dbf":["dbf"],"application/vnd.dece.data":["uvf","uvvf","uvd","uvvd"],"application/vnd.dece.ttml+xml":["uvt","uvvt"],"application/vnd.dece.unspecified":["uvx","uvvx"],"application/vnd.dece.zip":["uvz","uvvz"],"application/vnd.denovo.fcselayout-link":["fe_launch"],"application/vnd.dna":["dna"],"application/vnd.dolby.mlp":["mlp"],"application/vnd.dpgraph":["dpg"],"application/vnd.dreamfactory":["dfac"],"application/vnd.ds-keypoint":["kpxx"],"application/vnd.dvb.ait":["ait"],"application/vnd.dvb.service":["svc"],"application/vnd.dynageo":["geo"],"application/vnd.ecowin.chart":["mag"],"application/vnd.enliven":["nml"],"application/vnd.epson.esf":["esf"],"application/vnd.epson.msf":["msf"],"application/vnd.epson.quickanime":["qam"],"application/vnd.epson.salt":["slt"],"application/vnd.epson.ssf":["ssf"],"application/vnd.eszigno3+xml":["es3","et3"],"application/vnd.ezpix-album":["ez2"],"application/vnd.ezpix-package":["ez3"],"application/vnd.fdf":["fdf"],"application/vnd.fdsn.mseed":["mseed"],"application/vnd.fdsn.seed":["seed","dataless"],"application/vnd.flographit":["gph"],"application/vnd.fluxtime.clip":["ftc"],"application/vnd.framemaker":["fm","frame","maker","book"],"application/vnd.frogans.fnc":["fnc"],"application/vnd.frogans.ltf":["ltf"],"application/vnd.fsc.weblaunch":["fsc"],"application/vnd.fujitsu.oasys":["oas"],"application/vnd.fujitsu.oasys2":["oa2"],"application/vnd.fujitsu.oasys3":["oa3"],"application/vnd.fujitsu.oasysgp":["fg5"],"application/vnd.fujitsu.oasysprs":["bh2"],"application/vnd.fujixerox.ddd":["ddd"],"application/vnd.fujixerox.docuworks":["xdw"],"application/vnd.fujixerox.docuworks.binder":["xbd"],"application/vnd.fuzzysheet":["fzs"],"application/vnd.genomatix.tuxedo":["txd"],"application/vnd.geogebra.file":["ggb"],"application/vnd.geogebra.tool":["ggt"],"application/vnd.geometry-explorer":["gex","gre"],"application/vnd.geonext":["gxt"],"application/vnd.geoplan":["g2w"],"application/vnd.geospace":["g3w"],"application/vnd.gmx":["gmx"],"application/vnd.google-apps.document":["gdoc"],"application/vnd.google-apps.presentation":["gslides"],"application/vnd.google-apps.spreadsheet":["gsheet"],"application/vnd.google-earth.kml+xml":["kml"],"application/vnd.google-earth.kmz":["kmz"],"application/vnd.grafeq":["gqf","gqs"],"application/vnd.groove-account":["gac"],"application/vnd.groove-help":["ghf"],"application/vnd.groove-identity-message":["gim"],"application/vnd.groove-injector":["grv"],"application/vnd.groove-tool-message":["gtm"],"application/vnd.groove-tool-template":["tpl"],"application/vnd.groove-vcard":["vcg"],"application/vnd.hal+xml":["hal"],"application/vnd.handheld-entertainment+xml":["zmm"],"application/vnd.hbci":["hbci"],"application/vnd.hhe.lesson-player":["les"],"application/vnd.hp-hpgl":["hpgl"],"application/vnd.hp-hpid":["hpid"],"application/vnd.hp-hps":["hps"],"application/vnd.hp-jlyt":["jlt"],"application/vnd.hp-pcl":["pcl"],"application/vnd.hp-pclxl":["pclxl"],"application/vnd.hydrostatix.sof-data":["sfd-hdstx"],"application/vnd.ibm.minipay":["mpy"],"application/vnd.ibm.modcap":["afp","listafp","list3820"],"application/vnd.ibm.rights-management":["irm"],"application/vnd.ibm.secure-container":["sc"],"application/vnd.iccprofile":["icc","icm"],"application/vnd.igloader":["igl"],"application/vnd.immervision-ivp":["ivp"],"application/vnd.immervision-ivu":["ivu"],"application/vnd.insors.igm":["igm"],"application/vnd.intercon.formnet":["xpw","xpx"],"application/vnd.intergeo":["i2g"],"application/vnd.intu.qbo":["qbo"],"application/vnd.intu.qfx":["qfx"],"application/vnd.ipunplugged.rcprofile":["rcprofile"],"application/vnd.irepository.package+xml":["irp"],"application/vnd.is-xpr":["xpr"],"application/vnd.isac.fcs":["fcs"],"application/vnd.jam":["jam"],"application/vnd.jcp.javame.midlet-rms":["rms"],"application/vnd.jisp":["jisp"],"application/vnd.joost.joda-archive":["joda"],"application/vnd.kahootz":["ktz","ktr"],"application/vnd.kde.karbon":["karbon"],"application/vnd.kde.kchart":["chrt"],"application/vnd.kde.kformula":["kfo"],"application/vnd.kde.kivio":["flw"],"application/vnd.kde.kontour":["kon"],"application/vnd.kde.kpresenter":["kpr","kpt"],"application/vnd.kde.kspread":["ksp"],"application/vnd.kde.kword":["kwd","kwt"],"application/vnd.kenameaapp":["htke"],"application/vnd.kidspiration":["kia"],"application/vnd.kinar":["kne","knp"],"application/vnd.koan":["skp","skd","skt","skm"],"application/vnd.kodak-descriptor":["sse"],"application/vnd.las.las+xml":["lasxml"],"application/vnd.llamagraphics.life-balance.desktop":["lbd"],"application/vnd.llamagraphics.life-balance.exchange+xml":["lbe"],"application/vnd.lotus-1-2-3":["123"],"application/vnd.lotus-approach":["apr"],"application/vnd.lotus-freelance":["pre"],"application/vnd.lotus-notes":["nsf"],"application/vnd.lotus-organizer":["org"],"application/vnd.lotus-screencam":["scm"],"application/vnd.lotus-wordpro":["lwp"],"application/vnd.macports.portpkg":["portpkg"],"application/vnd.mcd":["mcd"],"application/vnd.medcalcdata":["mc1"],"application/vnd.mediastation.cdkey":["cdkey"],"application/vnd.mfer":["mwf"],"application/vnd.mfmp":["mfm"],"application/vnd.micrografx.flo":["flo"],"application/vnd.micrografx.igx":["igx"],"application/vnd.mif":["mif"],"application/vnd.mobius.daf":["daf"],"application/vnd.mobius.dis":["dis"],"application/vnd.mobius.mbk":["mbk"],"application/vnd.mobius.mqy":["mqy"],"application/vnd.mobius.msl":["msl"],"application/vnd.mobius.plc":["plc"],"application/vnd.mobius.txf":["txf"],"application/vnd.mophun.application":["mpn"],"application/vnd.mophun.certificate":["mpc"],"application/vnd.mozilla.xul+xml":["xul"],"application/vnd.ms-artgalry":["cil"],"application/vnd.ms-cab-compressed":["cab"],"application/vnd.ms-excel":["xls","xlm","xla","xlc","xlt","xlw"],"application/vnd.ms-excel.addin.macroenabled.12":["xlam"],"application/vnd.ms-excel.sheet.binary.macroenabled.12":["xlsb"],"application/vnd.ms-excel.sheet.macroenabled.12":["xlsm"],"application/vnd.ms-excel.template.macroenabled.12":["xltm"],"application/vnd.ms-fontobject":["eot"],"application/vnd.ms-htmlhelp":["chm"],"application/vnd.ms-ims":["ims"],"application/vnd.ms-lrm":["lrm"],"application/vnd.ms-officetheme":["thmx"],"application/vnd.ms-outlook":["msg"],"application/vnd.ms-pki.seccat":["cat"],"application/vnd.ms-pki.stl":["*stl"],"application/vnd.ms-powerpoint":["ppt","pps","pot"],"application/vnd.ms-powerpoint.addin.macroenabled.12":["ppam"],"application/vnd.ms-powerpoint.presentation.macroenabled.12":["pptm"],"application/vnd.ms-powerpoint.slide.macroenabled.12":["sldm"],"application/vnd.ms-powerpoint.slideshow.macroenabled.12":["ppsm"],"application/vnd.ms-powerpoint.template.macroenabled.12":["potm"],"application/vnd.ms-project":["mpp","mpt"],"application/vnd.ms-word.document.macroenabled.12":["docm"],"application/vnd.ms-word.template.macroenabled.12":["dotm"],"application/vnd.ms-works":["wps","wks","wcm","wdb"],"application/vnd.ms-wpl":["wpl"],"application/vnd.ms-xpsdocument":["xps"],"application/vnd.mseq":["mseq"],"application/vnd.musician":["mus"],"application/vnd.muvee.style":["msty"],"application/vnd.mynfc":["taglet"],"application/vnd.neurolanguage.nlu":["nlu"],"application/vnd.nitf":["ntf","nitf"],"application/vnd.noblenet-directory":["nnd"],"application/vnd.noblenet-sealer":["nns"],"application/vnd.noblenet-web":["nnw"],"application/vnd.nokia.n-gage.ac+xml":["*ac"],"application/vnd.nokia.n-gage.data":["ngdat"],"application/vnd.nokia.n-gage.symbian.install":["n-gage"],"application/vnd.nokia.radio-preset":["rpst"],"application/vnd.nokia.radio-presets":["rpss"],"application/vnd.novadigm.edm":["edm"],"application/vnd.novadigm.edx":["edx"],"application/vnd.novadigm.ext":["ext"],"application/vnd.oasis.opendocument.chart":["odc"],"application/vnd.oasis.opendocument.chart-template":["otc"],"application/vnd.oasis.opendocument.database":["odb"],"application/vnd.oasis.opendocument.formula":["odf"],"application/vnd.oasis.opendocument.formula-template":["odft"],"application/vnd.oasis.opendocument.graphics":["odg"],"application/vnd.oasis.opendocument.graphics-template":["otg"],"application/vnd.oasis.opendocument.image":["odi"],"application/vnd.oasis.opendocument.image-template":["oti"],"application/vnd.oasis.opendocument.presentation":["odp"],"application/vnd.oasis.opendocument.presentation-template":["otp"],"application/vnd.oasis.opendocument.spreadsheet":["ods"],"application/vnd.oasis.opendocument.spreadsheet-template":["ots"],"application/vnd.oasis.opendocument.text":["odt"],"application/vnd.oasis.opendocument.text-master":["odm"],"application/vnd.oasis.opendocument.text-template":["ott"],"application/vnd.oasis.opendocument.text-web":["oth"],"application/vnd.olpc-sugar":["xo"],"application/vnd.oma.dd2+xml":["dd2"],"application/vnd.openblox.game+xml":["obgx"],"application/vnd.openofficeorg.extension":["oxt"],"application/vnd.openstreetmap.data+xml":["osm"],"application/vnd.openxmlformats-officedocument.presentationml.presentation":["pptx"],"application/vnd.openxmlformats-officedocument.presentationml.slide":["sldx"],"application/vnd.openxmlformats-officedocument.presentationml.slideshow":["ppsx"],"application/vnd.openxmlformats-officedocument.presentationml.template":["potx"],"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":["xlsx"],"application/vnd.openxmlformats-officedocument.spreadsheetml.template":["xltx"],"application/vnd.openxmlformats-officedocument.wordprocessingml.document":["docx"],"application/vnd.openxmlformats-officedocument.wordprocessingml.template":["dotx"],"application/vnd.osgeo.mapguide.package":["mgp"],"application/vnd.osgi.dp":["dp"],"application/vnd.osgi.subsystem":["esa"],"application/vnd.palm":["pdb","pqa","oprc"],"application/vnd.pawaafile":["paw"],"application/vnd.pg.format":["str"],"application/vnd.pg.osasli":["ei6"],"application/vnd.picsel":["efif"],"application/vnd.pmi.widget":["wg"],"application/vnd.pocketlearn":["plf"],"application/vnd.powerbuilder6":["pbd"],"application/vnd.previewsystems.box":["box"],"application/vnd.proteus.magazine":["mgz"],"application/vnd.publishare-delta-tree":["qps"],"application/vnd.pvi.ptid1":["ptid"],"application/vnd.quark.quarkxpress":["qxd","qxt","qwd","qwt","qxl","qxb"],"application/vnd.rar":["rar"],"application/vnd.realvnc.bed":["bed"],"application/vnd.recordare.musicxml":["mxl"],"application/vnd.recordare.musicxml+xml":["musicxml"],"application/vnd.rig.cryptonote":["cryptonote"],"application/vnd.rim.cod":["cod"],"application/vnd.rn-realmedia":["rm"],"application/vnd.rn-realmedia-vbr":["rmvb"],"application/vnd.route66.link66+xml":["link66"],"application/vnd.sailingtracker.track":["st"],"application/vnd.seemail":["see"],"application/vnd.sema":["sema"],"application/vnd.semd":["semd"],"application/vnd.semf":["semf"],"application/vnd.shana.informed.formdata":["ifm"],"application/vnd.shana.informed.formtemplate":["itp"],"application/vnd.shana.informed.interchange":["iif"],"application/vnd.shana.informed.package":["ipk"],"application/vnd.simtech-mindmapper":["twd","twds"],"application/vnd.smaf":["mmf"],"application/vnd.smart.teacher":["teacher"],"application/vnd.software602.filler.form+xml":["fo"],"application/vnd.solent.sdkm+xml":["sdkm","sdkd"],"application/vnd.spotfire.dxp":["dxp"],"application/vnd.spotfire.sfs":["sfs"],"application/vnd.stardivision.calc":["sdc"],"application/vnd.stardivision.draw":["sda"],"application/vnd.stardivision.impress":["sdd"],"application/vnd.stardivision.math":["smf"],"application/vnd.stardivision.writer":["sdw","vor"],"application/vnd.stardivision.writer-global":["sgl"],"application/vnd.stepmania.package":["smzip"],"application/vnd.stepmania.stepchart":["sm"],"application/vnd.sun.wadl+xml":["wadl"],"application/vnd.sun.xml.calc":["sxc"],"application/vnd.sun.xml.calc.template":["stc"],"application/vnd.sun.xml.draw":["sxd"],"application/vnd.sun.xml.draw.template":["std"],"application/vnd.sun.xml.impress":["sxi"],"application/vnd.sun.xml.impress.template":["sti"],"application/vnd.sun.xml.math":["sxm"],"application/vnd.sun.xml.writer":["sxw"],"application/vnd.sun.xml.writer.global":["sxg"],"application/vnd.sun.xml.writer.template":["stw"],"application/vnd.sus-calendar":["sus","susp"],"application/vnd.svd":["svd"],"application/vnd.symbian.install":["sis","sisx"],"application/vnd.syncml+xml":["xsm"],"application/vnd.syncml.dm+wbxml":["bdm"],"application/vnd.syncml.dm+xml":["xdm"],"application/vnd.syncml.dmddf+xml":["ddf"],"application/vnd.tao.intent-module-archive":["tao"],"application/vnd.tcpdump.pcap":["pcap","cap","dmp"],"application/vnd.tmobile-livetv":["tmo"],"application/vnd.trid.tpt":["tpt"],"application/vnd.triscape.mxs":["mxs"],"application/vnd.trueapp":["tra"],"application/vnd.ufdl":["ufd","ufdl"],"application/vnd.uiq.theme":["utz"],"application/vnd.umajin":["umj"],"application/vnd.unity":["unityweb"],"application/vnd.uoml+xml":["uoml"],"application/vnd.vcx":["vcx"],"application/vnd.visio":["vsd","vst","vss","vsw"],"application/vnd.visionary":["vis"],"application/vnd.vsf":["vsf"],"application/vnd.wap.wbxml":["wbxml"],"application/vnd.wap.wmlc":["wmlc"],"application/vnd.wap.wmlscriptc":["wmlsc"],"application/vnd.webturbo":["wtb"],"application/vnd.wolfram.player":["nbp"],"application/vnd.wordperfect":["wpd"],"application/vnd.wqd":["wqd"],"application/vnd.wt.stf":["stf"],"application/vnd.xara":["xar"],"application/vnd.xfdl":["xfdl"],"application/vnd.yamaha.hv-dic":["hvd"],"application/vnd.yamaha.hv-script":["hvs"],"application/vnd.yamaha.hv-voice":["hvp"],"application/vnd.yamaha.openscoreformat":["osf"],"application/vnd.yamaha.openscoreformat.osfpvg+xml":["osfpvg"],"application/vnd.yamaha.smaf-audio":["saf"],"application/vnd.yamaha.smaf-phrase":["spf"],"application/vnd.yellowriver-custom-menu":["cmp"],"application/vnd.zul":["zir","zirz"],"application/vnd.zzazz.deck+xml":["zaz"],"application/x-7z-compressed":["7z"],"application/x-abiword":["abw"],"application/x-ace-compressed":["ace"],"application/x-apple-diskimage":["*dmg"],"application/x-arj":["arj"],"application/x-authorware-bin":["aab","x32","u32","vox"],"application/x-authorware-map":["aam"],"application/x-authorware-seg":["aas"],"application/x-bcpio":["bcpio"],"application/x-bdoc":["*bdoc"],"application/x-bittorrent":["torrent"],"application/x-blorb":["blb","blorb"],"application/x-bzip":["bz"],"application/x-bzip2":["bz2","boz"],"application/x-cbr":["cbr","cba","cbt","cbz","cb7"],"application/x-cdlink":["vcd"],"application/x-cfs-compressed":["cfs"],"application/x-chat":["chat"],"application/x-chess-pgn":["pgn"],"application/x-chrome-extension":["crx"],"application/x-cocoa":["cco"],"application/x-conference":["nsc"],"application/x-cpio":["cpio"],"application/x-csh":["csh"],"application/x-debian-package":["*deb","udeb"],"application/x-dgc-compressed":["dgc"],"application/x-director":["dir","dcr","dxr","cst","cct","cxt","w3d","fgd","swa"],"application/x-doom":["wad"],"application/x-dtbncx+xml":["ncx"],"application/x-dtbook+xml":["dtb"],"application/x-dtbresource+xml":["res"],"application/x-dvi":["dvi"],"application/x-envoy":["evy"],"application/x-eva":["eva"],"application/x-font-bdf":["bdf"],"application/x-font-ghostscript":["gsf"],"application/x-font-linux-psf":["psf"],"application/x-font-pcf":["pcf"],"application/x-font-snf":["snf"],"application/x-font-type1":["pfa","pfb","pfm","afm"],"application/x-freearc":["arc"],"application/x-futuresplash":["spl"],"application/x-gca-compressed":["gca"],"application/x-glulx":["ulx"],"application/x-gnumeric":["gnumeric"],"application/x-gramps-xml":["gramps"],"application/x-gtar":["gtar"],"application/x-hdf":["hdf"],"application/x-httpd-php":["php"],"application/x-install-instructions":["install"],"application/x-iso9660-image":["*iso"],"application/x-java-archive-diff":["jardiff"],"application/x-java-jnlp-file":["jnlp"],"application/x-keepass2":["kdbx"],"application/x-latex":["latex"],"application/x-lua-bytecode":["luac"],"application/x-lzh-compressed":["lzh","lha"],"application/x-makeself":["run"],"application/x-mie":["mie"],"application/x-mobipocket-ebook":["prc","mobi"],"application/x-ms-application":["application"],"application/x-ms-shortcut":["lnk"],"application/x-ms-wmd":["wmd"],"application/x-ms-wmz":["wmz"],"application/x-ms-xbap":["xbap"],"application/x-msaccess":["mdb"],"application/x-msbinder":["obd"],"application/x-mscardfile":["crd"],"application/x-msclip":["clp"],"application/x-msdos-program":["*exe"],"application/x-msdownload":["*exe","*dll","com","bat","*msi"],"application/x-msmediaview":["mvb","m13","m14"],"application/x-msmetafile":["*wmf","*wmz","*emf","emz"],"application/x-msmoney":["mny"],"application/x-mspublisher":["pub"],"application/x-msschedule":["scd"],"application/x-msterminal":["trm"],"application/x-mswrite":["wri"],"application/x-netcdf":["nc","cdf"],"application/x-ns-proxy-autoconfig":["pac"],"application/x-nzb":["nzb"],"application/x-perl":["pl","pm"],"application/x-pilot":["*prc","*pdb"],"application/x-pkcs12":["p12","pfx"],"application/x-pkcs7-certificates":["p7b","spc"],"application/x-pkcs7-certreqresp":["p7r"],"application/x-rar-compressed":["*rar"],"application/x-redhat-package-manager":["rpm"],"application/x-research-info-systems":["ris"],"application/x-sea":["sea"],"application/x-sh":["sh"],"application/x-shar":["shar"],"application/x-shockwave-flash":["swf"],"application/x-silverlight-app":["xap"],"application/x-sql":["sql"],"application/x-stuffit":["sit"],"application/x-stuffitx":["sitx"],"application/x-subrip":["srt"],"application/x-sv4cpio":["sv4cpio"],"application/x-sv4crc":["sv4crc"],"application/x-t3vm-image":["t3"],"application/x-tads":["gam"],"application/x-tar":["tar"],"application/x-tcl":["tcl","tk"],"application/x-tex":["tex"],"application/x-tex-tfm":["tfm"],"application/x-texinfo":["texinfo","texi"],"application/x-tgif":["*obj"],"application/x-ustar":["ustar"],"application/x-virtualbox-hdd":["hdd"],"application/x-virtualbox-ova":["ova"],"application/x-virtualbox-ovf":["ovf"],"application/x-virtualbox-vbox":["vbox"],"application/x-virtualbox-vbox-extpack":["vbox-extpack"],"application/x-virtualbox-vdi":["vdi"],"application/x-virtualbox-vhd":["vhd"],"application/x-virtualbox-vmdk":["vmdk"],"application/x-wais-source":["src"],"application/x-web-app-manifest+json":["webapp"],"application/x-x509-ca-cert":["der","crt","pem"],"application/x-xfig":["fig"],"application/x-xliff+xml":["*xlf"],"application/x-xpinstall":["xpi"],"application/x-xz":["xz"],"application/x-zmachine":["z1","z2","z3","z4","z5","z6","z7","z8"],"audio/vnd.dece.audio":["uva","uvva"],"audio/vnd.digital-winds":["eol"],"audio/vnd.dra":["dra"],"audio/vnd.dts":["dts"],"audio/vnd.dts.hd":["dtshd"],"audio/vnd.lucent.voice":["lvp"],"audio/vnd.ms-playready.media.pya":["pya"],"audio/vnd.nuera.ecelp4800":["ecelp4800"],"audio/vnd.nuera.ecelp7470":["ecelp7470"],"audio/vnd.nuera.ecelp9600":["ecelp9600"],"audio/vnd.rip":["rip"],"audio/x-aac":["aac"],"audio/x-aiff":["aif","aiff","aifc"],"audio/x-caf":["caf"],"audio/x-flac":["flac"],"audio/x-m4a":["*m4a"],"audio/x-matroska":["mka"],"audio/x-mpegurl":["m3u"],"audio/x-ms-wax":["wax"],"audio/x-ms-wma":["wma"],"audio/x-pn-realaudio":["ram","ra"],"audio/x-pn-realaudio-plugin":["rmp"],"audio/x-realaudio":["*ra"],"audio/x-wav":["*wav"],"chemical/x-cdx":["cdx"],"chemical/x-cif":["cif"],"chemical/x-cmdf":["cmdf"],"chemical/x-cml":["cml"],"chemical/x-csml":["csml"],"chemical/x-xyz":["xyz"],"image/prs.btif":["btif"],"image/prs.pti":["pti"],"image/vnd.adobe.photoshop":["psd"],"image/vnd.airzip.accelerator.azv":["azv"],"image/vnd.dece.graphic":["uvi","uvvi","uvg","uvvg"],"image/vnd.djvu":["djvu","djv"],"image/vnd.dvb.subtitle":["*sub"],"image/vnd.dwg":["dwg"],"image/vnd.dxf":["dxf"],"image/vnd.fastbidsheet":["fbs"],"image/vnd.fpx":["fpx"],"image/vnd.fst":["fst"],"image/vnd.fujixerox.edmics-mmr":["mmr"],"image/vnd.fujixerox.edmics-rlc":["rlc"],"image/vnd.microsoft.icon":["ico"],"image/vnd.ms-dds":["dds"],"image/vnd.ms-modi":["mdi"],"image/vnd.ms-photo":["wdp"],"image/vnd.net-fpx":["npx"],"image/vnd.pco.b16":["b16"],"image/vnd.tencent.tap":["tap"],"image/vnd.valve.source.texture":["vtf"],"image/vnd.wap.wbmp":["wbmp"],"image/vnd.xiff":["xif"],"image/vnd.zbrush.pcx":["pcx"],"image/x-3ds":["3ds"],"image/x-cmu-raster":["ras"],"image/x-cmx":["cmx"],"image/x-freehand":["fh","fhc","fh4","fh5","fh7"],"image/x-icon":["*ico"],"image/x-jng":["jng"],"image/x-mrsid-image":["sid"],"image/x-ms-bmp":["*bmp"],"image/x-pcx":["*pcx"],"image/x-pict":["pic","pct"],"image/x-portable-anymap":["pnm"],"image/x-portable-bitmap":["pbm"],"image/x-portable-graymap":["pgm"],"image/x-portable-pixmap":["ppm"],"image/x-rgb":["rgb"],"image/x-tga":["tga"],"image/x-xbitmap":["xbm"],"image/x-xpixmap":["xpm"],"image/x-xwindowdump":["xwd"],"message/vnd.wfa.wsc":["wsc"],"model/vnd.collada+xml":["dae"],"model/vnd.dwf":["dwf"],"model/vnd.gdl":["gdl"],"model/vnd.gtw":["gtw"],"model/vnd.mts":["mts"],"model/vnd.opengex":["ogex"],"model/vnd.parasolid.transmit.binary":["x_b"],"model/vnd.parasolid.transmit.text":["x_t"],"model/vnd.usdz+zip":["usdz"],"model/vnd.valve.source.compiled-map":["bsp"],"model/vnd.vtu":["vtu"],"text/prs.lines.tag":["dsc"],"text/vnd.curl":["curl"],"text/vnd.curl.dcurl":["dcurl"],"text/vnd.curl.mcurl":["mcurl"],"text/vnd.curl.scurl":["scurl"],"text/vnd.dvb.subtitle":["sub"],"text/vnd.fly":["fly"],"text/vnd.fmi.flexstor":["flx"],"text/vnd.graphviz":["gv"],"text/vnd.in3d.3dml":["3dml"],"text/vnd.in3d.spot":["spot"],"text/vnd.sun.j2me.app-descriptor":["jad"],"text/vnd.wap.wml":["wml"],"text/vnd.wap.wmlscript":["wmls"],"text/x-asm":["s","asm"],"text/x-c":["c","cc","cxx","cpp","h","hh","dic"],"text/x-component":["htc"],"text/x-fortran":["f","for","f77","f90"],"text/x-handlebars-template":["hbs"],"text/x-java-source":["java"],"text/x-lua":["lua"],"text/x-markdown":["mkd"],"text/x-nfo":["nfo"],"text/x-opml":["opml"],"text/x-org":["*org"],"text/x-pascal":["p","pas"],"text/x-processing":["pde"],"text/x-sass":["sass"],"text/x-scss":["scss"],"text/x-setext":["etx"],"text/x-sfv":["sfv"],"text/x-suse-ymp":["ymp"],"text/x-uuencode":["uu"],"text/x-vcalendar":["vcs"],"text/x-vcard":["vcf"],"video/vnd.dece.hd":["uvh","uvvh"],"video/vnd.dece.mobile":["uvm","uvvm"],"video/vnd.dece.pd":["uvp","uvvp"],"video/vnd.dece.sd":["uvs","uvvs"],"video/vnd.dece.video":["uvv","uvvv"],"video/vnd.dvb.file":["dvb"],"video/vnd.fvt":["fvt"],"video/vnd.mpegurl":["mxu","m4u"],"video/vnd.ms-playready.media.pyv":["pyv"],"video/vnd.uvvu.mp4":["uvu","uvvu"],"video/vnd.vivo":["viv"],"video/x-f4v":["f4v"],"video/x-fli":["fli"],"video/x-flv":["flv"],"video/x-m4v":["m4v"],"video/x-matroska":["mkv","mk3d","mks"],"video/x-mng":["mng"],"video/x-ms-asf":["asf","asx"],"video/x-ms-vob":["vob"],"video/x-ms-wm":["wm"],"video/x-ms-wmv":["wmv"],"video/x-ms-wmx":["wmx"],"video/x-ms-wvx":["wvx"],"video/x-msvideo":["avi"],"video/x-sgi-movie":["movie"],"video/x-smv":["smv"],"x-conference/x-cooltalk":["ice"]};
+"use strict";
+
+
+module.exports = { "application/andrew-inset": ["ez"], "application/applixware": ["aw"], "application/atom+xml": ["atom"], "application/atomcat+xml": ["atomcat"], "application/atomdeleted+xml": ["atomdeleted"], "application/atomsvc+xml": ["atomsvc"], "application/atsc-dwd+xml": ["dwd"], "application/atsc-held+xml": ["held"], "application/atsc-rsat+xml": ["rsat"], "application/bdoc": ["bdoc"], "application/calendar+xml": ["xcs"], "application/ccxml+xml": ["ccxml"], "application/cdfx+xml": ["cdfx"], "application/cdmi-capability": ["cdmia"], "application/cdmi-container": ["cdmic"], "application/cdmi-domain": ["cdmid"], "application/cdmi-object": ["cdmio"], "application/cdmi-queue": ["cdmiq"], "application/cu-seeme": ["cu"], "application/dash+xml": ["mpd"], "application/davmount+xml": ["davmount"], "application/docbook+xml": ["dbk"], "application/dssc+der": ["dssc"], "application/dssc+xml": ["xdssc"], "application/ecmascript": ["es", "ecma"], "application/emma+xml": ["emma"], "application/emotionml+xml": ["emotionml"], "application/epub+zip": ["epub"], "application/exi": ["exi"], "application/express": ["exp"], "application/fdt+xml": ["fdt"], "application/font-tdpfr": ["pfr"], "application/geo+json": ["geojson"], "application/gml+xml": ["gml"], "application/gpx+xml": ["gpx"], "application/gxf": ["gxf"], "application/gzip": ["gz"], "application/hjson": ["hjson"], "application/hyperstudio": ["stk"], "application/inkml+xml": ["ink", "inkml"], "application/ipfix": ["ipfix"], "application/its+xml": ["its"], "application/java-archive": ["jar", "war", "ear"], "application/java-serialized-object": ["ser"], "application/java-vm": ["class"], "application/javascript": ["js", "mjs"], "application/json": ["json", "map"], "application/json5": ["json5"], "application/jsonml+json": ["jsonml"], "application/ld+json": ["jsonld"], "application/lgr+xml": ["lgr"], "application/lost+xml": ["lostxml"], "application/mac-binhex40": ["hqx"], "application/mac-compactpro": ["cpt"], "application/mads+xml": ["mads"], "application/manifest+json": ["webmanifest"], "application/marc": ["mrc"], "application/marcxml+xml": ["mrcx"], "application/mathematica": ["ma", "nb", "mb"], "application/mathml+xml": ["mathml"], "application/mbox": ["mbox"], "application/mediaservercontrol+xml": ["mscml"], "application/metalink+xml": ["metalink"], "application/metalink4+xml": ["meta4"], "application/mets+xml": ["mets"], "application/mmt-aei+xml": ["maei"], "application/mmt-usd+xml": ["musd"], "application/mods+xml": ["mods"], "application/mp21": ["m21", "mp21"], "application/mp4": ["mp4s", "m4p"], "application/msword": ["doc", "dot"], "application/mxf": ["mxf"], "application/n-quads": ["nq"], "application/n-triples": ["nt"], "application/node": ["cjs"], "application/octet-stream": ["bin", "dms", "lrf", "mar", "so", "dist", "distz", "pkg", "bpk", "dump", "elc", "deploy", "exe", "dll", "deb", "dmg", "iso", "img", "msi", "msp", "msm", "buffer"], "application/oda": ["oda"], "application/oebps-package+xml": ["opf"], "application/ogg": ["ogx"], "application/omdoc+xml": ["omdoc"], "application/onenote": ["onetoc", "onetoc2", "onetmp", "onepkg"], "application/oxps": ["oxps"], "application/p2p-overlay+xml": ["relo"], "application/patch-ops-error+xml": ["xer"], "application/pdf": ["pdf"], "application/pgp-encrypted": ["pgp"], "application/pgp-signature": ["asc", "sig"], "application/pics-rules": ["prf"], "application/pkcs10": ["p10"], "application/pkcs7-mime": ["p7m", "p7c"], "application/pkcs7-signature": ["p7s"], "application/pkcs8": ["p8"], "application/pkix-attr-cert": ["ac"], "application/pkix-cert": ["cer"], "application/pkix-crl": ["crl"], "application/pkix-pkipath": ["pkipath"], "application/pkixcmp": ["pki"], "application/pls+xml": ["pls"], "application/postscript": ["ai", "eps", "ps"], "application/provenance+xml": ["provx"], "application/pskc+xml": ["pskcxml"], "application/raml+yaml": ["raml"], "application/rdf+xml": ["rdf", "owl"], "application/reginfo+xml": ["rif"], "application/relax-ng-compact-syntax": ["rnc"], "application/resource-lists+xml": ["rl"], "application/resource-lists-diff+xml": ["rld"], "application/rls-services+xml": ["rs"], "application/route-apd+xml": ["rapd"], "application/route-s-tsid+xml": ["sls"], "application/route-usd+xml": ["rusd"], "application/rpki-ghostbusters": ["gbr"], "application/rpki-manifest": ["mft"], "application/rpki-roa": ["roa"], "application/rsd+xml": ["rsd"], "application/rss+xml": ["rss"], "application/rtf": ["rtf"], "application/sbml+xml": ["sbml"], "application/scvp-cv-request": ["scq"], "application/scvp-cv-response": ["scs"], "application/scvp-vp-request": ["spq"], "application/scvp-vp-response": ["spp"], "application/sdp": ["sdp"], "application/senml+xml": ["senmlx"], "application/sensml+xml": ["sensmlx"], "application/set-payment-initiation": ["setpay"], "application/set-registration-initiation": ["setreg"], "application/shf+xml": ["shf"], "application/sieve": ["siv", "sieve"], "application/smil+xml": ["smi", "smil"], "application/sparql-query": ["rq"], "application/sparql-results+xml": ["srx"], "application/srgs": ["gram"], "application/srgs+xml": ["grxml"], "application/sru+xml": ["sru"], "application/ssdl+xml": ["ssdl"], "application/ssml+xml": ["ssml"], "application/swid+xml": ["swidtag"], "application/tei+xml": ["tei", "teicorpus"], "application/thraud+xml": ["tfi"], "application/timestamped-data": ["tsd"], "application/toml": ["toml"], "application/trig": ["trig"], "application/ttml+xml": ["ttml"], "application/ubjson": ["ubj"], "application/urc-ressheet+xml": ["rsheet"], "application/urc-targetdesc+xml": ["td"], "application/voicexml+xml": ["vxml"], "application/wasm": ["wasm"], "application/widget": ["wgt"], "application/winhlp": ["hlp"], "application/wsdl+xml": ["wsdl"], "application/wspolicy+xml": ["wspolicy"], "application/xaml+xml": ["xaml"], "application/xcap-att+xml": ["xav"], "application/xcap-caps+xml": ["xca"], "application/xcap-diff+xml": ["xdf"], "application/xcap-el+xml": ["xel"], "application/xcap-ns+xml": ["xns"], "application/xenc+xml": ["xenc"], "application/xhtml+xml": ["xhtml", "xht"], "application/xliff+xml": ["xlf"], "application/xml": ["xml", "xsl", "xsd", "rng"], "application/xml-dtd": ["dtd"], "application/xop+xml": ["xop"], "application/xproc+xml": ["xpl"], "application/xslt+xml": ["*xsl", "xslt"], "application/xspf+xml": ["xspf"], "application/xv+xml": ["mxml", "xhvml", "xvml", "xvm"], "application/yang": ["yang"], "application/yin+xml": ["yin"], "application/zip": ["zip"], "audio/3gpp": ["*3gpp"], "audio/adpcm": ["adp"], "audio/amr": ["amr"], "audio/basic": ["au", "snd"], "audio/midi": ["mid", "midi", "kar", "rmi"], "audio/mobile-xmf": ["mxmf"], "audio/mp3": ["*mp3"], "audio/mp4": ["m4a", "mp4a"], "audio/mpeg": ["mpga", "mp2", "mp2a", "mp3", "m2a", "m3a"], "audio/ogg": ["oga", "ogg", "spx", "opus"], "audio/s3m": ["s3m"], "audio/silk": ["sil"], "audio/wav": ["wav"], "audio/wave": ["*wav"], "audio/webm": ["weba"], "audio/xm": ["xm"], "font/collection": ["ttc"], "font/otf": ["otf"], "font/ttf": ["ttf"], "font/woff": ["woff"], "font/woff2": ["woff2"], "image/aces": ["exr"], "image/apng": ["apng"], "image/avif": ["avif"], "image/bmp": ["bmp"], "image/cgm": ["cgm"], "image/dicom-rle": ["drle"], "image/emf": ["emf"], "image/fits": ["fits"], "image/g3fax": ["g3"], "image/gif": ["gif"], "image/heic": ["heic"], "image/heic-sequence": ["heics"], "image/heif": ["heif"], "image/heif-sequence": ["heifs"], "image/hej2k": ["hej2"], "image/hsj2": ["hsj2"], "image/ief": ["ief"], "image/jls": ["jls"], "image/jp2": ["jp2", "jpg2"], "image/jpeg": ["jpeg", "jpg", "jpe"], "image/jph": ["jph"], "image/jphc": ["jhc"], "image/jpm": ["jpm"], "image/jpx": ["jpx", "jpf"], "image/jxr": ["jxr"], "image/jxra": ["jxra"], "image/jxrs": ["jxrs"], "image/jxs": ["jxs"], "image/jxsc": ["jxsc"], "image/jxsi": ["jxsi"], "image/jxss": ["jxss"], "image/ktx": ["ktx"], "image/ktx2": ["ktx2"], "image/png": ["png"], "image/sgi": ["sgi"], "image/svg+xml": ["svg", "svgz"], "image/t38": ["t38"], "image/tiff": ["tif", "tiff"], "image/tiff-fx": ["tfx"], "image/webp": ["webp"], "image/wmf": ["wmf"], "message/disposition-notification": ["disposition-notification"], "message/global": ["u8msg"], "message/global-delivery-status": ["u8dsn"], "message/global-disposition-notification": ["u8mdn"], "message/global-headers": ["u8hdr"], "message/rfc822": ["eml", "mime"], "model/3mf": ["3mf"], "model/gltf+json": ["gltf"], "model/gltf-binary": ["glb"], "model/iges": ["igs", "iges"], "model/mesh": ["msh", "mesh", "silo"], "model/mtl": ["mtl"], "model/obj": ["obj"], "model/step+xml": ["stpx"], "model/step+zip": ["stpz"], "model/step-xml+zip": ["stpxz"], "model/stl": ["stl"], "model/vrml": ["wrl", "vrml"], "model/x3d+binary": ["*x3db", "x3dbz"], "model/x3d+fastinfoset": ["x3db"], "model/x3d+vrml": ["*x3dv", "x3dvz"], "model/x3d+xml": ["x3d", "x3dz"], "model/x3d-vrml": ["x3dv"], "text/cache-manifest": ["appcache", "manifest"], "text/calendar": ["ics", "ifb"], "text/coffeescript": ["coffee", "litcoffee"], "text/css": ["css"], "text/csv": ["csv"], "text/html": ["html", "htm", "shtml"], "text/jade": ["jade"], "text/jsx": ["jsx"], "text/less": ["less"], "text/markdown": ["markdown", "md"], "text/mathml": ["mml"], "text/mdx": ["mdx"], "text/n3": ["n3"], "text/plain": ["txt", "text", "conf", "def", "list", "log", "in", "ini"], "text/richtext": ["rtx"], "text/rtf": ["*rtf"], "text/sgml": ["sgml", "sgm"], "text/shex": ["shex"], "text/slim": ["slim", "slm"], "text/spdx": ["spdx"], "text/stylus": ["stylus", "styl"], "text/tab-separated-values": ["tsv"], "text/troff": ["t", "tr", "roff", "man", "me", "ms"], "text/turtle": ["ttl"], "text/uri-list": ["uri", "uris", "urls"], "text/vcard": ["vcard"], "text/vtt": ["vtt"], "text/xml": ["*xml"], "text/yaml": ["yaml", "yml"], "video/3gpp": ["3gp", "3gpp"], "video/3gpp2": ["3g2"], "video/h261": ["h261"], "video/h263": ["h263"], "video/h264": ["h264"], "video/iso.segment": ["m4s"], "video/jpeg": ["jpgv"], "video/jpm": ["*jpm", "jpgm"], "video/mj2": ["mj2", "mjp2"], "video/mp2t": ["ts"], "video/mp4": ["mp4", "mp4v", "mpg4"], "video/mpeg": ["mpeg", "mpg", "mpe", "m1v", "m2v"], "video/ogg": ["ogv"], "video/quicktime": ["qt", "mov"], "video/webm": ["webm"] };
 
 /***/ }),
 /* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
+"use strict";
+
+
+module.exports = { "application/prs.cww": ["cww"], "application/vnd.1000minds.decision-model+xml": ["1km"], "application/vnd.3gpp.pic-bw-large": ["plb"], "application/vnd.3gpp.pic-bw-small": ["psb"], "application/vnd.3gpp.pic-bw-var": ["pvb"], "application/vnd.3gpp2.tcap": ["tcap"], "application/vnd.3m.post-it-notes": ["pwn"], "application/vnd.accpac.simply.aso": ["aso"], "application/vnd.accpac.simply.imp": ["imp"], "application/vnd.acucobol": ["acu"], "application/vnd.acucorp": ["atc", "acutc"], "application/vnd.adobe.air-application-installer-package+zip": ["air"], "application/vnd.adobe.formscentral.fcdt": ["fcdt"], "application/vnd.adobe.fxp": ["fxp", "fxpl"], "application/vnd.adobe.xdp+xml": ["xdp"], "application/vnd.adobe.xfdf": ["xfdf"], "application/vnd.ahead.space": ["ahead"], "application/vnd.airzip.filesecure.azf": ["azf"], "application/vnd.airzip.filesecure.azs": ["azs"], "application/vnd.amazon.ebook": ["azw"], "application/vnd.americandynamics.acc": ["acc"], "application/vnd.amiga.ami": ["ami"], "application/vnd.android.package-archive": ["apk"], "application/vnd.anser-web-certificate-issue-initiation": ["cii"], "application/vnd.anser-web-funds-transfer-initiation": ["fti"], "application/vnd.antix.game-component": ["atx"], "application/vnd.apple.installer+xml": ["mpkg"], "application/vnd.apple.keynote": ["key"], "application/vnd.apple.mpegurl": ["m3u8"], "application/vnd.apple.numbers": ["numbers"], "application/vnd.apple.pages": ["pages"], "application/vnd.apple.pkpass": ["pkpass"], "application/vnd.aristanetworks.swi": ["swi"], "application/vnd.astraea-software.iota": ["iota"], "application/vnd.audiograph": ["aep"], "application/vnd.balsamiq.bmml+xml": ["bmml"], "application/vnd.blueice.multipass": ["mpm"], "application/vnd.bmi": ["bmi"], "application/vnd.businessobjects": ["rep"], "application/vnd.chemdraw+xml": ["cdxml"], "application/vnd.chipnuts.karaoke-mmd": ["mmd"], "application/vnd.cinderella": ["cdy"], "application/vnd.citationstyles.style+xml": ["csl"], "application/vnd.claymore": ["cla"], "application/vnd.cloanto.rp9": ["rp9"], "application/vnd.clonk.c4group": ["c4g", "c4d", "c4f", "c4p", "c4u"], "application/vnd.cluetrust.cartomobile-config": ["c11amc"], "application/vnd.cluetrust.cartomobile-config-pkg": ["c11amz"], "application/vnd.commonspace": ["csp"], "application/vnd.contact.cmsg": ["cdbcmsg"], "application/vnd.cosmocaller": ["cmc"], "application/vnd.crick.clicker": ["clkx"], "application/vnd.crick.clicker.keyboard": ["clkk"], "application/vnd.crick.clicker.palette": ["clkp"], "application/vnd.crick.clicker.template": ["clkt"], "application/vnd.crick.clicker.wordbank": ["clkw"], "application/vnd.criticaltools.wbs+xml": ["wbs"], "application/vnd.ctc-posml": ["pml"], "application/vnd.cups-ppd": ["ppd"], "application/vnd.curl.car": ["car"], "application/vnd.curl.pcurl": ["pcurl"], "application/vnd.dart": ["dart"], "application/vnd.data-vision.rdz": ["rdz"], "application/vnd.dbf": ["dbf"], "application/vnd.dece.data": ["uvf", "uvvf", "uvd", "uvvd"], "application/vnd.dece.ttml+xml": ["uvt", "uvvt"], "application/vnd.dece.unspecified": ["uvx", "uvvx"], "application/vnd.dece.zip": ["uvz", "uvvz"], "application/vnd.denovo.fcselayout-link": ["fe_launch"], "application/vnd.dna": ["dna"], "application/vnd.dolby.mlp": ["mlp"], "application/vnd.dpgraph": ["dpg"], "application/vnd.dreamfactory": ["dfac"], "application/vnd.ds-keypoint": ["kpxx"], "application/vnd.dvb.ait": ["ait"], "application/vnd.dvb.service": ["svc"], "application/vnd.dynageo": ["geo"], "application/vnd.ecowin.chart": ["mag"], "application/vnd.enliven": ["nml"], "application/vnd.epson.esf": ["esf"], "application/vnd.epson.msf": ["msf"], "application/vnd.epson.quickanime": ["qam"], "application/vnd.epson.salt": ["slt"], "application/vnd.epson.ssf": ["ssf"], "application/vnd.eszigno3+xml": ["es3", "et3"], "application/vnd.ezpix-album": ["ez2"], "application/vnd.ezpix-package": ["ez3"], "application/vnd.fdf": ["fdf"], "application/vnd.fdsn.mseed": ["mseed"], "application/vnd.fdsn.seed": ["seed", "dataless"], "application/vnd.flographit": ["gph"], "application/vnd.fluxtime.clip": ["ftc"], "application/vnd.framemaker": ["fm", "frame", "maker", "book"], "application/vnd.frogans.fnc": ["fnc"], "application/vnd.frogans.ltf": ["ltf"], "application/vnd.fsc.weblaunch": ["fsc"], "application/vnd.fujitsu.oasys": ["oas"], "application/vnd.fujitsu.oasys2": ["oa2"], "application/vnd.fujitsu.oasys3": ["oa3"], "application/vnd.fujitsu.oasysgp": ["fg5"], "application/vnd.fujitsu.oasysprs": ["bh2"], "application/vnd.fujixerox.ddd": ["ddd"], "application/vnd.fujixerox.docuworks": ["xdw"], "application/vnd.fujixerox.docuworks.binder": ["xbd"], "application/vnd.fuzzysheet": ["fzs"], "application/vnd.genomatix.tuxedo": ["txd"], "application/vnd.geogebra.file": ["ggb"], "application/vnd.geogebra.tool": ["ggt"], "application/vnd.geometry-explorer": ["gex", "gre"], "application/vnd.geonext": ["gxt"], "application/vnd.geoplan": ["g2w"], "application/vnd.geospace": ["g3w"], "application/vnd.gmx": ["gmx"], "application/vnd.google-apps.document": ["gdoc"], "application/vnd.google-apps.presentation": ["gslides"], "application/vnd.google-apps.spreadsheet": ["gsheet"], "application/vnd.google-earth.kml+xml": ["kml"], "application/vnd.google-earth.kmz": ["kmz"], "application/vnd.grafeq": ["gqf", "gqs"], "application/vnd.groove-account": ["gac"], "application/vnd.groove-help": ["ghf"], "application/vnd.groove-identity-message": ["gim"], "application/vnd.groove-injector": ["grv"], "application/vnd.groove-tool-message": ["gtm"], "application/vnd.groove-tool-template": ["tpl"], "application/vnd.groove-vcard": ["vcg"], "application/vnd.hal+xml": ["hal"], "application/vnd.handheld-entertainment+xml": ["zmm"], "application/vnd.hbci": ["hbci"], "application/vnd.hhe.lesson-player": ["les"], "application/vnd.hp-hpgl": ["hpgl"], "application/vnd.hp-hpid": ["hpid"], "application/vnd.hp-hps": ["hps"], "application/vnd.hp-jlyt": ["jlt"], "application/vnd.hp-pcl": ["pcl"], "application/vnd.hp-pclxl": ["pclxl"], "application/vnd.hydrostatix.sof-data": ["sfd-hdstx"], "application/vnd.ibm.minipay": ["mpy"], "application/vnd.ibm.modcap": ["afp", "listafp", "list3820"], "application/vnd.ibm.rights-management": ["irm"], "application/vnd.ibm.secure-container": ["sc"], "application/vnd.iccprofile": ["icc", "icm"], "application/vnd.igloader": ["igl"], "application/vnd.immervision-ivp": ["ivp"], "application/vnd.immervision-ivu": ["ivu"], "application/vnd.insors.igm": ["igm"], "application/vnd.intercon.formnet": ["xpw", "xpx"], "application/vnd.intergeo": ["i2g"], "application/vnd.intu.qbo": ["qbo"], "application/vnd.intu.qfx": ["qfx"], "application/vnd.ipunplugged.rcprofile": ["rcprofile"], "application/vnd.irepository.package+xml": ["irp"], "application/vnd.is-xpr": ["xpr"], "application/vnd.isac.fcs": ["fcs"], "application/vnd.jam": ["jam"], "application/vnd.jcp.javame.midlet-rms": ["rms"], "application/vnd.jisp": ["jisp"], "application/vnd.joost.joda-archive": ["joda"], "application/vnd.kahootz": ["ktz", "ktr"], "application/vnd.kde.karbon": ["karbon"], "application/vnd.kde.kchart": ["chrt"], "application/vnd.kde.kformula": ["kfo"], "application/vnd.kde.kivio": ["flw"], "application/vnd.kde.kontour": ["kon"], "application/vnd.kde.kpresenter": ["kpr", "kpt"], "application/vnd.kde.kspread": ["ksp"], "application/vnd.kde.kword": ["kwd", "kwt"], "application/vnd.kenameaapp": ["htke"], "application/vnd.kidspiration": ["kia"], "application/vnd.kinar": ["kne", "knp"], "application/vnd.koan": ["skp", "skd", "skt", "skm"], "application/vnd.kodak-descriptor": ["sse"], "application/vnd.las.las+xml": ["lasxml"], "application/vnd.llamagraphics.life-balance.desktop": ["lbd"], "application/vnd.llamagraphics.life-balance.exchange+xml": ["lbe"], "application/vnd.lotus-1-2-3": ["123"], "application/vnd.lotus-approach": ["apr"], "application/vnd.lotus-freelance": ["pre"], "application/vnd.lotus-notes": ["nsf"], "application/vnd.lotus-organizer": ["org"], "application/vnd.lotus-screencam": ["scm"], "application/vnd.lotus-wordpro": ["lwp"], "application/vnd.macports.portpkg": ["portpkg"], "application/vnd.mapbox-vector-tile": ["mvt"], "application/vnd.mcd": ["mcd"], "application/vnd.medcalcdata": ["mc1"], "application/vnd.mediastation.cdkey": ["cdkey"], "application/vnd.mfer": ["mwf"], "application/vnd.mfmp": ["mfm"], "application/vnd.micrografx.flo": ["flo"], "application/vnd.micrografx.igx": ["igx"], "application/vnd.mif": ["mif"], "application/vnd.mobius.daf": ["daf"], "application/vnd.mobius.dis": ["dis"], "application/vnd.mobius.mbk": ["mbk"], "application/vnd.mobius.mqy": ["mqy"], "application/vnd.mobius.msl": ["msl"], "application/vnd.mobius.plc": ["plc"], "application/vnd.mobius.txf": ["txf"], "application/vnd.mophun.application": ["mpn"], "application/vnd.mophun.certificate": ["mpc"], "application/vnd.mozilla.xul+xml": ["xul"], "application/vnd.ms-artgalry": ["cil"], "application/vnd.ms-cab-compressed": ["cab"], "application/vnd.ms-excel": ["xls", "xlm", "xla", "xlc", "xlt", "xlw"], "application/vnd.ms-excel.addin.macroenabled.12": ["xlam"], "application/vnd.ms-excel.sheet.binary.macroenabled.12": ["xlsb"], "application/vnd.ms-excel.sheet.macroenabled.12": ["xlsm"], "application/vnd.ms-excel.template.macroenabled.12": ["xltm"], "application/vnd.ms-fontobject": ["eot"], "application/vnd.ms-htmlhelp": ["chm"], "application/vnd.ms-ims": ["ims"], "application/vnd.ms-lrm": ["lrm"], "application/vnd.ms-officetheme": ["thmx"], "application/vnd.ms-outlook": ["msg"], "application/vnd.ms-pki.seccat": ["cat"], "application/vnd.ms-pki.stl": ["*stl"], "application/vnd.ms-powerpoint": ["ppt", "pps", "pot"], "application/vnd.ms-powerpoint.addin.macroenabled.12": ["ppam"], "application/vnd.ms-powerpoint.presentation.macroenabled.12": ["pptm"], "application/vnd.ms-powerpoint.slide.macroenabled.12": ["sldm"], "application/vnd.ms-powerpoint.slideshow.macroenabled.12": ["ppsm"], "application/vnd.ms-powerpoint.template.macroenabled.12": ["potm"], "application/vnd.ms-project": ["mpp", "mpt"], "application/vnd.ms-word.document.macroenabled.12": ["docm"], "application/vnd.ms-word.template.macroenabled.12": ["dotm"], "application/vnd.ms-works": ["wps", "wks", "wcm", "wdb"], "application/vnd.ms-wpl": ["wpl"], "application/vnd.ms-xpsdocument": ["xps"], "application/vnd.mseq": ["mseq"], "application/vnd.musician": ["mus"], "application/vnd.muvee.style": ["msty"], "application/vnd.mynfc": ["taglet"], "application/vnd.neurolanguage.nlu": ["nlu"], "application/vnd.nitf": ["ntf", "nitf"], "application/vnd.noblenet-directory": ["nnd"], "application/vnd.noblenet-sealer": ["nns"], "application/vnd.noblenet-web": ["nnw"], "application/vnd.nokia.n-gage.ac+xml": ["*ac"], "application/vnd.nokia.n-gage.data": ["ngdat"], "application/vnd.nokia.n-gage.symbian.install": ["n-gage"], "application/vnd.nokia.radio-preset": ["rpst"], "application/vnd.nokia.radio-presets": ["rpss"], "application/vnd.novadigm.edm": ["edm"], "application/vnd.novadigm.edx": ["edx"], "application/vnd.novadigm.ext": ["ext"], "application/vnd.oasis.opendocument.chart": ["odc"], "application/vnd.oasis.opendocument.chart-template": ["otc"], "application/vnd.oasis.opendocument.database": ["odb"], "application/vnd.oasis.opendocument.formula": ["odf"], "application/vnd.oasis.opendocument.formula-template": ["odft"], "application/vnd.oasis.opendocument.graphics": ["odg"], "application/vnd.oasis.opendocument.graphics-template": ["otg"], "application/vnd.oasis.opendocument.image": ["odi"], "application/vnd.oasis.opendocument.image-template": ["oti"], "application/vnd.oasis.opendocument.presentation": ["odp"], "application/vnd.oasis.opendocument.presentation-template": ["otp"], "application/vnd.oasis.opendocument.spreadsheet": ["ods"], "application/vnd.oasis.opendocument.spreadsheet-template": ["ots"], "application/vnd.oasis.opendocument.text": ["odt"], "application/vnd.oasis.opendocument.text-master": ["odm"], "application/vnd.oasis.opendocument.text-template": ["ott"], "application/vnd.oasis.opendocument.text-web": ["oth"], "application/vnd.olpc-sugar": ["xo"], "application/vnd.oma.dd2+xml": ["dd2"], "application/vnd.openblox.game+xml": ["obgx"], "application/vnd.openofficeorg.extension": ["oxt"], "application/vnd.openstreetmap.data+xml": ["osm"], "application/vnd.openxmlformats-officedocument.presentationml.presentation": ["pptx"], "application/vnd.openxmlformats-officedocument.presentationml.slide": ["sldx"], "application/vnd.openxmlformats-officedocument.presentationml.slideshow": ["ppsx"], "application/vnd.openxmlformats-officedocument.presentationml.template": ["potx"], "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ["xlsx"], "application/vnd.openxmlformats-officedocument.spreadsheetml.template": ["xltx"], "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ["docx"], "application/vnd.openxmlformats-officedocument.wordprocessingml.template": ["dotx"], "application/vnd.osgeo.mapguide.package": ["mgp"], "application/vnd.osgi.dp": ["dp"], "application/vnd.osgi.subsystem": ["esa"], "application/vnd.palm": ["pdb", "pqa", "oprc"], "application/vnd.pawaafile": ["paw"], "application/vnd.pg.format": ["str"], "application/vnd.pg.osasli": ["ei6"], "application/vnd.picsel": ["efif"], "application/vnd.pmi.widget": ["wg"], "application/vnd.pocketlearn": ["plf"], "application/vnd.powerbuilder6": ["pbd"], "application/vnd.previewsystems.box": ["box"], "application/vnd.proteus.magazine": ["mgz"], "application/vnd.publishare-delta-tree": ["qps"], "application/vnd.pvi.ptid1": ["ptid"], "application/vnd.quark.quarkxpress": ["qxd", "qxt", "qwd", "qwt", "qxl", "qxb"], "application/vnd.rar": ["rar"], "application/vnd.realvnc.bed": ["bed"], "application/vnd.recordare.musicxml": ["mxl"], "application/vnd.recordare.musicxml+xml": ["musicxml"], "application/vnd.rig.cryptonote": ["cryptonote"], "application/vnd.rim.cod": ["cod"], "application/vnd.rn-realmedia": ["rm"], "application/vnd.rn-realmedia-vbr": ["rmvb"], "application/vnd.route66.link66+xml": ["link66"], "application/vnd.sailingtracker.track": ["st"], "application/vnd.seemail": ["see"], "application/vnd.sema": ["sema"], "application/vnd.semd": ["semd"], "application/vnd.semf": ["semf"], "application/vnd.shana.informed.formdata": ["ifm"], "application/vnd.shana.informed.formtemplate": ["itp"], "application/vnd.shana.informed.interchange": ["iif"], "application/vnd.shana.informed.package": ["ipk"], "application/vnd.simtech-mindmapper": ["twd", "twds"], "application/vnd.smaf": ["mmf"], "application/vnd.smart.teacher": ["teacher"], "application/vnd.software602.filler.form+xml": ["fo"], "application/vnd.solent.sdkm+xml": ["sdkm", "sdkd"], "application/vnd.spotfire.dxp": ["dxp"], "application/vnd.spotfire.sfs": ["sfs"], "application/vnd.stardivision.calc": ["sdc"], "application/vnd.stardivision.draw": ["sda"], "application/vnd.stardivision.impress": ["sdd"], "application/vnd.stardivision.math": ["smf"], "application/vnd.stardivision.writer": ["sdw", "vor"], "application/vnd.stardivision.writer-global": ["sgl"], "application/vnd.stepmania.package": ["smzip"], "application/vnd.stepmania.stepchart": ["sm"], "application/vnd.sun.wadl+xml": ["wadl"], "application/vnd.sun.xml.calc": ["sxc"], "application/vnd.sun.xml.calc.template": ["stc"], "application/vnd.sun.xml.draw": ["sxd"], "application/vnd.sun.xml.draw.template": ["std"], "application/vnd.sun.xml.impress": ["sxi"], "application/vnd.sun.xml.impress.template": ["sti"], "application/vnd.sun.xml.math": ["sxm"], "application/vnd.sun.xml.writer": ["sxw"], "application/vnd.sun.xml.writer.global": ["sxg"], "application/vnd.sun.xml.writer.template": ["stw"], "application/vnd.sus-calendar": ["sus", "susp"], "application/vnd.svd": ["svd"], "application/vnd.symbian.install": ["sis", "sisx"], "application/vnd.syncml+xml": ["xsm"], "application/vnd.syncml.dm+wbxml": ["bdm"], "application/vnd.syncml.dm+xml": ["xdm"], "application/vnd.syncml.dmddf+xml": ["ddf"], "application/vnd.tao.intent-module-archive": ["tao"], "application/vnd.tcpdump.pcap": ["pcap", "cap", "dmp"], "application/vnd.tmobile-livetv": ["tmo"], "application/vnd.trid.tpt": ["tpt"], "application/vnd.triscape.mxs": ["mxs"], "application/vnd.trueapp": ["tra"], "application/vnd.ufdl": ["ufd", "ufdl"], "application/vnd.uiq.theme": ["utz"], "application/vnd.umajin": ["umj"], "application/vnd.unity": ["unityweb"], "application/vnd.uoml+xml": ["uoml"], "application/vnd.vcx": ["vcx"], "application/vnd.visio": ["vsd", "vst", "vss", "vsw"], "application/vnd.visionary": ["vis"], "application/vnd.vsf": ["vsf"], "application/vnd.wap.wbxml": ["wbxml"], "application/vnd.wap.wmlc": ["wmlc"], "application/vnd.wap.wmlscriptc": ["wmlsc"], "application/vnd.webturbo": ["wtb"], "application/vnd.wolfram.player": ["nbp"], "application/vnd.wordperfect": ["wpd"], "application/vnd.wqd": ["wqd"], "application/vnd.wt.stf": ["stf"], "application/vnd.xara": ["xar"], "application/vnd.xfdl": ["xfdl"], "application/vnd.yamaha.hv-dic": ["hvd"], "application/vnd.yamaha.hv-script": ["hvs"], "application/vnd.yamaha.hv-voice": ["hvp"], "application/vnd.yamaha.openscoreformat": ["osf"], "application/vnd.yamaha.openscoreformat.osfpvg+xml": ["osfpvg"], "application/vnd.yamaha.smaf-audio": ["saf"], "application/vnd.yamaha.smaf-phrase": ["spf"], "application/vnd.yellowriver-custom-menu": ["cmp"], "application/vnd.zul": ["zir", "zirz"], "application/vnd.zzazz.deck+xml": ["zaz"], "application/x-7z-compressed": ["7z"], "application/x-abiword": ["abw"], "application/x-ace-compressed": ["ace"], "application/x-apple-diskimage": ["*dmg"], "application/x-arj": ["arj"], "application/x-authorware-bin": ["aab", "x32", "u32", "vox"], "application/x-authorware-map": ["aam"], "application/x-authorware-seg": ["aas"], "application/x-bcpio": ["bcpio"], "application/x-bdoc": ["*bdoc"], "application/x-bittorrent": ["torrent"], "application/x-blorb": ["blb", "blorb"], "application/x-bzip": ["bz"], "application/x-bzip2": ["bz2", "boz"], "application/x-cbr": ["cbr", "cba", "cbt", "cbz", "cb7"], "application/x-cdlink": ["vcd"], "application/x-cfs-compressed": ["cfs"], "application/x-chat": ["chat"], "application/x-chess-pgn": ["pgn"], "application/x-chrome-extension": ["crx"], "application/x-cocoa": ["cco"], "application/x-conference": ["nsc"], "application/x-cpio": ["cpio"], "application/x-csh": ["csh"], "application/x-debian-package": ["*deb", "udeb"], "application/x-dgc-compressed": ["dgc"], "application/x-director": ["dir", "dcr", "dxr", "cst", "cct", "cxt", "w3d", "fgd", "swa"], "application/x-doom": ["wad"], "application/x-dtbncx+xml": ["ncx"], "application/x-dtbook+xml": ["dtb"], "application/x-dtbresource+xml": ["res"], "application/x-dvi": ["dvi"], "application/x-envoy": ["evy"], "application/x-eva": ["eva"], "application/x-font-bdf": ["bdf"], "application/x-font-ghostscript": ["gsf"], "application/x-font-linux-psf": ["psf"], "application/x-font-pcf": ["pcf"], "application/x-font-snf": ["snf"], "application/x-font-type1": ["pfa", "pfb", "pfm", "afm"], "application/x-freearc": ["arc"], "application/x-futuresplash": ["spl"], "application/x-gca-compressed": ["gca"], "application/x-glulx": ["ulx"], "application/x-gnumeric": ["gnumeric"], "application/x-gramps-xml": ["gramps"], "application/x-gtar": ["gtar"], "application/x-hdf": ["hdf"], "application/x-httpd-php": ["php"], "application/x-install-instructions": ["install"], "application/x-iso9660-image": ["*iso"], "application/x-iwork-keynote-sffkey": ["*key"], "application/x-iwork-numbers-sffnumbers": ["*numbers"], "application/x-iwork-pages-sffpages": ["*pages"], "application/x-java-archive-diff": ["jardiff"], "application/x-java-jnlp-file": ["jnlp"], "application/x-keepass2": ["kdbx"], "application/x-latex": ["latex"], "application/x-lua-bytecode": ["luac"], "application/x-lzh-compressed": ["lzh", "lha"], "application/x-makeself": ["run"], "application/x-mie": ["mie"], "application/x-mobipocket-ebook": ["prc", "mobi"], "application/x-ms-application": ["application"], "application/x-ms-shortcut": ["lnk"], "application/x-ms-wmd": ["wmd"], "application/x-ms-wmz": ["wmz"], "application/x-ms-xbap": ["xbap"], "application/x-msaccess": ["mdb"], "application/x-msbinder": ["obd"], "application/x-mscardfile": ["crd"], "application/x-msclip": ["clp"], "application/x-msdos-program": ["*exe"], "application/x-msdownload": ["*exe", "*dll", "com", "bat", "*msi"], "application/x-msmediaview": ["mvb", "m13", "m14"], "application/x-msmetafile": ["*wmf", "*wmz", "*emf", "emz"], "application/x-msmoney": ["mny"], "application/x-mspublisher": ["pub"], "application/x-msschedule": ["scd"], "application/x-msterminal": ["trm"], "application/x-mswrite": ["wri"], "application/x-netcdf": ["nc", "cdf"], "application/x-ns-proxy-autoconfig": ["pac"], "application/x-nzb": ["nzb"], "application/x-perl": ["pl", "pm"], "application/x-pilot": ["*prc", "*pdb"], "application/x-pkcs12": ["p12", "pfx"], "application/x-pkcs7-certificates": ["p7b", "spc"], "application/x-pkcs7-certreqresp": ["p7r"], "application/x-rar-compressed": ["*rar"], "application/x-redhat-package-manager": ["rpm"], "application/x-research-info-systems": ["ris"], "application/x-sea": ["sea"], "application/x-sh": ["sh"], "application/x-shar": ["shar"], "application/x-shockwave-flash": ["swf"], "application/x-silverlight-app": ["xap"], "application/x-sql": ["sql"], "application/x-stuffit": ["sit"], "application/x-stuffitx": ["sitx"], "application/x-subrip": ["srt"], "application/x-sv4cpio": ["sv4cpio"], "application/x-sv4crc": ["sv4crc"], "application/x-t3vm-image": ["t3"], "application/x-tads": ["gam"], "application/x-tar": ["tar"], "application/x-tcl": ["tcl", "tk"], "application/x-tex": ["tex"], "application/x-tex-tfm": ["tfm"], "application/x-texinfo": ["texinfo", "texi"], "application/x-tgif": ["*obj"], "application/x-ustar": ["ustar"], "application/x-virtualbox-hdd": ["hdd"], "application/x-virtualbox-ova": ["ova"], "application/x-virtualbox-ovf": ["ovf"], "application/x-virtualbox-vbox": ["vbox"], "application/x-virtualbox-vbox-extpack": ["vbox-extpack"], "application/x-virtualbox-vdi": ["vdi"], "application/x-virtualbox-vhd": ["vhd"], "application/x-virtualbox-vmdk": ["vmdk"], "application/x-wais-source": ["src"], "application/x-web-app-manifest+json": ["webapp"], "application/x-x509-ca-cert": ["der", "crt", "pem"], "application/x-xfig": ["fig"], "application/x-xliff+xml": ["*xlf"], "application/x-xpinstall": ["xpi"], "application/x-xz": ["xz"], "application/x-zmachine": ["z1", "z2", "z3", "z4", "z5", "z6", "z7", "z8"], "audio/vnd.dece.audio": ["uva", "uvva"], "audio/vnd.digital-winds": ["eol"], "audio/vnd.dra": ["dra"], "audio/vnd.dts": ["dts"], "audio/vnd.dts.hd": ["dtshd"], "audio/vnd.lucent.voice": ["lvp"], "audio/vnd.ms-playready.media.pya": ["pya"], "audio/vnd.nuera.ecelp4800": ["ecelp4800"], "audio/vnd.nuera.ecelp7470": ["ecelp7470"], "audio/vnd.nuera.ecelp9600": ["ecelp9600"], "audio/vnd.rip": ["rip"], "audio/x-aac": ["aac"], "audio/x-aiff": ["aif", "aiff", "aifc"], "audio/x-caf": ["caf"], "audio/x-flac": ["flac"], "audio/x-m4a": ["*m4a"], "audio/x-matroska": ["mka"], "audio/x-mpegurl": ["m3u"], "audio/x-ms-wax": ["wax"], "audio/x-ms-wma": ["wma"], "audio/x-pn-realaudio": ["ram", "ra"], "audio/x-pn-realaudio-plugin": ["rmp"], "audio/x-realaudio": ["*ra"], "audio/x-wav": ["*wav"], "chemical/x-cdx": ["cdx"], "chemical/x-cif": ["cif"], "chemical/x-cmdf": ["cmdf"], "chemical/x-cml": ["cml"], "chemical/x-csml": ["csml"], "chemical/x-xyz": ["xyz"], "image/prs.btif": ["btif"], "image/prs.pti": ["pti"], "image/vnd.adobe.photoshop": ["psd"], "image/vnd.airzip.accelerator.azv": ["azv"], "image/vnd.dece.graphic": ["uvi", "uvvi", "uvg", "uvvg"], "image/vnd.djvu": ["djvu", "djv"], "image/vnd.dvb.subtitle": ["*sub"], "image/vnd.dwg": ["dwg"], "image/vnd.dxf": ["dxf"], "image/vnd.fastbidsheet": ["fbs"], "image/vnd.fpx": ["fpx"], "image/vnd.fst": ["fst"], "image/vnd.fujixerox.edmics-mmr": ["mmr"], "image/vnd.fujixerox.edmics-rlc": ["rlc"], "image/vnd.microsoft.icon": ["ico"], "image/vnd.ms-dds": ["dds"], "image/vnd.ms-modi": ["mdi"], "image/vnd.ms-photo": ["wdp"], "image/vnd.net-fpx": ["npx"], "image/vnd.pco.b16": ["b16"], "image/vnd.tencent.tap": ["tap"], "image/vnd.valve.source.texture": ["vtf"], "image/vnd.wap.wbmp": ["wbmp"], "image/vnd.xiff": ["xif"], "image/vnd.zbrush.pcx": ["pcx"], "image/x-3ds": ["3ds"], "image/x-cmu-raster": ["ras"], "image/x-cmx": ["cmx"], "image/x-freehand": ["fh", "fhc", "fh4", "fh5", "fh7"], "image/x-icon": ["*ico"], "image/x-jng": ["jng"], "image/x-mrsid-image": ["sid"], "image/x-ms-bmp": ["*bmp"], "image/x-pcx": ["*pcx"], "image/x-pict": ["pic", "pct"], "image/x-portable-anymap": ["pnm"], "image/x-portable-bitmap": ["pbm"], "image/x-portable-graymap": ["pgm"], "image/x-portable-pixmap": ["ppm"], "image/x-rgb": ["rgb"], "image/x-tga": ["tga"], "image/x-xbitmap": ["xbm"], "image/x-xpixmap": ["xpm"], "image/x-xwindowdump": ["xwd"], "message/vnd.wfa.wsc": ["wsc"], "model/vnd.collada+xml": ["dae"], "model/vnd.dwf": ["dwf"], "model/vnd.gdl": ["gdl"], "model/vnd.gtw": ["gtw"], "model/vnd.mts": ["mts"], "model/vnd.opengex": ["ogex"], "model/vnd.parasolid.transmit.binary": ["x_b"], "model/vnd.parasolid.transmit.text": ["x_t"], "model/vnd.sap.vds": ["vds"], "model/vnd.usdz+zip": ["usdz"], "model/vnd.valve.source.compiled-map": ["bsp"], "model/vnd.vtu": ["vtu"], "text/prs.lines.tag": ["dsc"], "text/vnd.curl": ["curl"], "text/vnd.curl.dcurl": ["dcurl"], "text/vnd.curl.mcurl": ["mcurl"], "text/vnd.curl.scurl": ["scurl"], "text/vnd.dvb.subtitle": ["sub"], "text/vnd.fly": ["fly"], "text/vnd.fmi.flexstor": ["flx"], "text/vnd.graphviz": ["gv"], "text/vnd.in3d.3dml": ["3dml"], "text/vnd.in3d.spot": ["spot"], "text/vnd.sun.j2me.app-descriptor": ["jad"], "text/vnd.wap.wml": ["wml"], "text/vnd.wap.wmlscript": ["wmls"], "text/x-asm": ["s", "asm"], "text/x-c": ["c", "cc", "cxx", "cpp", "h", "hh", "dic"], "text/x-component": ["htc"], "text/x-fortran": ["f", "for", "f77", "f90"], "text/x-handlebars-template": ["hbs"], "text/x-java-source": ["java"], "text/x-lua": ["lua"], "text/x-markdown": ["mkd"], "text/x-nfo": ["nfo"], "text/x-opml": ["opml"], "text/x-org": ["*org"], "text/x-pascal": ["p", "pas"], "text/x-processing": ["pde"], "text/x-sass": ["sass"], "text/x-scss": ["scss"], "text/x-setext": ["etx"], "text/x-sfv": ["sfv"], "text/x-suse-ymp": ["ymp"], "text/x-uuencode": ["uu"], "text/x-vcalendar": ["vcs"], "text/x-vcard": ["vcf"], "video/vnd.dece.hd": ["uvh", "uvvh"], "video/vnd.dece.mobile": ["uvm", "uvvm"], "video/vnd.dece.pd": ["uvp", "uvvp"], "video/vnd.dece.sd": ["uvs", "uvvs"], "video/vnd.dece.video": ["uvv", "uvvv"], "video/vnd.dvb.file": ["dvb"], "video/vnd.fvt": ["fvt"], "video/vnd.mpegurl": ["mxu", "m4u"], "video/vnd.ms-playready.media.pyv": ["pyv"], "video/vnd.uvvu.mp4": ["uvu", "uvvu"], "video/vnd.vivo": ["viv"], "video/x-f4v": ["f4v"], "video/x-fli": ["fli"], "video/x-flv": ["flv"], "video/x-m4v": ["m4v"], "video/x-matroska": ["mkv", "mk3d", "mks"], "video/x-mng": ["mng"], "video/x-ms-asf": ["asf", "asx"], "video/x-ms-vob": ["vob"], "video/x-ms-wm": ["wm"], "video/x-ms-wmv": ["wmv"], "video/x-ms-wmx": ["wmx"], "video/x-ms-wvx": ["wvx"], "video/x-msvideo": ["avi"], "video/x-sgi-movie": ["movie"], "video/x-smv": ["smv"], "x-conference/x-cooltalk": ["ice"] };
+
+/***/ }),
+/* 24 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var session = __webpack_require__(5);
-var Async = __webpack_require__(24);
+var Async = __webpack_require__(25);
 var EventProxy = __webpack_require__(4).EventProxy;
 var util = __webpack_require__(0);
 
@@ -9207,7 +9230,7 @@ function sliceUploadFile(params, callback) {
         if (!self._isRunningTask(TaskId)) return;
         var _err = {
             UploadId: params.UploadData.UploadId || '',
-            err: err,
+            err: err
         };
         return callback(_err);
     });
@@ -9215,7 +9238,7 @@ function sliceUploadFile(params, callback) {
     // 上传分块完成，开始 uploadSliceComplete 操作
     ep.on('upload_complete', function (UploadCompleteData) {
         var _UploadCompleteData = util.extend({
-          UploadId: params.UploadData.UploadId || ''
+            UploadId: params.UploadData.UploadId || ''
         }, UploadCompleteData);
         callback(null, _UploadCompleteData);
     });
@@ -9227,7 +9250,7 @@ function sliceUploadFile(params, callback) {
             Region: Region,
             Key: Key,
             UploadId: UploadData.UploadId,
-            SliceList: UploadData.SliceList,
+            SliceList: UploadData.SliceList
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
             session.removeUsing(UploadData.UploadId);
@@ -9236,7 +9259,7 @@ function sliceUploadFile(params, callback) {
                 return ep.emit('error', err);
             }
             session.removeUploadId(UploadData.UploadId);
-            onProgress({loaded: FileSize, total: FileSize}, true);
+            onProgress({ loaded: FileSize, total: FileSize }, true);
             ep.emit('upload_complete', data);
         });
     });
@@ -9291,7 +9314,7 @@ function sliceUploadFile(params, callback) {
                 FilePath: FilePath,
                 FileSize: FileSize,
                 SliceSize: ChunkSize,
-                onHashProgress: onHashProgress,
+                onHashProgress: onHashProgress
             }, params);
             getUploadIdAndPartList.call(self, _params, function (err, UploadData) {
                 if (!self._isRunningTask(TaskId)) return;
@@ -9338,7 +9361,6 @@ function sliceUploadFile(params, callback) {
     } else {
         ep.emit('get_file_size_finish');
     }
-
 }
 
 // 获取上传任务的 UploadId
@@ -9358,7 +9380,7 @@ function getUploadIdAndPartList(params, callback) {
     var FinishSliceCount = 0;
     var FinishSize = 0;
     var onHashProgress = util.throttleOnProgress.call(self, FileSize, params.onHashProgress);
-    var getChunkETag = function (PartNumber, callback) {
+    var getChunkETag = function getChunkETag(PartNumber, callback) {
         var start = SliceSize * (PartNumber - 1);
         var end = Math.min(start + SliceSize, FileSize);
         var ChunkSize = end - start;
@@ -9385,13 +9407,13 @@ function getUploadIdAndPartList(params, callback) {
                     ETag: ETag,
                     Size: ChunkSize
                 });
-                onHashProgress({loaded: FinishSize, total: FileSize});
+                onHashProgress({ loaded: FinishSize, total: FileSize });
             });
         }
     };
 
     // 通过和文件的 md5 对比，判断 UploadId 是否可用
-    var isAvailableUploadList = function (PartList, callback) {
+    var isAvailableUploadList = function isAvailableUploadList(PartList, callback) {
         var PartCount = PartList.length;
         // 如果没有分片，通过
         if (PartCount === 0) {
@@ -9409,7 +9431,7 @@ function getUploadIdAndPartList(params, callback) {
             }
         }
         // 逐个分片计算并检查 ETag 是否一致
-        var next = function (index) {
+        var next = function next(index) {
             if (index < PartCount) {
                 var Part = PartList[index];
                 getChunkETag(Part.PartNumber, function (err, chunk) {
@@ -9467,16 +9489,16 @@ function getUploadIdAndPartList(params, callback) {
             Key: Key,
             Headers: util.clone(params.Headers),
             Query: util.clone(params.Query),
-            StorageClass: StorageClass,
+            StorageClass: StorageClass
         }, params);
         self.multipartInit(_params, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
             if (err) return ep.emit('error', err);
             var UploadId = data.UploadId;
             if (!UploadId) {
-                return callback({Message: 'no upload id'});
+                return callback({ Message: 'no upload id' });
             }
-            ep.emit('upload_id_available', {UploadId: UploadId, PartList: []});
+            ep.emit('upload_id_available', { UploadId: UploadId, PartList: [] });
         });
     });
 
@@ -9496,7 +9518,7 @@ function getUploadIdAndPartList(params, callback) {
                 Bucket: Bucket,
                 Region: Region,
                 Key: Key,
-                UploadId: UploadId,
+                UploadId: UploadId
             }, function (err, PartListData) {
                 if (!self._isRunningTask(TaskId)) return;
                 if (err) {
@@ -9542,7 +9564,7 @@ function getUploadIdAndPartList(params, callback) {
             ep.emit('has_and_check_upload_id', RemoteUploadIdList);
             return;
         }
-        var next = function (index) {
+        var next = function next(index) {
             // 如果本地找不到可用 UploadId，再一个个遍历校验远端
             if (index >= LocalUploadIdList.length) {
                 ep.emit('has_and_check_upload_id', RemoteUploadIdList);
@@ -9565,7 +9587,7 @@ function getUploadIdAndPartList(params, callback) {
                 Bucket: Bucket,
                 Region: Region,
                 Key: Key,
-                UploadId: UploadId,
+                UploadId: UploadId
             }, function (err, PartListData) {
                 if (!self._isRunningTask(TaskId)) return;
                 if (err) {
@@ -9576,7 +9598,7 @@ function getUploadIdAndPartList(params, callback) {
                     // 找到可用 UploadId
                     ep.emit('upload_id_available', {
                         UploadId: UploadId,
-                        PartList: PartListData.PartList,
+                        PartList: PartListData.PartList
                     });
                 }
             });
@@ -9590,7 +9612,7 @@ function getUploadIdAndPartList(params, callback) {
         wholeMultipartList.call(self, {
             Bucket: Bucket,
             Region: Region,
-            Key: Key,
+            Key: Key
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
             if (err) {
@@ -9606,7 +9628,8 @@ function getUploadIdAndPartList(params, callback) {
                 ep.emit('seek_local_avail_upload_id', RemoteUploadIdList);
             } else {
                 // 远端没有 UploadId，清理缓存的 UploadId
-                var uuid = session.getFileId(params.FileStat, params.ChunkSize, Bucket, Key), LocalUploadIdList;
+                var uuid = session.getFileId(params.FileStat, params.ChunkSize, Bucket, Key),
+                    LocalUploadIdList;
                 if (uuid && (LocalUploadIdList = session.getUploadIdList(uuid))) {
                     util.each(LocalUploadIdList, function (UploadId) {
                         session.removeUploadId(UploadId);
@@ -9619,7 +9642,6 @@ function getUploadIdAndPartList(params, callback) {
 
     // 开始找可用 UploadId
     ep.emit('get_remote_upload_id_list');
-
 }
 
 // 获取符合条件的全部上传任务 (条件包括 Bucket, Region, Prefix)
@@ -9631,16 +9653,17 @@ function wholeMultipartList(params, callback) {
         Region: params.Region,
         Prefix: params.Key
     };
-    var next = function () {
+    var next = function next() {
         self.multipartList(sendParams, function (err, data) {
             if (err) return callback(err);
             UploadList.push.apply(UploadList, data.Upload || []);
-            if (data.IsTruncated === 'true') { // 列表不完整
+            if (data.IsTruncated === 'true') {
+                // 列表不完整
                 sendParams.KeyMarker = data.NextKeyMarker;
                 sendParams.UploadIdMarker = data.NextUploadIdMarker;
                 next();
             } else {
-                callback(null, {UploadList: UploadList});
+                callback(null, { UploadList: UploadList });
             }
         });
     };
@@ -9657,15 +9680,16 @@ function wholeMultipartListPart(params, callback) {
         Key: params.Key,
         UploadId: params.UploadId
     };
-    var next = function () {
+    var next = function next() {
         self.multipartListPart(sendParams, function (err, data) {
             if (err) return callback(err);
             PartList.push.apply(PartList, data.Part || []);
-            if (data.IsTruncated === 'true') { // 列表不完整
+            if (data.IsTruncated === 'true') {
+                // 列表不完整
                 sendParams.PartNumberMarker = data.NextPartNumberMarker;
                 next();
             } else {
-                callback(null, {PartList: PartList});
+                callback(null, { PartList: PartList });
             }
         });
     };
@@ -9698,11 +9722,11 @@ function uploadSliceList(params, cb) {
     var ServerSideEncryption = params.ServerSideEncryption;
     var needUploadSlices = util.filter(UploadData.PartList, function (SliceItem) {
         if (SliceItem['Uploaded']) {
-            FinishSize += SliceItem['PartNumber'] >= SliceCount ? (FileSize % SliceSize || SliceSize) : SliceSize;
+            FinishSize += SliceItem['PartNumber'] >= SliceCount ? FileSize % SliceSize || SliceSize : SliceSize;
         }
         return !SliceItem['Uploaded'];
     });
-    var onProgress = params.onProgress;
+    var _onProgress2 = params.onProgress;
 
     Async.eachLimit(needUploadSlices, ChunkParallel, function (SliceItem, asyncCallback) {
         if (!self._isRunningTask(TaskId)) return;
@@ -9720,11 +9744,11 @@ function uploadSliceList(params, cb) {
             ServerSideEncryption: ServerSideEncryption,
             FilePath: FilePath,
             UploadData: UploadData,
-            onProgress: function (data) {
+            onProgress: function onProgress(data) {
                 FinishSize += data.loaded - preAddSize;
                 preAddSize = data.loaded;
-                onProgress({loaded: FinishSize, total: FileSize});
-            },
+                _onProgress2({ loaded: FinishSize, total: FileSize });
+            }
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
             if (err) {
@@ -9733,7 +9757,7 @@ function uploadSliceList(params, cb) {
                 FinishSize += currentSize - preAddSize;
                 SliceItem.ETag = data.ETag;
             }
-            onProgress({loaded: FinishSize, total: FileSize});
+            _onProgress2({ loaded: FinishSize, total: FileSize });
             asyncCallback(err || null, data);
         });
     }, function (err) {
@@ -9775,7 +9799,7 @@ function uploadSliceItem(params, callback) {
 
     var headersWhiteList = ['x-cos-traffic-limit', 'x-cos-mime-limit'];
     var headers = {};
-    util.each(Headers, function(v, k) {
+    util.each(Headers, function (v, k) {
         if (headersWhiteList.indexOf(k) > -1) {
             headers[k] = v;
         }
@@ -9799,7 +9823,7 @@ function uploadSliceItem(params, callback) {
                 Body: Body,
                 Headers: headers,
                 onProgress: params.onProgress,
-                ContentMD5: contentMd5,
+                ContentMD5: contentMd5
             }, function (err, data) {
                 if (!self._isRunningTask(TaskId)) return;
                 if (err) {
@@ -9815,7 +9839,6 @@ function uploadSliceItem(params, callback) {
         });
     });
 }
-
 
 // 完成分块上传
 function uploadSliceComplete(params, callback) {
@@ -9897,7 +9920,7 @@ function abortUploadTask(params, callback) {
         });
     } else if (Level === 'file') {
         // 文件级别的任务抛弃，抛弃该文件的全部上传任务
-        if (!Key) return callback({error: 'abort_upload_task_no_key'});
+        if (!Key) return callback({ error: 'abort_upload_task_no_key' });
         wholeMultipartList.call(self, {
             Bucket: Bucket,
             Region: Region,
@@ -9910,14 +9933,14 @@ function abortUploadTask(params, callback) {
         });
     } else if (Level === 'task') {
         // 单个任务级别的任务抛弃，抛弃指定 UploadId 的上传任务
-        if (!UploadId) return callback({error: 'abort_upload_task_no_id'});
-        if (!Key) return callback({error: 'abort_upload_task_no_key'});
+        if (!UploadId) return callback({ error: 'abort_upload_task_no_id' });
+        if (!Key) return callback({ error: 'abort_upload_task_no_key' });
         ep.emit('get_abort_array', [{
             Key: Key,
             UploadId: UploadId
         }]);
     } else {
-        return callback({error: 'abort_unknown_level'});
+        return callback({ error: 'abort_unknown_level' });
     }
 }
 
@@ -9936,7 +9959,7 @@ function abortUploadTaskArray(params, callback) {
     Async.eachLimit(AbortArray, AsyncLimit, function (AbortItem, callback) {
         var eachIndex = index;
         if (Key && Key !== AbortItem.Key) {
-            resultList[eachIndex] = {error: {KeyNotMatch: true}};
+            resultList[eachIndex] = { error: { KeyNotMatch: true } };
             callback(null);
             return;
         }
@@ -9955,11 +9978,10 @@ function abortUploadTaskArray(params, callback) {
                 Key: AbortItem.Key,
                 UploadId: UploadId
             };
-            resultList[eachIndex] = {error: err, task: task};
+            resultList[eachIndex] = { error: err, task: task };
             callback(null);
         });
         index++;
-
     }, function (err) {
         if (err) {
             return callback(err);
@@ -9988,45 +10010,45 @@ function abortUploadTaskArray(params, callback) {
 
 // 高级上传
 function uploadFile(params, callback) {
-  var self = this;
+    var self = this;
 
-  // 判断多大的文件使用分片上传
-  var SliceSize = params.SliceSize === undefined ? self.options.SliceSize : params.SliceSize;
+    // 判断多大的文件使用分片上传
+    var SliceSize = params.SliceSize === undefined ? self.options.SliceSize : params.SliceSize;
 
-  var taskList = [];
+    var taskList = [];
 
-  var FileSize = params.FileSize;
-  var fileInfo = {TaskId: ''};
+    var FileSize = params.FileSize;
+    var fileInfo = { TaskId: '' };
 
-  // 整理 option，用于返回给回调
-  util.each(params, function (v, k) {
-      if (typeof v !== 'object' && typeof v !== 'function') {
-          fileInfo[k] = v;
-      }
-  });
+    // 整理 option，用于返回给回调
+    util.each(params, function (v, k) {
+        if ((typeof v === 'undefined' ? 'undefined' : _typeof(v)) !== 'object' && typeof v !== 'function') {
+            fileInfo[k] = v;
+        }
+    });
 
-  // 处理文件 TaskReady
-  var _onTaskReady = params.onTaskReady;
-  params.onTaskReady = function (tid) {
-      fileInfo.TaskId = tid;
-      _onTaskReady && _onTaskReady(tid);
-  };
+    // 处理文件 TaskReady
+    var _onTaskReady = params.onTaskReady;
+    params.onTaskReady = function (tid) {
+        fileInfo.TaskId = tid;
+        _onTaskReady && _onTaskReady(tid);
+    };
 
-  // 处理文件完成
-  var _onFileFinish = params.onFileFinish;
-  var onFileFinish = function (err, data) {
-      _onFileFinish && _onFileFinish(err, data, fileInfo);
-      callback && callback(err, data);
-  };
+    // 处理文件完成
+    var _onFileFinish = params.onFileFinish;
+    var onFileFinish = function onFileFinish(err, data) {
+        _onFileFinish && _onFileFinish(err, data, fileInfo);
+        callback && callback(err, data);
+    };
 
-  // 添加上传任务
-  var api = FileSize > SliceSize ? 'sliceUploadFile' : 'postObject';
-  taskList.push({
-      api: api,
-      params: params,
-      callback: onFileFinish,
-  });
-  self._addTasks(taskList);
+    // 添加上传任务
+    var api = FileSize > SliceSize ? 'sliceUploadFile' : 'postObject';
+    taskList.push({
+        api: api,
+        params: params,
+        callback: onFileFinish
+    });
+    self._addTasks(taskList);
 }
 
 // 批量上传文件
@@ -10045,7 +10067,7 @@ function uploadFiles(params, callback) {
     var unFinishCount = params.files.length;
     var _onTotalFileFinish = params.onFileFinish;
     var resultList = Array(unFinishCount);
-    var onTotalFileFinish = function (err, data, options) {
+    var onTotalFileFinish = function onTotalFileFinish(err, data, options) {
         onTotalProgress(null, true);
         _onTotalFileFinish && _onTotalFileFinish(err, data, options);
         resultList[options.Index] = {
@@ -10055,7 +10077,7 @@ function uploadFiles(params, callback) {
         };
         if (--unFinishCount <= 0 && callback) {
             callback(null, {
-                files: resultList,
+                files: resultList
             });
         }
     };
@@ -10064,14 +10086,14 @@ function uploadFiles(params, callback) {
     var taskList = [];
     util.each(params.files, function (fileParams, index) {
         var FileSize = fileParams.FileSize;
-        var fileInfo = {Index: index, TaskId: ''};
+        var fileInfo = { Index: index, TaskId: '' };
 
         // 更新文件总大小
         TotalSize += FileSize;
 
         // 整理 option，用于返回给回调
         util.each(fileParams, function (v, k) {
-            if (typeof v !== 'object' && typeof v !== 'function') {
+            if ((typeof v === 'undefined' ? 'undefined' : _typeof(v)) !== 'object' && typeof v !== 'function') {
                 fileInfo[k] = v;
             }
         });
@@ -10090,12 +10112,12 @@ function uploadFiles(params, callback) {
             TotalFinish = TotalFinish - PreAddSize + info.loaded;
             PreAddSize = info.loaded;
             _onProgress && _onProgress(info);
-            onTotalProgress({loaded: TotalFinish, total: TotalSize});
+            onTotalProgress({ loaded: TotalFinish, total: TotalSize });
         };
 
         // 处理单个文件完成
         var _onFileFinish = fileParams.onFileFinish;
-        var onFileFinish = function (err, data) {
+        var onFileFinish = function onFileFinish(err, data) {
             _onFileFinish && _onFileFinish(err, data);
             onTotalFileFinish && onTotalFileFinish(err, data, fileInfo);
         };
@@ -10105,7 +10127,7 @@ function uploadFiles(params, callback) {
         taskList.push({
             api: api,
             params: fileParams,
-            callback: onFileFinish,
+            callback: onFileFinish
         });
     });
     self._addTasks(taskList);
@@ -10122,7 +10144,7 @@ function sliceCopyFile(params, callback) {
     var CopySource = params.CopySource;
     var m = CopySource.match(/^([^.]+-\d+)\.cos(v6)?\.([^.]+)\.[^/]+\/(.+)$/);
     if (!m) {
-        callback({error: 'CopySource format error'});
+        callback({ error: 'CopySource format error' });
         return;
     }
 
@@ -10137,7 +10159,7 @@ function sliceCopyFile(params, callback) {
 
     var FinishSize = 0;
     var FileSize;
-    var onProgress;
+    var _onProgress3;
 
     // 分片复制完成，开始 multipartComplete 操作
     ep.on('copy_slice_complete', function (UploadData) {
@@ -10146,18 +10168,18 @@ function sliceCopyFile(params, callback) {
             Region: Region,
             Key: Key,
             UploadId: UploadData.UploadId,
-            Parts: UploadData.PartList,
-        },function (err, data) {
+            Parts: UploadData.PartList
+        }, function (err, data) {
             if (err) {
-                onProgress(null, true);
+                _onProgress3(null, true);
                 return callback(err);
             }
-            onProgress({loaded: FileSize, total: FileSize}, true);
+            _onProgress3({ loaded: FileSize, total: FileSize }, true);
             callback(null, data);
         });
     });
 
-    ep.on('get_copy_data_finish',function (UploadData) {
+    ep.on('get_copy_data_finish', function (UploadData) {
         Async.eachLimit(UploadData.PartList, ChunkParallel, function (SliceItem, asyncCallback) {
             var PartNumber = SliceItem.PartNumber;
             var CopySourceRange = SliceItem.CopySourceRange;
@@ -10172,16 +10194,16 @@ function sliceCopyFile(params, callback) {
                 UploadId: UploadData.UploadId,
                 PartNumber: PartNumber,
                 CopySourceRange: CopySourceRange,
-                onProgress: function (data) {
+                onProgress: function onProgress(data) {
                     FinishSize += data.loaded - preAddSize;
                     preAddSize = data.loaded;
-                    onProgress({loaded: FinishSize, total: FileSize});
+                    _onProgress3({ loaded: FinishSize, total: FileSize });
                 }
-            },function (err,data) {
+            }, function (err, data) {
                 if (err) {
                     return asyncCallback(err);
                 }
-                onProgress({loaded: FinishSize, total: FileSize});
+                _onProgress3({ loaded: FinishSize, total: FileSize });
 
                 FinishSize += currentSize - preAddSize;
                 SliceItem.ETag = data.ETag;
@@ -10189,7 +10211,7 @@ function sliceCopyFile(params, callback) {
             });
         }, function (err) {
             if (err) {
-                onProgress(null, true);
+                _onProgress3(null, true);
                 return callback(err);
             }
 
@@ -10213,12 +10235,12 @@ function sliceCopyFile(params, callback) {
             var list = [];
             for (var partNumber = 1; partNumber <= ChunkCount; partNumber++) {
                 var start = (partNumber - 1) * ChunkSize;
-                var end = partNumber * ChunkSize < FileSize ? (partNumber * ChunkSize - 1) : FileSize - 1;
+                var end = partNumber * ChunkSize < FileSize ? partNumber * ChunkSize - 1 : FileSize - 1;
                 var item = {
                     PartNumber: partNumber,
                     start: start,
                     end: end,
-                    CopySourceRange: "bytes=" + start + "-" + end,
+                    CopySourceRange: "bytes=" + start + "-" + end
                 };
                 list.push(item);
             }
@@ -10257,8 +10279,8 @@ function sliceCopyFile(params, callback) {
             Bucket: Bucket,
             Region: Region,
             Key: Key,
-            Headers: TargetHeader,
-        },function (err,data) {
+            Headers: TargetHeader
+        }, function (err, data) {
             if (err) {
                 return callback(err);
             }
@@ -10271,11 +10293,11 @@ function sliceCopyFile(params, callback) {
     self.headObject({
         Bucket: SourceBucket,
         Region: SourceRegion,
-        Key: SourceKey,
-    },function(err, data) {
+        Key: SourceKey
+    }, function (err, data) {
         if (err) {
             if (err.statusCode && err.statusCode === 404) {
-                callback({ErrorStatus: SourceKey + ' Not Exist'});
+                callback({ ErrorStatus: SourceKey + ' Not Exist' });
             } else {
                 callback(err);
             }
@@ -10284,11 +10306,11 @@ function sliceCopyFile(params, callback) {
 
         FileSize = params.FileSize = data.headers['content-length'];
         if (FileSize === undefined || !FileSize) {
-            callback({error: 'get Content-Length error, please add "Content-Length" to CORS ExposeHeader setting.'});
+            callback({ error: 'get Content-Length error, please add "Content-Length" to CORS ExposeHeader setting.' });
             return;
         }
 
-        onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
+        _onProgress3 = util.throttleOnProgress.call(self, FileSize, params.onProgress);
 
         // 开始上传
         if (FileSize <= CopySliceSize) {
@@ -10297,10 +10319,10 @@ function sliceCopyFile(params, callback) {
             }
             self.putObjectCopy(params, function (err, data) {
                 if (err) {
-                    onProgress(null, true);
+                    _onProgress3(null, true);
                     return callback(err);
                 }
-                onProgress({loaded: FileSize, total: FileSize}, true);
+                _onProgress3({ loaded: FileSize, total: FileSize }, true);
                 callback(err, data);
             });
         } else {
@@ -10311,7 +10333,7 @@ function sliceCopyFile(params, callback) {
                 'Content-Encoding': resHeaders['content-encoding'],
                 'Content-Type': resHeaders['content-type'],
                 'Expires': resHeaders['expires'],
-                'x-cos-storage-class': resHeaders['x-cos-storage-class'],
+                'x-cos-storage-class': resHeaders['x-cos-storage-class']
             };
             util.each(resHeaders, function (v, k) {
                 var metaPrefix = 'x-cos-meta-';
@@ -10346,24 +10368,23 @@ function copySliceItem(params, callback) {
             Key: Key,
             CopySource: CopySource,
             UploadId: UploadId,
-            PartNumber:PartNumber,
-            CopySourceRange:CopySourceRange,
-            onProgress:params.onProgress,
-        },function (err,data) {
+            PartNumber: PartNumber,
+            CopySourceRange: CopySourceRange,
+            onProgress: params.onProgress
+        }, function (err, data) {
             tryCallback(err || null, data);
-        })
+        });
     }, function (err, data) {
         return callback(err, data);
     });
 }
-
 
 var API_MAP = {
     sliceUploadFile: sliceUploadFile,
     abortUploadTask: abortUploadTask,
     uploadFile: uploadFile,
     uploadFiles: uploadFiles,
-    sliceCopyFile: sliceCopyFile,
+    sliceCopyFile: sliceCopyFile
 };
 
 module.exports.init = function (COS, task) {
@@ -10373,12 +10394,14 @@ module.exports.init = function (COS, task) {
     });
 };
 
-
 /***/ }),
-/* 24 */
-/***/ (function(module, exports) {
+/* 25 */
+/***/ (function(module, exports, __webpack_require__) {
 
-var eachLimit = function (arr, limit, iterator, callback) {
+"use strict";
+
+
+var eachLimit = function eachLimit(arr, limit, iterator, callback) {
     callback = callback || function () {};
     if (!arr.length || limit <= 0) {
         return callback();
@@ -10388,7 +10411,7 @@ var eachLimit = function (arr, limit, iterator, callback) {
     var started = 0;
     var running = 0;
 
-    (function replenish () {
+    (function replenish() {
         if (completed >= arr.length) {
             return callback();
         }
@@ -10400,7 +10423,7 @@ var eachLimit = function (arr, limit, iterator, callback) {
 
                 if (err) {
                     callback(err);
-                    callback = function () {};
+                    callback = function callback() {};
                 } else {
                     completed += 1;
                     running -= 1;
@@ -10415,8 +10438,8 @@ var eachLimit = function (arr, limit, iterator, callback) {
     })();
 };
 
-var retry = function (times, iterator, callback) {
-    var next = function (index) {
+var retry = function retry(times, iterator, callback) {
+    var next = function next(index) {
         iterator(function (err, data) {
             if (err && index < times) {
                 next(index + 1);

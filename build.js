@@ -45,7 +45,10 @@ var config = {
         rules: [
             {
                 test: /\.m?js$/,
-                exclude: /(node_modules|bower_components)/,
+                loader: 'babel-loader',
+                options: {
+                  presets: ['es2015']
+               }
             }
         ]
     },
@@ -66,7 +69,7 @@ if (process.env.NODE_ENV === 'production') {
         'demo-album/project.config.json',
     ]);
     config.watch = false;
-    config.output.filename = 'cos-wx-sdk-v5.js';
+    config.output.filename = 'cos-wx-sdk-v5.min.js';
     config.plugins = (config.plugins || []).concat([
         new webpack.DefinePlugin({
             'process.env': {
@@ -92,7 +95,10 @@ webpack(config, function (err, stats) {
     // 每次运行 npm run build，将 sourcePath 代码复制一份放入 targetPath
     var sourcePath = path.resolve(__dirname, './demo/lib/cos-wx-sdk-v5.js');
     var targetPath = path.resolve(__dirname, './demo-album/lib/cos-wx-sdk-v5.js');
+    var minSourcePath = path.resolve(__dirname, './demo/lib/cos-wx-sdk-v5.min.js');
+    var mintTargetPath = path.resolve(__dirname, './demo-album/lib/cos-wx-sdk-v5.min.js');
     fs.createReadStream(sourcePath).pipe(fs.createWriteStream(targetPath));
+    fs.createReadStream(minSourcePath).pipe(fs.createWriteStream(mintTargetPath));
     if (err) throw err
     process.stdout.write(stats.toString({
         colors: true,

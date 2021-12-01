@@ -49,6 +49,14 @@ var COS = function (options) {
     if (this.options.AppId) {
         console.warn('warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g: "test-1250000000").');
     }
+    if (this.options.SecretId && this.options.SecretId.indexOf(' ') > -1) {
+        console.error('error: SecretId格式错误，请检查');
+        console.error('error: SecretId format is incorrect. Please check');
+    }
+    if (this.options.SecretKey && this.options.SecretKey.indexOf(' ') > -1) {
+        console.error('error: SecretKey格式错误，请检查');
+        console.error('error: SecretKey format is incorrect. Please check');
+    }
     event.init(this);
     task.init(this);
 };
@@ -57,6 +65,6 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.1.1';
+COS.version = '1.1.2';
 
 module.exports = COS;
