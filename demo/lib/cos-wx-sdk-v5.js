@@ -2306,7 +2306,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.1.3';
+COS.version = '1.1.4';
 
 module.exports = COS;
 
@@ -8419,13 +8419,13 @@ function getUrl(params) {
 }
 
 var getSignHost = function getSignHost(opt) {
-    if (!opt.Bucket || !opt.Bucket) return '';
+    if (!opt.Bucket || !opt.Region) return '';
     var url = opt.Url || getUrl({
         ForcePathStyle: this.options.ForcePathStyle,
         protocol: this.options.Protocol,
         domain: this.options.Domain,
         bucket: opt.Bucket,
-        region: opt.Region
+        region: this.options.UseAccelerate ? 'accelerate' : opt.Region
     });
     var urlHost = url.replace(/^https?:\/\/([^/]+)(\/.*)?$/, '$1');
     var standardHostReg = new RegExp('^([a-z\\d-]+-\\d+\\.)?(cos|cosv6|ci|pic)\\.([a-z\\d-]+)\\.myqcloud\\.com$');
