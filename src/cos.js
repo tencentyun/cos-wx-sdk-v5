@@ -21,9 +21,9 @@ var defaultOptions = {
     MaxPartNumber: 10000,
     ProgressInterval: 1000,
     UploadQueueSize: 10000,
-    Domain: '',
+    Domain: '', // 优先级低于EndPoint
     ServiceDomain: '',
-    Protocol: '',
+    // Protocol: '',
     CompatibilityMode: false,
     ForcePathStyle: false,
     Timeout: 0, // 单位毫秒，0 代表不设置超时时间
@@ -31,7 +31,10 @@ var defaultOptions = {
     SystemClockOffset: 0, // 单位毫秒，ms
     UploadCheckContentMd5: false,
     UploadIdCacheLimit: 50,
-    UseAccelerate: false,
+    UseAccelerate: false, // 使用全球加速
+    EnableOldDomain: false, // 是否默认使用原myqcloud.com域名，默认不使用
+    EnableInternalDomain: false, // 是否使用内网域名，小程序默认使用外网域名
+    Endpoint: '' // 指定endPoint,比如cos.ap-guangzhou.tencentcos.cn
 };
 
 // 对外暴露的类
