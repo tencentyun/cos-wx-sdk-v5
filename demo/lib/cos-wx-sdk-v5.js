@@ -2306,7 +2306,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.1.4';
+COS.version = '1.1.5';
 
 module.exports = COS;
 
@@ -7259,6 +7259,14 @@ function postObject(params, callback) {
     headers['x-cos-storage-class'] = params['StorageClass'];
     headers['x-cos-mime-limit'] = params['MimeLimit'];
     headers['x-cos-traffic-limit'] = params['TrafficLimit'];
+    // SSE-C
+    headers['x-cos-server-side-encryption-customer-algorithm'] = params['SSECustomerAlgorithm'];
+    headers['x-cos-server-side-encryption-customer-key'] = params['SSECustomerKey'];
+    headers['x-cos-server-side-encryption-customer-key-MD5'] = params['SSECustomerKeyMD5'];
+    // SSE-COS、SSE-KMS
+    headers['x-cos-server-side-encryption'] = params['ServerSideEncryption'];
+    headers['x-cos-server-side-encryption-cos-kms-key-id'] = params['SSEKMSKeyId'];
+    headers['x-cos-server-side-encryption-context'] = params['SSEContext'];
 
     // 删除 Content-Length 避免签名错误
     delete headers['Content-Length'];
