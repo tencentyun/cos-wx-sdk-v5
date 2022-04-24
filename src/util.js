@@ -89,8 +89,11 @@ var getAuth = function (opt) {
         pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
     }
 
+     // ForceSignHost明确传入false才不加入host签名
+     var forceSignHost = opt.ForceSignHost === false ? false : true;
+
     // 如果有传入存储桶，那么签名默认加 Host 参与计算，避免跨桶访问
-    if (!headers.Host && !headers.host && opt.Bucket && opt.Region) headers.Host = opt.Bucket + '.cos.' + opt.Region + '.myqcloud.com';
+    if (!headers.Host && !headers.host && opt.Bucket && opt.Region && forceSignHost) headers.Host = opt.Bucket + '.cos.' + opt.Region + '.myqcloud.com';
 
     if (!SecretId) return console.error('missing param SecretId');
     if (!SecretKey) return console.error('missing param SecretKey');
@@ -386,6 +389,8 @@ var apiWrapper = function (apiName, apiFn) {
         // 代理回调函数
         var formatResult = function (result) {
             if (result && result.headers) {
+                result.headers['x-cos-request-id'] && (result.RequestId = result.headers['x-cos-request-id']);
+                result.headers['x-ci-request-id'] && (result.RequestId = result.headers['x-ci-request-id']);
                 result.headers['x-cos-version-id'] && (result.VersionId = result.headers['x-cos-version-id']);
                 result.headers['x-cos-delete-marker'] && (result.DeleteMarker = result.headers['x-cos-delete-marker']);
             }

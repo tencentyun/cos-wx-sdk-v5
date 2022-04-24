@@ -32,6 +32,7 @@ var defaultOptions = {
     UploadCheckContentMd5: false,
     UploadIdCacheLimit: 50,
     UseAccelerate: false,
+    ForceSignHost: true, // 默认将host加入签名计算，关闭后可能导致越权风险，建议保持为true
 };
 
 // 对外暴露的类
@@ -64,7 +65,12 @@ var COS = function (options) {
 base.init(COS, task);
 advance.init(COS, task);
 
+COS.util = {
+  md5: util.md5,
+  xml2json: util.xml2json,
+  json2xml: util.json2xml,
+};
 COS.getAuthorization = util.getAuth;
-COS.version = '1.1.5';
+COS.version = '1.1.6';
 
 module.exports = COS;

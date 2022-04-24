@@ -162,8 +162,11 @@ var getAuth = function getAuth(opt) {
         pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
     }
 
+    // ForceSignHost明确传入false才不加入host签名
+    var forceSignHost = opt.ForceSignHost === false ? false : true;
+
     // 如果有传入存储桶，那么签名默认加 Host 参与计算，避免跨桶访问
-    if (!headers.Host && !headers.host && opt.Bucket && opt.Region) headers.Host = opt.Bucket + '.cos.' + opt.Region + '.myqcloud.com';
+    if (!headers.Host && !headers.host && opt.Bucket && opt.Region && forceSignHost) headers.Host = opt.Bucket + '.cos.' + opt.Region + '.myqcloud.com';
 
     if (!SecretId) return console.error('missing param SecretId');
     if (!SecretKey) return console.error('missing param SecretKey');
@@ -451,6 +454,8 @@ var apiWrapper = function apiWrapper(apiName, apiFn) {
         // 代理回调函数
         var formatResult = function formatResult(result) {
             if (result && result.headers) {
+                result.headers['x-cos-request-id'] && (result.RequestId = result.headers['x-cos-request-id']);
+                result.headers['x-ci-request-id'] && (result.RequestId = result.headers['x-ci-request-id']);
                 result.headers['x-cos-version-id'] && (result.VersionId = result.headers['x-cos-version-id']);
                 result.headers['x-cos-delete-marker'] && (result.DeleteMarker = result.headers['x-cos-delete-marker']);
             }
@@ -2272,7 +2277,8 @@ var defaultOptions = {
     SystemClockOffset: 0, // 单位毫秒，ms
     UploadCheckContentMd5: false,
     UploadIdCacheLimit: 50,
-    UseAccelerate: false
+    UseAccelerate: false,
+    ForceSignHost: true // 默认将host加入签名计算，关闭后可能导致越权风险，建议保持为true
 };
 
 // 对外暴露的类
@@ -2305,8 +2311,13 @@ var COS = function COS(options) {
 base.init(COS, task);
 advance.init(COS, task);
 
+COS.util = {
+    md5: util.md5,
+    xml2json: util.xml2json,
+    json2xml: util.json2xml
+};
 COS.getAuthorization = util.getAuth;
-COS.version = '1.1.5';
+COS.version = '1.1.6';
 
 module.exports = COS;
 
@@ -8280,7 +8291,8 @@ function getObjectUrl(params, callback) {
         Expires: params.Expires,
         Headers: params.Headers,
         Query: params.Query,
-        SignHost: SignHost
+        SignHost: SignHost,
+        ForceSignHost: params.ForceSignHost === false ? false : self.options.ForceSignHost // getObjectUrl支持传参ForceSignHost
     }, function (err, AuthData) {
         if (!callback) return;
         if (err) {
@@ -8451,8 +8463,10 @@ function getAuthorizationAsync(params, callback) {
         if (k.toLowerCase() === 'host') headerHost = v;
     });
 
+    // ForceSignHost明确传入false才不加入host签名
+    var forceSignHost = params.ForceSignHost === false ? false : true;
     // Host 加入签名计算
-    if (!headerHost && params.SignHost) headers.Host = params.SignHost;
+    if (!headerHost && params.SignHost && forceSignHost) headers.Host = params.SignHost;
 
     var cb = function cb(AuthData) {
 
@@ -8535,7 +8549,8 @@ function getAuthorizationAsync(params, callback) {
             Headers: headers,
             Expires: params.Expires,
             SystemClockOffset: self.options.SystemClockOffset,
-            KeyTime: KeyTime
+            KeyTime: KeyTime,
+            ForceSignHost: forceSignHost
         });
         var AuthData = {
             Authorization: Authorization,
@@ -8562,7 +8577,8 @@ function getAuthorizationAsync(params, callback) {
             Query: params.Query,
             Headers: headers,
             Scope: Scope,
-            SystemClockOffset: self.options.SystemClockOffset
+            SystemClockOffset: self.options.SystemClockOffset,
+            ForceSignHost: forceSignHost
         }, function (AuthData) {
             if (typeof AuthData === 'string') {
                 AuthData = { Authorization: AuthData };
@@ -8602,7 +8618,8 @@ function getAuthorizationAsync(params, callback) {
                 Query: params.Query,
                 Headers: headers,
                 Expires: params.Expires,
-                SystemClockOffset: self.options.SystemClockOffset
+                SystemClockOffset: self.options.SystemClockOffset,
+                ForceSignHost: forceSignHost
             });
             var AuthData = {
                 Authorization: Authorization,
@@ -8675,7 +8692,8 @@ function submitRequest(params, callback) {
             SignHost: SignHost,
             Action: params.Action,
             ResourceKey: params.ResourceKey,
-            Scope: params.Scope
+            Scope: params.Scope,
+            ForceSignHost: self.options.ForceSignHost
         }, function (err, AuthData) {
             if (err) {
                 callback(err);
