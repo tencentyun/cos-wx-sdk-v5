@@ -71,6 +71,6 @@ COS.util = {
   json2xml: util.json2xml,
 };
 COS.getAuthorization = util.getAuth;
-COS.version = '1.1.6';
+COS.version = '1.1.7';
 
 module.exports = COS;

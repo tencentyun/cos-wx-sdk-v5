@@ -70,7 +70,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "/Users/tianfeng/Documents/项目/sdk/cos-wx-sdk-v5/demo/lib";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 6);
+/******/ 	return __webpack_require__(__webpack_require__.s = 7);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -82,11 +82,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
-var md5 = __webpack_require__(8);
-var CryptoJS = __webpack_require__(12);
-var xml2json = __webpack_require__(13);
-var json2xml = __webpack_require__(16);
-var base64 = __webpack_require__(3);
+var md5 = __webpack_require__(9);
+var CryptoJS = __webpack_require__(13);
+var xml2json = __webpack_require__(14);
+var json2xml = __webpack_require__(19);
+var base64 = __webpack_require__(4);
 var btoa = base64.btoa;
 var wxfs = wx.getFileSystemManager();
 
@@ -681,10 +681,189 @@ var util = {
 
 module.exports = util;
 xml2json;
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)))
 
 /***/ }),
 /* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+/**
+ * "Shallow freezes" an object to render it immutable.
+ * Uses `Object.freeze` if available,
+ * otherwise the immutability is only in the type.
+ *
+ * Is used to create "enum like" objects.
+ *
+ * @template T
+ * @param {T} object the object to freeze
+ * @param {Pick<ObjectConstructor, 'freeze'> = Object} oc `Object` by default,
+ * 				allows to inject custom object constructor for tests
+ * @returns {Readonly<T>}
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/freeze
+ */
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+function freeze(object, oc) {
+	if (oc === undefined) {
+		oc = Object;
+	}
+	return oc && typeof oc.freeze === 'function' ? oc.freeze(object) : object;
+}
+
+/**
+ * Since we can not rely on `Object.assign` we provide a simplified version
+ * that is sufficient for our needs.
+ *
+ * @param {Object} target
+ * @param {Object | null | undefined} source
+ *
+ * @returns {Object} target
+ * @throws TypeError if target is not an object
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign
+ * @see https://tc39.es/ecma262/multipage/fundamental-objects.html#sec-object.assign
+ */
+function assign(target, source) {
+	if (target === null || (typeof target === 'undefined' ? 'undefined' : _typeof(target)) !== 'object') {
+		throw new TypeError('target is not an object');
+	}
+	for (var key in source) {
+		if (Object.prototype.hasOwnProperty.call(source, key)) {
+			target[key] = source[key];
+		}
+	}
+	return target;
+}
+
+/**
+ * All mime types that are allowed as input to `DOMParser.parseFromString`
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/DOMParser/parseFromString#Argument02 MDN
+ * @see https://html.spec.whatwg.org/multipage/dynamic-markup-insertion.html#domparsersupportedtype WHATWG HTML Spec
+ * @see DOMParser.prototype.parseFromString
+ */
+var MIME_TYPE = freeze({
+	/**
+  * `text/html`, the only mime type that triggers treating an XML document as HTML.
+  *
+  * @see DOMParser.SupportedType.isHTML
+  * @see https://www.iana.org/assignments/media-types/text/html IANA MimeType registration
+  * @see https://en.wikipedia.org/wiki/HTML Wikipedia
+  * @see https://developer.mozilla.org/en-US/docs/Web/API/DOMParser/parseFromString MDN
+  * @see https://html.spec.whatwg.org/multipage/dynamic-markup-insertion.html#dom-domparser-parsefromstring WHATWG HTML Spec
+  */
+	HTML: 'text/html',
+
+	/**
+  * Helper method to check a mime type if it indicates an HTML document
+  *
+  * @param {string} [value]
+  * @returns {boolean}
+  *
+  * @see https://www.iana.org/assignments/media-types/text/html IANA MimeType registration
+  * @see https://en.wikipedia.org/wiki/HTML Wikipedia
+  * @see https://developer.mozilla.org/en-US/docs/Web/API/DOMParser/parseFromString MDN
+  * @see https://html.spec.whatwg.org/multipage/dynamic-markup-insertion.html#dom-domparser-parsefromstring 	 */
+	isHTML: function isHTML(value) {
+		return value === MIME_TYPE.HTML;
+	},
+
+	/**
+  * `application/xml`, the standard mime type for XML documents.
+  *
+  * @see https://www.iana.org/assignments/media-types/application/xml IANA MimeType registration
+  * @see https://tools.ietf.org/html/rfc7303#section-9.1 RFC 7303
+  * @see https://en.wikipedia.org/wiki/XML_and_MIME Wikipedia
+  */
+	XML_APPLICATION: 'application/xml',
+
+	/**
+  * `text/html`, an alias for `application/xml`.
+  *
+  * @see https://tools.ietf.org/html/rfc7303#section-9.2 RFC 7303
+  * @see https://www.iana.org/assignments/media-types/text/xml IANA MimeType registration
+  * @see https://en.wikipedia.org/wiki/XML_and_MIME Wikipedia
+  */
+	XML_TEXT: 'text/xml',
+
+	/**
+  * `application/xhtml+xml`, indicates an XML document that has the default HTML namespace,
+  * but is parsed as an XML document.
+  *
+  * @see https://www.iana.org/assignments/media-types/application/xhtml+xml IANA MimeType registration
+  * @see https://dom.spec.whatwg.org/#dom-domimplementation-createdocument WHATWG DOM Spec
+  * @see https://en.wikipedia.org/wiki/XHTML Wikipedia
+  */
+	XML_XHTML_APPLICATION: 'application/xhtml+xml',
+
+	/**
+  * `image/svg+xml`,
+  *
+  * @see https://www.iana.org/assignments/media-types/image/svg+xml IANA MimeType registration
+  * @see https://www.w3.org/TR/SVG11/ W3C SVG 1.1
+  * @see https://en.wikipedia.org/wiki/Scalable_Vector_Graphics Wikipedia
+  */
+	XML_SVG_IMAGE: 'image/svg+xml'
+});
+
+/**
+ * Namespaces that are used in this code base.
+ *
+ * @see http://www.w3.org/TR/REC-xml-names
+ */
+var NAMESPACE = freeze({
+	/**
+  * The XHTML namespace.
+  *
+  * @see http://www.w3.org/1999/xhtml
+  */
+	HTML: 'http://www.w3.org/1999/xhtml',
+
+	/**
+  * Checks if `uri` equals `NAMESPACE.HTML`.
+  *
+  * @param {string} [uri]
+  *
+  * @see NAMESPACE.HTML
+  */
+	isHTML: function isHTML(uri) {
+		return uri === NAMESPACE.HTML;
+	},
+
+	/**
+  * The SVG namespace.
+  *
+  * @see http://www.w3.org/2000/svg
+  */
+	SVG: 'http://www.w3.org/2000/svg',
+
+	/**
+  * The `xml:` namespace.
+  *
+  * @see http://www.w3.org/XML/1998/namespace
+  */
+	XML: 'http://www.w3.org/XML/1998/namespace',
+
+	/**
+  * The `xmlns:` namespace
+  *
+  * @see https://www.w3.org/2000/xmlns/
+  */
+	XMLNS: 'http://www.w3.org/2000/xmlns/'
+});
+
+exports.assign = assign;
+exports.freeze = freeze;
+exports.MIME_TYPE = MIME_TYPE;
+exports.NAMESPACE = NAMESPACE;
+
+/***/ }),
+/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -714,7 +893,7 @@ try {
 module.exports = g;
 
 /***/ }),
-/* 2 */
+/* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -722,28 +901,80 @@ module.exports = g;
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
-/*
- * DOM Level 2
- * Object DOMException
- * @see http://www.w3.org/TR/REC-DOM-Level-1/ecma-script-language-binding.html
- * @see http://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/ecma-script-binding.html
+var conventions = __webpack_require__(1);
+
+var NAMESPACE = conventions.NAMESPACE;
+
+/**
+ * A prerequisite for `[].filter`, to drop elements that are empty
+ * @param {string} input
+ * @returns {boolean}
  */
+function notEmptyString(input) {
+	return input !== '';
+}
+/**
+ * @see https://infra.spec.whatwg.org/#split-on-ascii-whitespace
+ * @see https://infra.spec.whatwg.org/#ascii-whitespace
+ *
+ * @param {string} input
+ * @returns {string[]} (can be empty)
+ */
+function splitOnASCIIWhitespace(input) {
+	// U+0009 TAB, U+000A LF, U+000C FF, U+000D CR, U+0020 SPACE
+	return input ? input.split(/[\t\n\f\r ]+/).filter(notEmptyString) : [];
+}
+
+/**
+ * Adds element as a key to current if it is not already present.
+ *
+ * @param {Record<string, boolean | undefined>} current
+ * @param {string} element
+ * @returns {Record<string, boolean | undefined>}
+ */
+function orderedSetReducer(current, element) {
+	if (!current.hasOwnProperty(element)) {
+		current[element] = true;
+	}
+	return current;
+}
+
+/**
+ * @see https://infra.spec.whatwg.org/#ordered-set
+ * @param {string} input
+ * @returns {string[]}
+ */
+function toOrderedSet(input) {
+	if (!input) return [];
+	var list = splitOnASCIIWhitespace(input);
+	return Object.keys(list.reduce(orderedSetReducer, {}));
+}
+
+/**
+ * Uses `list.indexOf` to implement something like `Array.prototype.includes`,
+ * which we can not rely on being available.
+ *
+ * @param {any[]} list
+ * @returns {function(any): boolean}
+ */
+function arrayIncludes(list) {
+	return function (element) {
+		return list && list.indexOf(element) !== -1;
+	};
+}
 
 function copy(src, dest) {
 	for (var p in src) {
 		dest[p] = src[p];
 	}
 }
+
 /**
 ^\w+\.prototype\.([_\w]+)\s*=\s*((?:.*\{\s*?[\r\n][\s\S]*?^})|\S.*?(?=[;\r\n]));?
 ^\w+\.prototype\.([_\w]+)\s*=\s*(\S.*?(?=[;\r\n]));?
  */
 function _extends(Class, Super) {
 	var pt = Class.prototype;
-	if (Object.create) {
-		var ppt = Object.create(Super.prototype);
-		pt.__proto__ = ppt;
-	}
 	if (!(pt instanceof Super)) {
 		var t = function t() {};
 
@@ -755,12 +986,12 @@ function _extends(Class, Super) {
 	}
 	if (pt.constructor != Class) {
 		if (typeof Class != 'function') {
-			console.error("unknow Class:" + Class);
+			console.error("unknown Class:" + Class);
 		}
 		pt.constructor = Class;
 	}
 }
-var htmlns = 'http://www.w3.org/1999/xhtml';
+
 // Node Types
 var NodeType = {};
 var ELEMENT_NODE = NodeType.ELEMENT_NODE = 1;
@@ -796,6 +1027,12 @@ var INVALID_MODIFICATION_ERR = ExceptionCode.INVALID_MODIFICATION_ERR = (Excepti
 var NAMESPACE_ERR = ExceptionCode.NAMESPACE_ERR = (ExceptionMessage[14] = "Invalid namespace", 14);
 var INVALID_ACCESS_ERR = ExceptionCode.INVALID_ACCESS_ERR = (ExceptionMessage[15] = "Invalid access", 15);
 
+/**
+ * DOM Level 2
+ * Object DOMException
+ * @see http://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/ecma-script-binding.html
+ * @see http://www.w3.org/TR/REC-DOM-Level-1/ecma-script-language-binding.html
+ */
 function DOMException(code, message) {
 	if (message instanceof Error) {
 		var error = message;
@@ -811,6 +1048,7 @@ function DOMException(code, message) {
 };
 DOMException.prototype = Error.prototype;
 copy(ExceptionCode, DOMException);
+
 /**
  * @see http://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/core.html#ID-536297177
  * The NodeList interface provides the abstraction of an ordered collection of nodes, without defining or constraining how this collection is implemented. NodeList objects in the DOM are live.
@@ -841,6 +1079,7 @@ NodeList.prototype = {
 		return buf.join('');
 	}
 };
+
 function LiveNodeList(node, refresh) {
 	this._node = node;
 	this._refresh = refresh;
@@ -862,9 +1101,15 @@ LiveNodeList.prototype.item = function (i) {
 };
 
 _extends(LiveNodeList, NodeList);
+
 /**
- * 
- * Objects implementing the NamedNodeMap interface are used to represent collections of nodes that can be accessed by name. Note that NamedNodeMap does not inherit from NodeList; NamedNodeMaps are not maintained in any particular order. Objects contained in an object implementing NamedNodeMap may also be accessed by an ordinal index, but this is simply to allow convenient enumeration of the contents of a NamedNodeMap, and does not imply that the DOM specifies an order to these Nodes.
+ * Objects implementing the NamedNodeMap interface are used
+ * to represent collections of nodes that can be accessed by name.
+ * Note that NamedNodeMap does not inherit from NodeList;
+ * NamedNodeMaps are not maintained in any particular order.
+ * Objects contained in an object implementing NamedNodeMap may also be accessed by an ordinal index,
+ * but this is simply to allow convenient enumeration of the contents of a NamedNodeMap,
+ * and does not imply that the DOM specifies an order to these Nodes.
  * NamedNodeMap objects in the DOM are live.
  * used for attributes or DocumentType entities 
  */
@@ -977,34 +1222,70 @@ NamedNodeMap.prototype = {
 		return null;
 	}
 };
+
 /**
- * @see http://www.w3.org/TR/REC-DOM-Level-1/level-one-core.html#ID-102161490
+ * The DOMImplementation interface represents an object providing methods
+ * which are not dependent on any particular document.
+ * Such an object is returned by the `Document.implementation` property.
+ *
+ * __The individual methods describe the differences compared to the specs.__
+ *
+ * @constructor
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/DOMImplementation MDN
+ * @see https://www.w3.org/TR/REC-DOM-Level-1/level-one-core.html#ID-102161490 DOM Level 1 Core (Initial)
+ * @see https://www.w3.org/TR/DOM-Level-2-Core/core.html#ID-102161490 DOM Level 2 Core
+ * @see https://www.w3.org/TR/DOM-Level-3-Core/core.html#ID-102161490 DOM Level 3 Core
+ * @see https://dom.spec.whatwg.org/#domimplementation DOM Living Standard
  */
-function DOMImplementation( /* Object */features) {
-	this._features = {};
-	if (features) {
-		for (var feature in features) {
-			this._features = features[feature];
-		}
-	}
-};
+function DOMImplementation() {}
 
 DOMImplementation.prototype = {
-	hasFeature: function hasFeature( /* string */feature, /* string */version) {
-		var versions = this._features[feature.toLowerCase()];
-		if (versions && (!version || version in versions)) {
-			return true;
-		} else {
-			return false;
-		}
+	/**
+  * The DOMImplementation.hasFeature() method returns a Boolean flag indicating if a given feature is supported.
+  * The different implementations fairly diverged in what kind of features were reported.
+  * The latest version of the spec settled to force this method to always return true, where the functionality was accurate and in use.
+  *
+  * @deprecated It is deprecated and modern browsers return true in all cases.
+  *
+  * @param {string} feature
+  * @param {string} [version]
+  * @returns {boolean} always true
+  *
+  * @see https://developer.mozilla.org/en-US/docs/Web/API/DOMImplementation/hasFeature MDN
+  * @see https://www.w3.org/TR/REC-DOM-Level-1/level-one-core.html#ID-5CED94D7 DOM Level 1 Core
+  * @see https://dom.spec.whatwg.org/#dom-domimplementation-hasfeature DOM Living Standard
+  */
+	hasFeature: function hasFeature(feature, version) {
+		return true;
 	},
-	// Introduced in DOM Level 2:
+	/**
+  * Creates an XML Document object of the specified type with its document element.
+  *
+  * __It behaves slightly different from the description in the living standard__:
+  * - There is no interface/class `XMLDocument`, it returns a `Document` instance.
+  * - `contentType`, `encoding`, `mode`, `origin`, `url` fields are currently not declared.
+  * - this implementation is not validating names or qualified names
+  *   (when parsing XML strings, the SAX parser takes care of that)
+  *
+  * @param {string|null} namespaceURI
+  * @param {string} qualifiedName
+  * @param {DocumentType=null} doctype
+  * @returns {Document}
+  *
+  * @see https://developer.mozilla.org/en-US/docs/Web/API/DOMImplementation/createDocument MDN
+  * @see https://www.w3.org/TR/DOM-Level-2-Core/core.html#Level-2-Core-DOM-createDocument DOM Level 2 Core (initial)
+  * @see https://dom.spec.whatwg.org/#dom-domimplementation-createdocument  DOM Level 2 Core
+  *
+  * @see https://dom.spec.whatwg.org/#validate-and-extract DOM: Validate and extract
+  * @see https://www.w3.org/TR/xml/#NT-NameStartChar XML Spec: Names
+  * @see https://www.w3.org/TR/xml-names/#ns-qualnames XML Namespaces: Qualified names
+  */
 	createDocument: function createDocument(namespaceURI, qualifiedName, doctype) {
-		// raises:INVALID_CHARACTER_ERR,NAMESPACE_ERR,WRONG_DOCUMENT_ERR
 		var doc = new Document();
 		doc.implementation = this;
 		doc.childNodes = new NodeList();
-		doc.doctype = doctype;
+		doc.doctype = doctype || null;
 		if (doctype) {
 			doc.appendChild(doctype);
 		}
@@ -1014,20 +1295,34 @@ DOMImplementation.prototype = {
 		}
 		return doc;
 	},
-	// Introduced in DOM Level 2:
+	/**
+  * Returns a doctype, with the given `qualifiedName`, `publicId`, and `systemId`.
+  *
+  * __This behavior is slightly different from the in the specs__:
+  * - this implementation is not validating names or qualified names
+  *   (when parsing XML strings, the SAX parser takes care of that)
+  *
+  * @param {string} qualifiedName
+  * @param {string} [publicId]
+  * @param {string} [systemId]
+  * @returns {DocumentType} which can either be used with `DOMImplementation.createDocument` upon document creation
+  * 				  or can be put into the document via methods like `Node.insertBefore()` or `Node.replaceChild()`
+  *
+  * @see https://developer.mozilla.org/en-US/docs/Web/API/DOMImplementation/createDocumentType MDN
+  * @see https://www.w3.org/TR/DOM-Level-2-Core/core.html#Level-2-Core-DOM-createDocType DOM Level 2 Core
+  * @see https://dom.spec.whatwg.org/#dom-domimplementation-createdocumenttype DOM Living Standard
+  *
+  * @see https://dom.spec.whatwg.org/#validate-and-extract DOM: Validate and extract
+  * @see https://www.w3.org/TR/xml/#NT-NameStartChar XML Spec: Names
+  * @see https://www.w3.org/TR/xml-names/#ns-qualnames XML Namespaces: Qualified names
+  */
 	createDocumentType: function createDocumentType(qualifiedName, publicId, systemId) {
-		// raises:INVALID_CHARACTER_ERR,NAMESPACE_ERR
 		var node = new DocumentType();
 		node.name = qualifiedName;
 		node.nodeName = qualifiedName;
-		node.publicId = publicId;
-		node.systemId = systemId;
-		// Introduced in DOM Level 2:
-		//readonly attribute DOMString        internalSubset;
+		node.publicId = publicId || '';
+		node.systemId = systemId || '';
 
-		//TODO:..
-		//  readonly attribute NamedNodeMap     entities;
-		//  readonly attribute NamedNodeMap     notations;
 		return node;
 	}
 };
@@ -1097,6 +1392,20 @@ Node.prototype = {
 	hasAttributes: function hasAttributes() {
 		return this.attributes.length > 0;
 	},
+	/**
+  * Look up the prefix associated to the given namespace URI, starting from this node.
+  * **The default namespace declarations are ignored by this method.**
+  * See Namespace Prefix Lookup for details on the algorithm used by this method.
+  *
+  * _Note: The implementation seems to be incomplete when compared to the algorithm described in the specs._
+  *
+  * @param {string | null} namespaceURI
+  * @returns {string | null}
+  * @see https://www.w3.org/TR/DOM-Level-3-Core/core.html#Node3-lookupNamespacePrefix
+  * @see https://www.w3.org/TR/DOM-Level-3-Core/namespaces-algorithms.html#lookupNamespacePrefixAlgo
+  * @see https://dom.spec.whatwg.org/#dom-node-lookupprefix
+  * @see https://github.com/xmldom/xmldom/issues/322
+  */
 	lookupPrefix: function lookupPrefix(namespaceURI) {
 		var el = this;
 		while (el) {
@@ -1160,22 +1469,37 @@ function _visitNode(node, callback) {
 }
 
 function Document() {}
+
 function _onAddAttribute(doc, el, newAttr) {
 	doc && doc._inc++;
 	var ns = newAttr.namespaceURI;
-	if (ns == 'http://www.w3.org/2000/xmlns/') {
+	if (ns === NAMESPACE.XMLNS) {
 		//update namespace
 		el._nsMap[newAttr.prefix ? newAttr.localName : ''] = newAttr.value;
 	}
 }
+
 function _onRemoveAttribute(doc, el, newAttr, remove) {
 	doc && doc._inc++;
 	var ns = newAttr.namespaceURI;
-	if (ns == 'http://www.w3.org/2000/xmlns/') {
+	if (ns === NAMESPACE.XMLNS) {
 		//update namespace
 		delete el._nsMap[newAttr.prefix ? newAttr.localName : ''];
 	}
 }
+
+/**
+ * Updates `el.childNodes`, updating the indexed items and it's `length`.
+ * Passing `newChild` means it will be appended.
+ * Otherwise it's assumed that an item has been removed,
+ * and `el.firstNode` and it's `.nextSibling` are used
+ * to walk the current list of child nodes.
+ *
+ * @param {Document} doc
+ * @param {Node} el
+ * @param {Node} [newChild]
+ * @private
+ */
 function _onUpdateChild(doc, el, newChild) {
 	if (doc && doc._inc) {
 		doc._inc++;
@@ -1184,7 +1508,6 @@ function _onUpdateChild(doc, el, newChild) {
 		if (newChild) {
 			cs[cs.length++] = newChild;
 		} else {
-			//console.log(1)
 			var child = el.firstChild;
 			var i = 0;
 			while (child) {
@@ -1192,17 +1515,22 @@ function _onUpdateChild(doc, el, newChild) {
 				child = child.nextSibling;
 			}
 			cs.length = i;
+			delete cs[cs.length];
 		}
 	}
 }
 
 /**
- * attributes;
- * children;
- * 
- * writeable properties:
- * nodeValue,Attr:value,CharacterData:data
- * prefix
+ * Removes the connections between `parentNode` and `child`
+ * and any existing `child.previousSibling` or `child.nextSibling`.
+ *
+ * @see https://github.com/xmldom/xmldom/issues/135
+ * @see https://github.com/xmldom/xmldom/issues/145
+ *
+ * @param {Node} parentNode
+ * @param {Node} child
+ * @returns {Node} the child that was removed.
+ * @private
  */
 function _removeChild(parentNode, child) {
 	var previous = child.previousSibling;
@@ -1217,6 +1545,9 @@ function _removeChild(parentNode, child) {
 	} else {
 		parentNode.lastChild = previous;
 	}
+	child.parentNode = null;
+	child.previousSibling = null;
+	child.nextSibling = null;
 	_onUpdateChild(parentNode.ownerDocument, parentNode);
 	return child;
 }
@@ -1262,37 +1593,51 @@ function _insertBefore(parentNode, newChild, nextChild) {
 	}
 	return newChild;
 }
+
+/**
+ * Appends `newChild` to `parentNode`.
+ * If `newChild` is already connected to a `parentNode` it is first removed from it.
+ *
+ * @see https://github.com/xmldom/xmldom/issues/135
+ * @see https://github.com/xmldom/xmldom/issues/145
+ * @param {Node} parentNode
+ * @param {Node} newChild
+ * @returns {Node}
+ * @private
+ */
 function _appendSingleChild(parentNode, newChild) {
-	var cp = newChild.parentNode;
-	if (cp) {
-		var pre = parentNode.lastChild;
-		cp.removeChild(newChild); //remove and update
-		var pre = parentNode.lastChild;
+	if (newChild.parentNode) {
+		newChild.parentNode.removeChild(newChild);
 	}
-	var pre = parentNode.lastChild;
 	newChild.parentNode = parentNode;
-	newChild.previousSibling = pre;
+	newChild.previousSibling = parentNode.lastChild;
 	newChild.nextSibling = null;
-	if (pre) {
-		pre.nextSibling = newChild;
+	if (newChild.previousSibling) {
+		newChild.previousSibling.nextSibling = newChild;
 	} else {
 		parentNode.firstChild = newChild;
 	}
 	parentNode.lastChild = newChild;
 	_onUpdateChild(parentNode.ownerDocument, parentNode, newChild);
 	return newChild;
-	//console.log("__aa",parentNode.lastChild.nextSibling == null)
 }
+
 Document.prototype = {
 	//implementation : null,
 	nodeName: '#document',
 	nodeType: DOCUMENT_NODE,
+	/**
+  * The DocumentType node of the document.
+  *
+  * @readonly
+  * @type DocumentType
+  */
 	doctype: null,
 	documentElement: null,
 	_inc: 1,
 
 	insertBefore: function insertBefore(newChild, refChild) {
-		//raises 
+		//raises
 		if (newChild.nodeType == DOCUMENT_FRAGMENT_NODE) {
 			var child = newChild.firstChild;
 			while (child) {
@@ -1332,12 +1677,57 @@ Document.prototype = {
 		return rtv;
 	},
 
+	/**
+  * The `getElementsByClassName` method of `Document` interface returns an array-like object
+  * of all child elements which have **all** of the given class name(s).
+  *
+  * Returns an empty list if `classeNames` is an empty string or only contains HTML white space characters.
+  *
+  *
+  * Warning: This is a live LiveNodeList.
+  * Changes in the DOM will reflect in the array as the changes occur.
+  * If an element selected by this array no longer qualifies for the selector,
+  * it will automatically be removed. Be aware of this for iteration purposes.
+  *
+  * @param {string} classNames is a string representing the class name(s) to match; multiple class names are separated by (ASCII-)whitespace
+  *
+  * @see https://developer.mozilla.org/en-US/docs/Web/API/Document/getElementsByClassName
+  * @see https://dom.spec.whatwg.org/#concept-getelementsbyclassname
+  */
+	getElementsByClassName: function getElementsByClassName(classNames) {
+		var classNamesSet = toOrderedSet(classNames);
+		return new LiveNodeList(this, function (base) {
+			var ls = [];
+			if (classNamesSet.length > 0) {
+				_visitNode(base.documentElement, function (node) {
+					if (node !== base && node.nodeType === ELEMENT_NODE) {
+						var nodeClassNames = node.getAttribute('class');
+						// can be null if the attribute does not exist
+						if (nodeClassNames) {
+							// before splitting and iterating just compare them for the most common case
+							var matches = classNames === nodeClassNames;
+							if (!matches) {
+								var nodeClassNamesSet = toOrderedSet(nodeClassNames);
+								matches = classNamesSet.every(arrayIncludes(nodeClassNamesSet));
+							}
+							if (matches) {
+								ls.push(node);
+							}
+						}
+					}
+				});
+			}
+			return ls;
+		});
+	},
+
 	//document factory method:
 	createElement: function createElement(tagName) {
 		var node = new Element();
 		node.ownerDocument = this;
 		node.nodeName = tagName;
 		node.tagName = tagName;
+		node.localName = tagName;
 		node.childNodes = new NodeList();
 		var attrs = node.attributes = new NamedNodeMap();
 		attrs._ownerElement = node;
@@ -1618,7 +2008,7 @@ XMLSerializer.prototype.serializeToString = function (node, isHtml, nodeFilter) 
 Node.prototype.toString = nodeSerializeToString;
 function nodeSerializeToString(isHtml, nodeFilter) {
 	var buf = [];
-	var refNode = this.nodeType == 9 ? this.documentElement : this;
+	var refNode = this.nodeType == 9 && this.documentElement || this;
 	var prefix = refNode.prefix;
 	var uri = refNode.namespaceURI;
 
@@ -1636,35 +2026,56 @@ function nodeSerializeToString(isHtml, nodeFilter) {
 	//console.log('###',this.nodeType,uri,prefix,buf.join(''))
 	return buf.join('');
 }
+
 function needNamespaceDefine(node, isHTML, visibleNamespaces) {
 	var prefix = node.prefix || '';
 	var uri = node.namespaceURI;
-	if (!prefix && !uri) {
+	// According to [Namespaces in XML 1.0](https://www.w3.org/TR/REC-xml-names/#ns-using) ,
+	// and more specifically https://www.w3.org/TR/REC-xml-names/#nsc-NoPrefixUndecl :
+	// > In a namespace declaration for a prefix [...], the attribute value MUST NOT be empty.
+	// in a similar manner [Namespaces in XML 1.1](https://www.w3.org/TR/xml-names11/#ns-using)
+	// and more specifically https://www.w3.org/TR/xml-names11/#nsc-NSDeclared :
+	// > [...] Furthermore, the attribute value [...] must not be an empty string.
+	// so serializing empty namespace value like xmlns:ds="" would produce an invalid XML document.
+	if (!uri) {
 		return false;
 	}
-	if (prefix === "xml" && uri === "http://www.w3.org/XML/1998/namespace" || uri == 'http://www.w3.org/2000/xmlns/') {
+	if (prefix === "xml" && uri === NAMESPACE.XML || uri === NAMESPACE.XMLNS) {
 		return false;
 	}
 
 	var i = visibleNamespaces.length;
-	//console.log('@@@@',node.tagName,prefix,uri,visibleNamespaces)
 	while (i--) {
 		var ns = visibleNamespaces[i];
 		// get namespace prefix
-		//console.log(node.nodeType,node.tagName,ns.prefix,prefix)
-		if (ns.prefix == prefix) {
-			return ns.namespace != uri;
+		if (ns.prefix === prefix) {
+			return ns.namespace !== uri;
 		}
 	}
-	//console.log(isHTML,uri,prefix=='')
-	//if(isHTML && prefix ==null && uri == 'http://www.w3.org/1999/xhtml'){
-	//	return false;
-	//}
-	//node.flag = '11111'
-	//console.error(3,true,node.flag,node.prefix,node.namespaceURI)
 	return true;
 }
+/**
+ * Well-formed constraint: No < in Attribute Values
+ * > The replacement text of any entity referred to directly or indirectly
+ * > in an attribute value must not contain a <.
+ * @see https://www.w3.org/TR/xml11/#CleanAttrVals
+ * @see https://www.w3.org/TR/xml11/#NT-AttValue
+ *
+ * Literal whitespace other than space that appear in attribute values
+ * are serialized as their entity references, so they will be preserved.
+ * (In contrast to whitespace literals in the input which are normalized to spaces)
+ * @see https://www.w3.org/TR/xml11/#AVNormalize
+ * @see https://w3c.github.io/DOM-Parsing/#serializing-an-element-s-attributes
+ */
+function addSerializedAttribute(buf, qualifiedName, value) {
+	buf.push(' ', qualifiedName, '="', value.replace(/[<>&"\t\n\r]/g, _xmlEncoder), '"');
+}
+
 function serializeToString(node, buf, isHTML, nodeFilter, visibleNamespaces) {
+	if (!visibleNamespaces) {
+		visibleNamespaces = [];
+	}
+
 	if (nodeFilter) {
 		node = nodeFilter(node);
 		if (node) {
@@ -1677,17 +2088,50 @@ function serializeToString(node, buf, isHTML, nodeFilter, visibleNamespaces) {
 		}
 		//buf.sort.apply(attrs, attributeSorter);
 	}
+
 	switch (node.nodeType) {
 		case ELEMENT_NODE:
-			if (!visibleNamespaces) visibleNamespaces = [];
-			var startVisibleNamespaces = visibleNamespaces.length;
 			var attrs = node.attributes;
 			var len = attrs.length;
 			var child = node.firstChild;
 			var nodeName = node.tagName;
 
-			isHTML = htmlns === node.namespaceURI || isHTML;
-			buf.push('<', nodeName);
+			isHTML = NAMESPACE.isHTML(node.namespaceURI) || isHTML;
+
+			var prefixedNodeName = nodeName;
+			if (!isHTML && !node.prefix && node.namespaceURI) {
+				var defaultNS;
+				// lookup current default ns from `xmlns` attribute
+				for (var ai = 0; ai < attrs.length; ai++) {
+					if (attrs.item(ai).name === 'xmlns') {
+						defaultNS = attrs.item(ai).value;
+						break;
+					}
+				}
+				if (!defaultNS) {
+					// lookup current default ns in visibleNamespaces
+					for (var nsi = visibleNamespaces.length - 1; nsi >= 0; nsi--) {
+						var namespace = visibleNamespaces[nsi];
+						if (namespace.prefix === '' && namespace.namespace === node.namespaceURI) {
+							defaultNS = namespace.namespace;
+							break;
+						}
+					}
+				}
+				if (defaultNS !== node.namespaceURI) {
+					for (var nsi = visibleNamespaces.length - 1; nsi >= 0; nsi--) {
+						var namespace = visibleNamespaces[nsi];
+						if (namespace.namespace === node.namespaceURI) {
+							if (namespace.prefix) {
+								prefixedNodeName = namespace.prefix + ':' + nodeName;
+							}
+							break;
+						}
+					}
+				}
+			}
+
+			buf.push('<', prefixedNodeName);
 
 			for (var i = 0; i < len; i++) {
 				// add namespaces for attributes
@@ -1698,23 +2142,23 @@ function serializeToString(node, buf, isHTML, nodeFilter, visibleNamespaces) {
 					visibleNamespaces.push({ prefix: '', namespace: attr.value });
 				}
 			}
+
 			for (var i = 0; i < len; i++) {
 				var attr = attrs.item(i);
 				if (needNamespaceDefine(attr, isHTML, visibleNamespaces)) {
 					var prefix = attr.prefix || '';
 					var uri = attr.namespaceURI;
-					var ns = prefix ? ' xmlns:' + prefix : " xmlns";
-					buf.push(ns, '="', uri, '"');
+					addSerializedAttribute(buf, prefix ? 'xmlns:' + prefix : "xmlns", uri);
 					visibleNamespaces.push({ prefix: prefix, namespace: uri });
 				}
 				serializeToString(attr, buf, isHTML, nodeFilter, visibleNamespaces);
 			}
+
 			// add namespace for current node		
-			if (needNamespaceDefine(node, isHTML, visibleNamespaces)) {
+			if (nodeName === prefixedNodeName && needNamespaceDefine(node, isHTML, visibleNamespaces)) {
 				var prefix = node.prefix || '';
 				var uri = node.namespaceURI;
-				var ns = prefix ? ' xmlns:' + prefix : " xmlns";
-				buf.push(ns, '="', uri, '"');
+				addSerializedAttribute(buf, prefix ? 'xmlns:' + prefix : "xmlns", uri);
 				visibleNamespaces.push({ prefix: prefix, namespace: uri });
 			}
 
@@ -1726,17 +2170,17 @@ function serializeToString(node, buf, isHTML, nodeFilter, visibleNamespaces) {
 						if (child.data) {
 							buf.push(child.data);
 						} else {
-							serializeToString(child, buf, isHTML, nodeFilter, visibleNamespaces);
+							serializeToString(child, buf, isHTML, nodeFilter, visibleNamespaces.slice());
 						}
 						child = child.nextSibling;
 					}
 				} else {
 					while (child) {
-						serializeToString(child, buf, isHTML, nodeFilter, visibleNamespaces);
+						serializeToString(child, buf, isHTML, nodeFilter, visibleNamespaces.slice());
 						child = child.nextSibling;
 					}
 				}
-				buf.push('</', nodeName, '>');
+				buf.push('</', prefixedNodeName, '>');
 			} else {
 				buf.push('/>');
 			}
@@ -1747,14 +2191,30 @@ function serializeToString(node, buf, isHTML, nodeFilter, visibleNamespaces) {
 		case DOCUMENT_FRAGMENT_NODE:
 			var child = node.firstChild;
 			while (child) {
-				serializeToString(child, buf, isHTML, nodeFilter, visibleNamespaces);
+				serializeToString(child, buf, isHTML, nodeFilter, visibleNamespaces.slice());
 				child = child.nextSibling;
 			}
 			return;
 		case ATTRIBUTE_NODE:
-			return buf.push(' ', node.name, '="', node.value.replace(/[<&"]/g, _xmlEncoder), '"');
+			return addSerializedAttribute(buf, node.name, node.value);
 		case TEXT_NODE:
-			return buf.push(node.data.replace(/[<&]/g, _xmlEncoder));
+			/**
+    * The ampersand character (&) and the left angle bracket (<) must not appear in their literal form,
+    * except when used as markup delimiters, or within a comment, a processing instruction, or a CDATA section.
+    * If they are needed elsewhere, they must be escaped using either numeric character references or the strings
+    * `&amp;` and `&lt;` respectively.
+    * The right angle bracket (>) may be represented using the string " &gt; ", and must, for compatibility,
+    * be escaped using either `&gt;` or a character reference when it appears in the string `]]>` in content,
+    * when that string is not marking the end of a CDATA section.
+    *
+    * In the content of elements, character data is any string of characters
+    * which does not contain the start-delimiter of any markup
+    * and does not include the CDATA-section-close delimiter, `]]>`.
+    *
+    * @see https://www.w3.org/TR/xml/#NT-CharData
+    * @see https://w3c.github.io/DOM-Parsing/#xml-serializing-a-text-node
+    */
+			return buf.push(node.data.replace(/[<&>]/g, _xmlEncoder));
 		case CDATA_SECTION_NODE:
 			return buf.push('<![CDATA[', node.data, ']]>');
 		case COMMENT_NODE:
@@ -1764,13 +2224,13 @@ function serializeToString(node, buf, isHTML, nodeFilter, visibleNamespaces) {
 			var sysid = node.systemId;
 			buf.push('<!DOCTYPE ', node.name);
 			if (pubid) {
-				buf.push(' PUBLIC "', pubid);
+				buf.push(' PUBLIC ', pubid);
 				if (sysid && sysid != '.') {
-					buf.push('" "', sysid);
+					buf.push(' ', sysid);
 				}
-				buf.push('">');
+				buf.push('>');
 			} else if (sysid && sysid != '.') {
-				buf.push(' SYSTEM "', sysid, '">');
+				buf.push(' SYSTEM ', sysid, '>');
 			} else {
 				var sub = node.internalSubset;
 				if (sub) {
@@ -1904,10 +2364,12 @@ try {
 				return this.$$length;
 			}
 		});
+
 		Object.defineProperty(Node.prototype, 'textContent', {
 			get: function get() {
 				return getTextContent(this);
 			},
+
 			set: function set(data) {
 				switch (this.nodeType) {
 					case ELEMENT_NODE:
@@ -1919,8 +2381,8 @@ try {
 							this.appendChild(this.ownerDocument.createTextNode(data));
 						}
 						break;
+
 					default:
-						//TODO:
 						this.data = data;
 						this.value = data;
 						this.nodeValue = data;
@@ -1937,12 +2399,17 @@ try {
 
 
 //if(typeof require == 'function'){
+exports.DocumentType = DocumentType;
+exports.DOMException = DOMException;
 exports.DOMImplementation = DOMImplementation;
+exports.Element = Element;
+exports.Node = Node;
+exports.NodeList = NodeList;
 exports.XMLSerializer = XMLSerializer;
 //}
 
 /***/ }),
-/* 3 */
+/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2078,7 +2545,7 @@ var Base64 = function (global) {
 module.exports = Base64;
 
 /***/ }),
-/* 4 */
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2117,7 +2584,7 @@ module.exports.init = initEvent;
 module.exports.EventProxy = EventProxy;
 
 /***/ }),
-/* 5 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2230,27 +2697,27 @@ var mod = {
 module.exports = mod;
 
 /***/ }),
-/* 6 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var COS = __webpack_require__(7);
-module.exports = COS;
-
-/***/ }),
 /* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
+var COS = __webpack_require__(8);
+module.exports = COS;
+
+/***/ }),
+/* 8 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
 var util = __webpack_require__(0);
-var event = __webpack_require__(4);
-var task = __webpack_require__(17);
-var base = __webpack_require__(18);
-var advance = __webpack_require__(24);
+var event = __webpack_require__(5);
+var task = __webpack_require__(20);
+var base = __webpack_require__(21);
+var advance = __webpack_require__(27);
 
 var defaultOptions = {
     SecretId: '',
@@ -2317,12 +2784,12 @@ COS.util = {
     json2xml: util.json2xml
 };
 COS.getAuthorization = util.getAuth;
-COS.version = '1.1.6';
+COS.version = '1.1.7';
 
 module.exports = COS;
 
 /***/ }),
-/* 8 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2348,7 +2815,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
         root = self;
     }
     var COMMON_JS = !root.JS_MD5_NO_COMMON_JS && ( false ? 'undefined' : _typeof(module)) === 'object' && module.exports;
-    var AMD = "function" === 'function' && __webpack_require__(11);
+    var AMD = "function" === 'function' && __webpack_require__(12);
     var ARRAY_BUFFER = !root.JS_MD5_NO_ARRAY_BUFFER && typeof ArrayBuffer !== 'undefined';
     var HEX_CHARS = '0123456789abcdef'.split('');
     var EXTRA = [128, 32768, 8388608, -2147483648];
@@ -2994,10 +3461,10 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
         }
     }
 })();
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(9), __webpack_require__(1), __webpack_require__(10)(module)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(10), __webpack_require__(2), __webpack_require__(11)(module)))
 
 /***/ }),
-/* 9 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3190,7 +3657,7 @@ process.umask = function () {
 };
 
 /***/ }),
-/* 10 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3220,7 +3687,7 @@ module.exports = function (module) {
 };
 
 /***/ }),
-/* 11 */
+/* 12 */
 /***/ (function(module, exports) {
 
 /* WEBPACK VAR INJECTION */(function(__webpack_amd_options__) {/* globals __webpack_amd_options__ */
@@ -3229,7 +3696,7 @@ module.exports = __webpack_amd_options__;
 /* WEBPACK VAR INJECTION */}.call(exports, {}))
 
 /***/ }),
-/* 12 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3490,7 +3957,7 @@ var CryptoJS = CryptoJS || function (g, l) {
 module.exports = CryptoJS;
 
 /***/ }),
-/* 13 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3512,7 +3979,7 @@ module.exports = CryptoJS;
  See the License for the specific language governing permissions and
  limitations under the License.
  */
-var DOMParser = __webpack_require__(14).DOMParser;
+var DOMParser = __webpack_require__(15).DOMParser;
 
 var x2js = function x2js(config) {
     'use strict';
@@ -4004,15 +4471,96 @@ var json2xml = function json2xml(data) {
 module.exports = xml2json;
 
 /***/ }),
-/* 14 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
+var dom = __webpack_require__(3);
+exports.DOMImplementation = dom.DOMImplementation;
+exports.XMLSerializer = dom.XMLSerializer;
+exports.DOMParser = __webpack_require__(16).DOMParser;
+
+/***/ }),
+/* 16 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var conventions = __webpack_require__(1);
+var dom = __webpack_require__(3);
+var entities = __webpack_require__(17);
+var sax = __webpack_require__(18);
+
+var DOMImplementation = dom.DOMImplementation;
+
+var NAMESPACE = conventions.NAMESPACE;
+
+var ParseError = sax.ParseError;
+var XMLReader = sax.XMLReader;
+
+/**
+ * Normalizes line ending according to https://www.w3.org/TR/xml11/#sec-line-ends:
+ *
+ * > XML parsed entities are often stored in computer files which,
+ * > for editing convenience, are organized into lines.
+ * > These lines are typically separated by some combination
+ * > of the characters CARRIAGE RETURN (#xD) and LINE FEED (#xA).
+ * >
+ * > To simplify the tasks of applications, the XML processor must behave
+ * > as if it normalized all line breaks in external parsed entities (including the document entity)
+ * > on input, before parsing, by translating all of the following to a single #xA character:
+ * >
+ * > 1. the two-character sequence #xD #xA
+ * > 2. the two-character sequence #xD #x85
+ * > 3. the single character #x85
+ * > 4. the single character #x2028
+ * > 5. any #xD character that is not immediately followed by #xA or #x85.
+ *
+ * @param {string} input
+ * @returns {string}
+ */
+function normalizeLineEndings(input) {
+	return input.replace(/\r[\n\u0085]/g, '\n').replace(/[\r\u0085\u2028]/g, '\n');
+}
+
+/**
+ * @typedef Locator
+ * @property {number} [columnNumber]
+ * @property {number} [lineNumber]
+ */
+
+/**
+ * @typedef DOMParserOptions
+ * @property {DOMHandler} [domBuilder]
+ * @property {Function} [errorHandler]
+ * @property {(string) => string} [normalizeLineEndings] used to replace line endings before parsing
+ * 						defaults to `normalizeLineEndings`
+ * @property {Locator} [locator]
+ * @property {Record<string, string>} [xmlns]
+ *
+ * @see normalizeLineEndings
+ */
+
+/**
+ * The DOMParser interface provides the ability to parse XML or HTML source code
+ * from a string into a DOM `Document`.
+ *
+ * _xmldom is different from the spec in that it allows an `options` parameter,
+ * to override the default behavior._
+ *
+ * @param {DOMParserOptions} [options]
+ * @constructor
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/DOMParser
+ * @see https://html.spec.whatwg.org/multipage/dynamic-markup-insertion.html#dom-parsing-and-serialization
+ */
 function DOMParser(options) {
 	this.options = options || { locator: {} };
 }
+
 DOMParser.prototype.parseFromString = function (source, mimeType) {
 	var options = this.options;
 	var sax = new XMLReader();
@@ -4020,23 +4568,23 @@ DOMParser.prototype.parseFromString = function (source, mimeType) {
 	var errorHandler = options.errorHandler;
 	var locator = options.locator;
 	var defaultNSMap = options.xmlns || {};
-	var entityMap = { 'lt': '<', 'gt': '>', 'amp': '&', 'quot': '"', 'apos': "'" };
+	var isHTML = /\/x?html?$/.test(mimeType); //mimeType.toLowerCase().indexOf('html') > -1;
+	var entityMap = isHTML ? entities.HTML_ENTITIES : entities.XML_ENTITIES;
 	if (locator) {
 		domBuilder.setDocumentLocator(locator);
 	}
 
 	sax.errorHandler = buildErrorHandler(errorHandler, domBuilder, locator);
 	sax.domBuilder = options.domBuilder || domBuilder;
-	if (/\/x?html?$/.test(mimeType)) {
-		entityMap.nbsp = '\xa0';
-		entityMap.copy = '\xa9';
-		defaultNSMap[''] = 'http://www.w3.org/1999/xhtml';
+	if (isHTML) {
+		defaultNSMap[''] = NAMESPACE.HTML;
 	}
-	defaultNSMap.xml = defaultNSMap.xml || 'http://www.w3.org/XML/1998/namespace';
-	if (source) {
-		sax.parse(source, defaultNSMap, entityMap);
+	defaultNSMap.xml = defaultNSMap.xml || NAMESPACE.XML;
+	var normalize = options.normalizeLineEndings || normalizeLineEndings;
+	if (source && typeof source === 'string') {
+		sax.parse(normalize(source), defaultNSMap, entityMap);
 	} else {
-		sax.errorHandler.error("invalid doc source");
+		sax.errorHandler.error('invalid doc source');
 	}
 	return domBuilder.doc;
 };
@@ -4071,8 +4619,8 @@ function buildErrorHandler(errorImpl, domBuilder, locator) {
 /**
  * +ContentHandler+ErrorHandler
  * +LexicalHandler+EntityResolver2
- * -DeclHandler-DTDHandler 
- * 
+ * -DeclHandler-DTDHandler
+ *
  * DefaultHandler:EntityResolver, DTDHandler, ContentHandler, ErrorHandler
  * DefaultHandler2:DefaultHandler,LexicalHandler, DeclHandler, EntityResolver2
  * @link http://www.saxproject.org/apidoc/org/xml/sax/helpers/DefaultHandler.html
@@ -4176,6 +4724,7 @@ DOMHandler.prototype = {
 			var dt = impl.createDocumentType(name, publicId, systemId);
 			this.locator && position(this.locator, dt);
 			appendElement(this, dt);
+			this.doc.doctype = dt;
 		}
 	},
 	/**
@@ -4189,8 +4738,7 @@ DOMHandler.prototype = {
 		console.error('[xmldom error]\t' + _error, _locator(this.locator));
 	},
 	fatalError: function fatalError(error) {
-		console.error('[xmldom fatalError]\t' + error, _locator(this.locator));
-		throw error;
+		throw new ParseError(error, this.locator);
 	}
 };
 function _locator(l) {
@@ -4256,19 +4804,299 @@ function appendElement(hander, node) {
 	}
 } //appendChild and setAttributeNS are preformance key
 
-//if(typeof require == 'function'){
-var XMLReader = __webpack_require__(15).XMLReader;
-var DOMImplementation = exports.DOMImplementation = __webpack_require__(2).DOMImplementation;
-exports.XMLSerializer = __webpack_require__(2).XMLSerializer;
+exports.__DOMHandler = DOMHandler;
+exports.normalizeLineEndings = normalizeLineEndings;
 exports.DOMParser = DOMParser;
-//}
 
 /***/ }),
-/* 15 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
+
+var freeze = __webpack_require__(1).freeze;
+
+/**
+ * The entities that are predefined in every XML document.
+ *
+ * @see https://www.w3.org/TR/2006/REC-xml11-20060816/#sec-predefined-ent W3C XML 1.1
+ * @see https://www.w3.org/TR/2008/REC-xml-20081126/#sec-predefined-ent W3C XML 1.0
+ * @see https://en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references#Predefined_entities_in_XML Wikipedia
+ */
+exports.XML_ENTITIES = freeze({ amp: '&', apos: "'", gt: '>', lt: '<', quot: '"' });
+
+/**
+ * A map of currently 241 entities that are detected in an HTML document.
+ * They contain all entries from `XML_ENTITIES`.
+ *
+ * @see XML_ENTITIES
+ * @see DOMParser.parseFromString
+ * @see DOMImplementation.prototype.createHTMLDocument
+ * @see https://html.spec.whatwg.org/#named-character-references WHATWG HTML(5) Spec
+ * @see https://www.w3.org/TR/xml-entity-names/ W3C XML Entity Names
+ * @see https://www.w3.org/TR/html4/sgml/entities.html W3C HTML4/SGML
+ * @see https://en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references#Character_entity_references_in_HTML Wikipedia (HTML)
+ * @see https://en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references#Entities_representing_special_characters_in_XHTML Wikpedia (XHTML)
+ */
+exports.HTML_ENTITIES = freeze({
+  lt: '<',
+  gt: '>',
+  amp: '&',
+  quot: '"',
+  apos: "'",
+  Agrave: "À",
+  Aacute: "Á",
+  Acirc: "Â",
+  Atilde: "Ã",
+  Auml: "Ä",
+  Aring: "Å",
+  AElig: "Æ",
+  Ccedil: "Ç",
+  Egrave: "È",
+  Eacute: "É",
+  Ecirc: "Ê",
+  Euml: "Ë",
+  Igrave: "Ì",
+  Iacute: "Í",
+  Icirc: "Î",
+  Iuml: "Ï",
+  ETH: "Ð",
+  Ntilde: "Ñ",
+  Ograve: "Ò",
+  Oacute: "Ó",
+  Ocirc: "Ô",
+  Otilde: "Õ",
+  Ouml: "Ö",
+  Oslash: "Ø",
+  Ugrave: "Ù",
+  Uacute: "Ú",
+  Ucirc: "Û",
+  Uuml: "Ü",
+  Yacute: "Ý",
+  THORN: "Þ",
+  szlig: "ß",
+  agrave: "à",
+  aacute: "á",
+  acirc: "â",
+  atilde: "ã",
+  auml: "ä",
+  aring: "å",
+  aelig: "æ",
+  ccedil: "ç",
+  egrave: "è",
+  eacute: "é",
+  ecirc: "ê",
+  euml: "ë",
+  igrave: "ì",
+  iacute: "í",
+  icirc: "î",
+  iuml: "ï",
+  eth: "ð",
+  ntilde: "ñ",
+  ograve: "ò",
+  oacute: "ó",
+  ocirc: "ô",
+  otilde: "õ",
+  ouml: "ö",
+  oslash: "ø",
+  ugrave: "ù",
+  uacute: "ú",
+  ucirc: "û",
+  uuml: "ü",
+  yacute: "ý",
+  thorn: "þ",
+  yuml: "ÿ",
+  nbsp: '\xA0',
+  iexcl: "¡",
+  cent: "¢",
+  pound: "£",
+  curren: "¤",
+  yen: "¥",
+  brvbar: "¦",
+  sect: "§",
+  uml: "¨",
+  copy: "©",
+  ordf: "ª",
+  laquo: "«",
+  not: "¬",
+  shy: "­­",
+  reg: "®",
+  macr: "¯",
+  deg: "°",
+  plusmn: "±",
+  sup2: "²",
+  sup3: "³",
+  acute: "´",
+  micro: "µ",
+  para: "¶",
+  middot: "·",
+  cedil: "¸",
+  sup1: "¹",
+  ordm: "º",
+  raquo: "»",
+  frac14: "¼",
+  frac12: "½",
+  frac34: "¾",
+  iquest: "¿",
+  times: "×",
+  divide: "÷",
+  forall: "∀",
+  part: "∂",
+  exist: "∃",
+  empty: "∅",
+  nabla: "∇",
+  isin: "∈",
+  notin: "∉",
+  ni: "∋",
+  prod: "∏",
+  sum: "∑",
+  minus: "−",
+  lowast: "∗",
+  radic: "√",
+  prop: "∝",
+  infin: "∞",
+  ang: "∠",
+  and: "∧",
+  or: "∨",
+  cap: "∩",
+  cup: "∪",
+  'int': "∫",
+  there4: "∴",
+  sim: "∼",
+  cong: "≅",
+  asymp: "≈",
+  ne: "≠",
+  equiv: "≡",
+  le: "≤",
+  ge: "≥",
+  sub: "⊂",
+  sup: "⊃",
+  nsub: "⊄",
+  sube: "⊆",
+  supe: "⊇",
+  oplus: "⊕",
+  otimes: "⊗",
+  perp: "⊥",
+  sdot: "⋅",
+  Alpha: "Α",
+  Beta: "Β",
+  Gamma: "Γ",
+  Delta: "Δ",
+  Epsilon: "Ε",
+  Zeta: "Ζ",
+  Eta: "Η",
+  Theta: "Θ",
+  Iota: "Ι",
+  Kappa: "Κ",
+  Lambda: "Λ",
+  Mu: "Μ",
+  Nu: "Ν",
+  Xi: "Ξ",
+  Omicron: "Ο",
+  Pi: "Π",
+  Rho: "Ρ",
+  Sigma: "Σ",
+  Tau: "Τ",
+  Upsilon: "Υ",
+  Phi: "Φ",
+  Chi: "Χ",
+  Psi: "Ψ",
+  Omega: "Ω",
+  alpha: "α",
+  beta: "β",
+  gamma: "γ",
+  delta: "δ",
+  epsilon: "ε",
+  zeta: "ζ",
+  eta: "η",
+  theta: "θ",
+  iota: "ι",
+  kappa: "κ",
+  lambda: "λ",
+  mu: "μ",
+  nu: "ν",
+  xi: "ξ",
+  omicron: "ο",
+  pi: "π",
+  rho: "ρ",
+  sigmaf: "ς",
+  sigma: "σ",
+  tau: "τ",
+  upsilon: "υ",
+  phi: "φ",
+  chi: "χ",
+  psi: "ψ",
+  omega: "ω",
+  thetasym: "ϑ",
+  upsih: "ϒ",
+  piv: "ϖ",
+  OElig: "Œ",
+  oelig: "œ",
+  Scaron: "Š",
+  scaron: "š",
+  Yuml: "Ÿ",
+  fnof: "ƒ",
+  circ: "ˆ",
+  tilde: "˜",
+  ensp: " ",
+  emsp: " ",
+  thinsp: " ",
+  zwnj: "‌",
+  zwj: "‍",
+  lrm: "‎",
+  rlm: "‏",
+  ndash: "–",
+  mdash: "—",
+  lsquo: "‘",
+  rsquo: "’",
+  sbquo: "‚",
+  ldquo: "“",
+  rdquo: "”",
+  bdquo: "„",
+  dagger: "†",
+  Dagger: "‡",
+  bull: "•",
+  hellip: "…",
+  permil: "‰",
+  prime: "′",
+  Prime: "″",
+  lsaquo: "‹",
+  rsaquo: "›",
+  oline: "‾",
+  euro: "€",
+  trade: "™",
+  larr: "←",
+  uarr: "↑",
+  rarr: "→",
+  darr: "↓",
+  harr: "↔",
+  crarr: "↵",
+  lceil: "⌈",
+  rceil: "⌉",
+  lfloor: "⌊",
+  rfloor: "⌋",
+  loz: "◊",
+  spades: "♠",
+  clubs: "♣",
+  hearts: "♥",
+  diams: "♦"
+});
+
+/**
+ * @deprecated use `HTML_ENTITIES` instead
+ * @see HTML_ENTITIES
+ */
+exports.entityMap = exports.HTML_ENTITIES;
+
+/***/ }),
+/* 18 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var NAMESPACE = __webpack_require__(1).NAMESPACE;
 
 //[4]   	NameStartChar	   ::=   	":" | [A-Z] | "_" | [a-z] | [#xC0-#xD6] | [#xD8-#xF6] | [#xF8-#x2FF] | [#x370-#x37D] | [#x37F-#x1FFF] | [#x200C-#x200D] | [#x2070-#x218F] | [#x2C00-#x2FEF] | [#x3001-#xD7FF] | [#xF900-#xFDCF] | [#xFDF0-#xFFFD] | [#x10000-#xEFFFF]
 //[4a]   	NameChar	   ::=   	NameStartChar | "-" | "." | [0-9] | #xB7 | [#x0300-#x036F] | [#x203F-#x2040]
@@ -4282,13 +5110,28 @@ var tagNamePattern = new RegExp('^' + nameStartChar.source + nameChar.source + '
 //S_TAG,	S_ATTR,	S_EQ,	S_ATTR_NOQUOT_VALUE
 //S_ATTR_SPACE,	S_ATTR_END,	S_TAG_SPACE, S_TAG_CLOSE
 var S_TAG = 0; //tag name offerring
-var S_ATTR = 1; //attr name offerring 
+var S_ATTR = 1; //attr name offerring
 var S_ATTR_SPACE = 2; //attr name end and space offer
 var S_EQ = 3; //=space?
 var S_ATTR_NOQUOT_VALUE = 4; //attr value(no quot value only)
 var S_ATTR_END = 5; //attr value end and no space(quot end)
 var S_TAG_SPACE = 6; //(attr value end || tag end ) && (space offer)
 var S_TAG_CLOSE = 7; //closed el<el />
+
+/**
+ * Creates an error that will not be caught by XMLReader aka the SAX parser.
+ *
+ * @param {string} message
+ * @param {any?} locator Optional, can provide details about the location in the source
+ * @constructor
+ */
+function ParseError(message, locator) {
+	this.message = message;
+	this.locator = locator;
+	if (Error.captureStackTrace) Error.captureStackTrace(this, ParseError);
+}
+ParseError.prototype = new Error();
+ParseError.prototype.name = ParseError.name;
 
 function XMLReader() {}
 
@@ -4317,7 +5160,7 @@ function _parse(source, defaultNSMapCopy, entityMap, domBuilder, errorHandler) {
 	}
 	function entityReplacer(a) {
 		var k = a.slice(1, -1);
-		if (k in entityMap) {
+		if (Object.hasOwnProperty.call(entityMap, k)) {
 			return entityMap[k];
 		} else if (k.charAt(0) === '#') {
 			return fixedFromCharCode(parseInt(k.substr(1).replace('x', '0x')));
@@ -4370,12 +5213,11 @@ function _parse(source, defaultNSMapCopy, entityMap, domBuilder, errorHandler) {
 			switch (source.charAt(tagStart + 1)) {
 				case '/':
 					var end = source.indexOf('>', tagStart + 3);
-					var tagName = source.substring(tagStart + 2, end);
+					var tagName = source.substring(tagStart + 2, end).replace(/[ \t\n\r]+$/g, '');
 					var config = parseStack.pop();
 					if (end < 0) {
 
 						tagName = source.substring(tagStart + 2).replace(/[\s<].*/, '');
-						//console.error('#@@@@@@'+tagName)
 						errorHandler.error("end tag name: " + tagName + ' is not complete:' + config.tagName);
 						end = tagStart + 1 + tagName.length;
 					} else if (tagName.match(/\s</)) {
@@ -4383,8 +5225,6 @@ function _parse(source, defaultNSMapCopy, entityMap, domBuilder, errorHandler) {
 						errorHandler.error("end tag name: " + tagName + ' maybe not complete');
 						end = tagStart + 1 + tagName.length;
 					}
-					//console.error(parseStack.length,parseStack)
-					//console.error(config);
 					var localNSMap = config.localNSMap;
 					var endMatch = config.tagName == tagName;
 					var endIgnoreCaseMach = endMatch || config.tagName && config.tagName.toLowerCase() == tagName.toLowerCase();
@@ -4396,7 +5236,7 @@ function _parse(source, defaultNSMapCopy, entityMap, domBuilder, errorHandler) {
 							}
 						}
 						if (!endMatch) {
-							errorHandler.fatalError("end tag name: " + tagName + ' is not match the current start tagName:' + config.tagName);
+							errorHandler.fatalError("end tag name: " + tagName + ' is not match the current start tagName:' + config.tagName); // No known test case
 						}
 					} else {
 						parseStack.push(config);
@@ -4437,7 +5277,6 @@ function _parse(source, defaultNSMapCopy, entityMap, domBuilder, errorHandler) {
 							position(a.offset);
 							a.locator = copyLocator(locator, {});
 						}
-						//}catch(e){console.error('@@@@@'+e)}
 						domBuilder.locator = locator2;
 						if (appendElement(el, domBuilder, currentNSMap)) {
 							parseStack.push(el);
@@ -4449,17 +5288,18 @@ function _parse(source, defaultNSMapCopy, entityMap, domBuilder, errorHandler) {
 						}
 					}
 
-					if (el.uri === 'http://www.w3.org/1999/xhtml' && !el.closed) {
+					if (NAMESPACE.isHTML(el.uri) && !el.closed) {
 						end = parseHtmlSpecialContent(source, end, el.tagName, entityReplacer, domBuilder);
 					} else {
 						end++;
 					}
 			}
 		} catch (e) {
+			if (e instanceof ParseError) {
+				throw e;
+			}
 			errorHandler.error('element parse error: ' + e);
-			//errorHandler.error('element parse error: '+e);
 			end = -1;
-			//throw e;
 		}
 		if (end > start) {
 			start = end;
@@ -4480,6 +5320,23 @@ function copyLocator(f, t) {
  * @return end of the elementStartPart(end of elementEndPart for selfClosed el)
  */
 function parseElementStartPart(source, start, el, currentNSMap, entityReplacer, errorHandler) {
+
+	/**
+  * @param {string} qname
+  * @param {string} value
+  * @param {number} startIndex
+  */
+	function addAttribute(qname, value, startIndex) {
+		if (el.attributeNames.hasOwnProperty(qname)) {
+			errorHandler.fatalError('Attribute ' + qname + ' redefined');
+		}
+		el.addValue(qname,
+		// @see https://www.w3.org/TR/xml/#AVNormalize
+		// since the xmldom sax parser does not "interpret" DTD the following is not implemented:
+		// - recursive replacement of (DTD) entity references
+		// - trimming and collapsing multiple spaces into a single one for attributes that are not of type CDATA
+		value.replace(/[\t\n\r]/g, ' ').replace(/&#?\w+;/g, entityReplacer), startIndex);
+	}
 	var attrName;
 	var value;
 	var p = ++start;
@@ -4496,7 +5353,7 @@ function parseElementStartPart(source, start, el, currentNSMap, entityReplacer, 
 					s = S_EQ;
 				} else {
 					//fatalError: equal must after attrName or space after attrName
-					throw new Error('attribute equal must after attrName');
+					throw new Error('attribute equal must after attrName'); // No known test case
 				}
 				break;
 			case '\'':
@@ -4511,24 +5368,22 @@ function parseElementStartPart(source, start, el, currentNSMap, entityReplacer, 
 						start = p + 1;
 						p = source.indexOf(c, start);
 						if (p > 0) {
-							value = source.slice(start, p).replace(/&#?\w+;/g, entityReplacer);
-							el.add(attrName, value, start - 1);
+							value = source.slice(start, p);
+							addAttribute(attrName, value, start - 1);
 							s = S_ATTR_END;
 						} else {
 							//fatalError: no end quot match
 							throw new Error('attribute value no end \'' + c + '\' match');
 						}
 					} else if (s == S_ATTR_NOQUOT_VALUE) {
-					value = source.slice(start, p).replace(/&#?\w+;/g, entityReplacer);
-					//console.log(attrName,value,start,p)
-					el.add(attrName, value, start);
-					//console.dir(el)
+					value = source.slice(start, p);
+					addAttribute(attrName, value, start);
 					errorHandler.warning('attribute "' + attrName + '" missed start quot(' + c + ')!!');
 					start = p + 1;
 					s = S_ATTR_END;
 				} else {
 					//fatalError: no equal before
-					throw new Error('attribute value must after "="');
+					throw new Error('attribute value must after "="'); // No known test case
 				}
 				break;
 			case '/':
@@ -4546,12 +5401,11 @@ function parseElementStartPart(source, start, el, currentNSMap, entityReplacer, 
 						break;
 					//case S_EQ:
 					default:
-						throw new Error("attribute invalid close char('/')");
+						throw new Error("attribute invalid close char('/')"); // No known test case
 				}
 				break;
 			case '':
 				//end document
-				//throw new Error('unexpected end of input')
 				errorHandler.error('unexpected end of input');
 				if (s == S_TAG) {
 					el.setTagName(source.slice(start, p));
@@ -4577,13 +5431,13 @@ function parseElementStartPart(source, start, el, currentNSMap, entityReplacer, 
 							value = attrName;
 						}
 						if (s == S_ATTR_NOQUOT_VALUE) {
-							errorHandler.warning('attribute "' + value + '" missed quot(")!!');
-							el.add(attrName, value.replace(/&#?\w+;/g, entityReplacer), start);
+							errorHandler.warning('attribute "' + value + '" missed quot(")!');
+							addAttribute(attrName, value, start);
 						} else {
-							if (currentNSMap[''] !== 'http://www.w3.org/1999/xhtml' || !value.match(/^(?:disabled|checked|selected)$/i)) {
+							if (!NAMESPACE.isHTML(currentNSMap['']) || !value.match(/^(?:disabled|checked|selected)$/i)) {
 								errorHandler.warning('attribute "' + value + '" missed value!! "' + value + '" instead!!');
 							}
-							el.add(value, value, start);
+							addAttribute(value, value, start);
 						}
 						break;
 					case S_EQ:
@@ -4607,9 +5461,9 @@ function parseElementStartPart(source, start, el, currentNSMap, entityReplacer, 
 							s = S_ATTR_SPACE;
 							break;
 						case S_ATTR_NOQUOT_VALUE:
-							var value = source.slice(start, p).replace(/&#?\w+;/g, entityReplacer);
+							var value = source.slice(start, p);
 							errorHandler.warning('attribute "' + value + '" missed quot(")!!');
-							el.add(attrName, value, start);
+							addAttribute(attrName, value, start);
 						case S_ATTR_END:
 							s = S_TAG_SPACE;
 							break;
@@ -4630,10 +5484,10 @@ function parseElementStartPart(source, start, el, currentNSMap, entityReplacer, 
 						//case S_ATTR_NOQUOT_VALUE:void();break;
 						case S_ATTR_SPACE:
 							var tagName = el.tagName;
-							if (currentNSMap[''] !== 'http://www.w3.org/1999/xhtml' || !attrName.match(/^(?:disabled|checked|selected)$/i)) {
+							if (!NAMESPACE.isHTML(currentNSMap['']) || !attrName.match(/^(?:disabled|checked|selected)$/i)) {
 								errorHandler.warning('attribute "' + attrName + '" missed value!! "' + attrName + '" instead2!!');
 							}
-							el.add(attrName, attrName, start);
+							addAttribute(attrName, attrName, start);
 							start = p;
 							s = S_ATTR;
 							break;
@@ -4680,7 +5534,7 @@ function appendElement(el, domBuilder, currentNSMap) {
 		}
 		//can not set prefix,because prefix !== ''
 		a.localName = localName;
-		//prefix == null for no ns prefix attribute 
+		//prefix == null for no ns prefix attribute
 		if (nsPrefix !== false) {
 			//hack!!
 			if (localNSMap == null) {
@@ -4690,7 +5544,7 @@ function appendElement(el, domBuilder, currentNSMap) {
 				//console.log(currentNSMap,1)
 			}
 			currentNSMap[nsPrefix] = localNSMap[nsPrefix] = value;
-			a.uri = 'http://www.w3.org/2000/xmlns/';
+			a.uri = NAMESPACE.XMLNS;
 			domBuilder.startPrefixMapping(nsPrefix, value);
 		}
 	}
@@ -4701,7 +5555,7 @@ function appendElement(el, domBuilder, currentNSMap) {
 		if (prefix) {
 			//no prefix attribute has no namespace
 			if (prefix === 'xml') {
-				a.uri = 'http://www.w3.org/XML/1998/namespace';
+				a.uri = NAMESPACE.XML;
 			}if (prefix !== 'xmlns') {
 				a.uri = currentNSMap[prefix || ''];
 
@@ -4770,7 +5624,7 @@ function fixSelfClosed(source, elStartEnd, tagName, closeMap) {
 		closeMap[tagName] = pos;
 	}
 	return pos < elStartEnd;
-	//} 
+	//}
 }
 function _copy(source, target) {
 	for (var n in source) {
@@ -4805,15 +5659,23 @@ function parseDCC(source, start, domBuilder, errorHandler) {
 				return end + 3;
 			}
 			//<!DOCTYPE
-			//startDTD(java.lang.String name, java.lang.String publicId, java.lang.String systemId) 
+			//startDTD(java.lang.String name, java.lang.String publicId, java.lang.String systemId)
 			var matchs = split(source, start);
 			var len = matchs.length;
 			if (len > 1 && /!doctype/i.test(matchs[0][0])) {
 				var name = matchs[1][0];
-				var pubid = len > 3 && /^public$/i.test(matchs[2][0]) && matchs[3][0];
-				var sysid = len > 4 && matchs[4][0];
+				var pubid = false;
+				var sysid = false;
+				if (len > 3) {
+					if (/^public$/i.test(matchs[2][0])) {
+						pubid = matchs[3][0];
+						sysid = len > 4 && matchs[4][0];
+					} else if (/^system$/i.test(matchs[2][0])) {
+						sysid = matchs[3][0];
+					}
+				}
 				var lastMatch = matchs[len - 1];
-				domBuilder.startDTD(name, pubid && pubid.replace(/^(['"])(.*?)\1$/, '$2'), sysid && sysid.replace(/^(['"])(.*?)\1$/, '$2'));
+				domBuilder.startDTD(name, pubid, sysid);
 				domBuilder.endDTD();
 
 				return lastMatch.index + lastMatch[0].length;
@@ -4838,10 +5700,9 @@ function parseInstruction(source, start, domBuilder) {
 	return -1;
 }
 
-/**
- * @param source
- */
-function ElementAttributes(source) {}
+function ElementAttributes() {
+	this.attributeNames = {};
+}
 ElementAttributes.prototype = {
 	setTagName: function setTagName(tagName) {
 		if (!tagNamePattern.test(tagName)) {
@@ -4849,10 +5710,11 @@ ElementAttributes.prototype = {
 		}
 		this.tagName = tagName;
 	},
-	add: function add(qName, value, offset) {
+	addValue: function addValue(qName, value, offset) {
 		if (!tagNamePattern.test(qName)) {
 			throw new Error('invalid attribute:' + qName);
 		}
+		this.attributeNames[qName] = this.length;
 		this[this.length++] = { qName: qName, value: value, offset: offset };
 	},
 	length: 0,
@@ -4873,7 +5735,7 @@ ElementAttributes.prototype = {
 	}
 	//	,getIndex:function(uri, localName)){
 	//		if(localName){
-	//			
+	//
 	//		}else{
 	//			var qName = uri
 	//		}
@@ -4882,22 +5744,6 @@ ElementAttributes.prototype = {
 	//	getType:function(uri,localName){}
 	//	getType:function(i){},
 };
-
-function _set_proto_(thiz, parent) {
-	thiz.__proto__ = parent;
-	return thiz;
-}
-if (!(_set_proto_({}, _set_proto_.prototype) instanceof _set_proto_)) {
-	_set_proto_ = function _set_proto_(thiz, parent) {
-		function p() {};
-		p.prototype = parent;
-		p = new p();
-		for (parent in thiz) {
-			p[parent] = thiz[parent];
-		}
-		return p;
-	};
-}
 
 function split(source, start) {
 	var match;
@@ -4912,9 +5758,10 @@ function split(source, start) {
 }
 
 exports.XMLReader = XMLReader;
+exports.ParseError = ParseError;
 
 /***/ }),
-/* 16 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5078,13 +5925,13 @@ var json2xml = function json2xml(obj, options) {
 module.exports = json2xml;
 
 /***/ }),
-/* 17 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var session = __webpack_require__(5);
+var session = __webpack_require__(6);
 var util = __webpack_require__(0);
 
 var originApiMap = {};
@@ -5338,16 +6185,16 @@ module.exports.transferToTaskMethod = transferToTaskMethod;
 module.exports.init = initTask;
 
 /***/ }),
-/* 18 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var REQUEST = __webpack_require__(19);
-var base64 = __webpack_require__(3);
+var REQUEST = __webpack_require__(22);
+var base64 = __webpack_require__(4);
 var util = __webpack_require__(0);
-var mime = __webpack_require__(20);
+var mime = __webpack_require__(23);
 
 // Bucket 相关
 
@@ -8956,7 +9803,7 @@ module.exports.init = function (COS, task) {
 };
 
 /***/ }),
-/* 19 */
+/* 22 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -9087,17 +9934,17 @@ var request = function request(params, callback) {
 module.exports = request;
 
 /***/ }),
-/* 20 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var Mime = __webpack_require__(21);
-module.exports = new Mime(__webpack_require__(22), __webpack_require__(23));
+var Mime = __webpack_require__(24);
+module.exports = new Mime(__webpack_require__(25), __webpack_require__(26));
 
 /***/ }),
-/* 21 */
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -9196,7 +10043,7 @@ Mime.prototype.getExtension = function (type) {
 module.exports = Mime;
 
 /***/ }),
-/* 22 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -9205,7 +10052,7 @@ module.exports = Mime;
 module.exports = { "application/andrew-inset": ["ez"], "application/applixware": ["aw"], "application/atom+xml": ["atom"], "application/atomcat+xml": ["atomcat"], "application/atomdeleted+xml": ["atomdeleted"], "application/atomsvc+xml": ["atomsvc"], "application/atsc-dwd+xml": ["dwd"], "application/atsc-held+xml": ["held"], "application/atsc-rsat+xml": ["rsat"], "application/bdoc": ["bdoc"], "application/calendar+xml": ["xcs"], "application/ccxml+xml": ["ccxml"], "application/cdfx+xml": ["cdfx"], "application/cdmi-capability": ["cdmia"], "application/cdmi-container": ["cdmic"], "application/cdmi-domain": ["cdmid"], "application/cdmi-object": ["cdmio"], "application/cdmi-queue": ["cdmiq"], "application/cu-seeme": ["cu"], "application/dash+xml": ["mpd"], "application/davmount+xml": ["davmount"], "application/docbook+xml": ["dbk"], "application/dssc+der": ["dssc"], "application/dssc+xml": ["xdssc"], "application/ecmascript": ["es", "ecma"], "application/emma+xml": ["emma"], "application/emotionml+xml": ["emotionml"], "application/epub+zip": ["epub"], "application/exi": ["exi"], "application/express": ["exp"], "application/fdt+xml": ["fdt"], "application/font-tdpfr": ["pfr"], "application/geo+json": ["geojson"], "application/gml+xml": ["gml"], "application/gpx+xml": ["gpx"], "application/gxf": ["gxf"], "application/gzip": ["gz"], "application/hjson": ["hjson"], "application/hyperstudio": ["stk"], "application/inkml+xml": ["ink", "inkml"], "application/ipfix": ["ipfix"], "application/its+xml": ["its"], "application/java-archive": ["jar", "war", "ear"], "application/java-serialized-object": ["ser"], "application/java-vm": ["class"], "application/javascript": ["js", "mjs"], "application/json": ["json", "map"], "application/json5": ["json5"], "application/jsonml+json": ["jsonml"], "application/ld+json": ["jsonld"], "application/lgr+xml": ["lgr"], "application/lost+xml": ["lostxml"], "application/mac-binhex40": ["hqx"], "application/mac-compactpro": ["cpt"], "application/mads+xml": ["mads"], "application/manifest+json": ["webmanifest"], "application/marc": ["mrc"], "application/marcxml+xml": ["mrcx"], "application/mathematica": ["ma", "nb", "mb"], "application/mathml+xml": ["mathml"], "application/mbox": ["mbox"], "application/mediaservercontrol+xml": ["mscml"], "application/metalink+xml": ["metalink"], "application/metalink4+xml": ["meta4"], "application/mets+xml": ["mets"], "application/mmt-aei+xml": ["maei"], "application/mmt-usd+xml": ["musd"], "application/mods+xml": ["mods"], "application/mp21": ["m21", "mp21"], "application/mp4": ["mp4s", "m4p"], "application/msword": ["doc", "dot"], "application/mxf": ["mxf"], "application/n-quads": ["nq"], "application/n-triples": ["nt"], "application/node": ["cjs"], "application/octet-stream": ["bin", "dms", "lrf", "mar", "so", "dist", "distz", "pkg", "bpk", "dump", "elc", "deploy", "exe", "dll", "deb", "dmg", "iso", "img", "msi", "msp", "msm", "buffer"], "application/oda": ["oda"], "application/oebps-package+xml": ["opf"], "application/ogg": ["ogx"], "application/omdoc+xml": ["omdoc"], "application/onenote": ["onetoc", "onetoc2", "onetmp", "onepkg"], "application/oxps": ["oxps"], "application/p2p-overlay+xml": ["relo"], "application/patch-ops-error+xml": ["xer"], "application/pdf": ["pdf"], "application/pgp-encrypted": ["pgp"], "application/pgp-signature": ["asc", "sig"], "application/pics-rules": ["prf"], "application/pkcs10": ["p10"], "application/pkcs7-mime": ["p7m", "p7c"], "application/pkcs7-signature": ["p7s"], "application/pkcs8": ["p8"], "application/pkix-attr-cert": ["ac"], "application/pkix-cert": ["cer"], "application/pkix-crl": ["crl"], "application/pkix-pkipath": ["pkipath"], "application/pkixcmp": ["pki"], "application/pls+xml": ["pls"], "application/postscript": ["ai", "eps", "ps"], "application/provenance+xml": ["provx"], "application/pskc+xml": ["pskcxml"], "application/raml+yaml": ["raml"], "application/rdf+xml": ["rdf", "owl"], "application/reginfo+xml": ["rif"], "application/relax-ng-compact-syntax": ["rnc"], "application/resource-lists+xml": ["rl"], "application/resource-lists-diff+xml": ["rld"], "application/rls-services+xml": ["rs"], "application/route-apd+xml": ["rapd"], "application/route-s-tsid+xml": ["sls"], "application/route-usd+xml": ["rusd"], "application/rpki-ghostbusters": ["gbr"], "application/rpki-manifest": ["mft"], "application/rpki-roa": ["roa"], "application/rsd+xml": ["rsd"], "application/rss+xml": ["rss"], "application/rtf": ["rtf"], "application/sbml+xml": ["sbml"], "application/scvp-cv-request": ["scq"], "application/scvp-cv-response": ["scs"], "application/scvp-vp-request": ["spq"], "application/scvp-vp-response": ["spp"], "application/sdp": ["sdp"], "application/senml+xml": ["senmlx"], "application/sensml+xml": ["sensmlx"], "application/set-payment-initiation": ["setpay"], "application/set-registration-initiation": ["setreg"], "application/shf+xml": ["shf"], "application/sieve": ["siv", "sieve"], "application/smil+xml": ["smi", "smil"], "application/sparql-query": ["rq"], "application/sparql-results+xml": ["srx"], "application/srgs": ["gram"], "application/srgs+xml": ["grxml"], "application/sru+xml": ["sru"], "application/ssdl+xml": ["ssdl"], "application/ssml+xml": ["ssml"], "application/swid+xml": ["swidtag"], "application/tei+xml": ["tei", "teicorpus"], "application/thraud+xml": ["tfi"], "application/timestamped-data": ["tsd"], "application/toml": ["toml"], "application/trig": ["trig"], "application/ttml+xml": ["ttml"], "application/ubjson": ["ubj"], "application/urc-ressheet+xml": ["rsheet"], "application/urc-targetdesc+xml": ["td"], "application/voicexml+xml": ["vxml"], "application/wasm": ["wasm"], "application/widget": ["wgt"], "application/winhlp": ["hlp"], "application/wsdl+xml": ["wsdl"], "application/wspolicy+xml": ["wspolicy"], "application/xaml+xml": ["xaml"], "application/xcap-att+xml": ["xav"], "application/xcap-caps+xml": ["xca"], "application/xcap-diff+xml": ["xdf"], "application/xcap-el+xml": ["xel"], "application/xcap-ns+xml": ["xns"], "application/xenc+xml": ["xenc"], "application/xhtml+xml": ["xhtml", "xht"], "application/xliff+xml": ["xlf"], "application/xml": ["xml", "xsl", "xsd", "rng"], "application/xml-dtd": ["dtd"], "application/xop+xml": ["xop"], "application/xproc+xml": ["xpl"], "application/xslt+xml": ["*xsl", "xslt"], "application/xspf+xml": ["xspf"], "application/xv+xml": ["mxml", "xhvml", "xvml", "xvm"], "application/yang": ["yang"], "application/yin+xml": ["yin"], "application/zip": ["zip"], "audio/3gpp": ["*3gpp"], "audio/adpcm": ["adp"], "audio/amr": ["amr"], "audio/basic": ["au", "snd"], "audio/midi": ["mid", "midi", "kar", "rmi"], "audio/mobile-xmf": ["mxmf"], "audio/mp3": ["*mp3"], "audio/mp4": ["m4a", "mp4a"], "audio/mpeg": ["mpga", "mp2", "mp2a", "mp3", "m2a", "m3a"], "audio/ogg": ["oga", "ogg", "spx", "opus"], "audio/s3m": ["s3m"], "audio/silk": ["sil"], "audio/wav": ["wav"], "audio/wave": ["*wav"], "audio/webm": ["weba"], "audio/xm": ["xm"], "font/collection": ["ttc"], "font/otf": ["otf"], "font/ttf": ["ttf"], "font/woff": ["woff"], "font/woff2": ["woff2"], "image/aces": ["exr"], "image/apng": ["apng"], "image/avif": ["avif"], "image/bmp": ["bmp"], "image/cgm": ["cgm"], "image/dicom-rle": ["drle"], "image/emf": ["emf"], "image/fits": ["fits"], "image/g3fax": ["g3"], "image/gif": ["gif"], "image/heic": ["heic"], "image/heic-sequence": ["heics"], "image/heif": ["heif"], "image/heif-sequence": ["heifs"], "image/hej2k": ["hej2"], "image/hsj2": ["hsj2"], "image/ief": ["ief"], "image/jls": ["jls"], "image/jp2": ["jp2", "jpg2"], "image/jpeg": ["jpeg", "jpg", "jpe"], "image/jph": ["jph"], "image/jphc": ["jhc"], "image/jpm": ["jpm"], "image/jpx": ["jpx", "jpf"], "image/jxr": ["jxr"], "image/jxra": ["jxra"], "image/jxrs": ["jxrs"], "image/jxs": ["jxs"], "image/jxsc": ["jxsc"], "image/jxsi": ["jxsi"], "image/jxss": ["jxss"], "image/ktx": ["ktx"], "image/ktx2": ["ktx2"], "image/png": ["png"], "image/sgi": ["sgi"], "image/svg+xml": ["svg", "svgz"], "image/t38": ["t38"], "image/tiff": ["tif", "tiff"], "image/tiff-fx": ["tfx"], "image/webp": ["webp"], "image/wmf": ["wmf"], "message/disposition-notification": ["disposition-notification"], "message/global": ["u8msg"], "message/global-delivery-status": ["u8dsn"], "message/global-disposition-notification": ["u8mdn"], "message/global-headers": ["u8hdr"], "message/rfc822": ["eml", "mime"], "model/3mf": ["3mf"], "model/gltf+json": ["gltf"], "model/gltf-binary": ["glb"], "model/iges": ["igs", "iges"], "model/mesh": ["msh", "mesh", "silo"], "model/mtl": ["mtl"], "model/obj": ["obj"], "model/step+xml": ["stpx"], "model/step+zip": ["stpz"], "model/step-xml+zip": ["stpxz"], "model/stl": ["stl"], "model/vrml": ["wrl", "vrml"], "model/x3d+binary": ["*x3db", "x3dbz"], "model/x3d+fastinfoset": ["x3db"], "model/x3d+vrml": ["*x3dv", "x3dvz"], "model/x3d+xml": ["x3d", "x3dz"], "model/x3d-vrml": ["x3dv"], "text/cache-manifest": ["appcache", "manifest"], "text/calendar": ["ics", "ifb"], "text/coffeescript": ["coffee", "litcoffee"], "text/css": ["css"], "text/csv": ["csv"], "text/html": ["html", "htm", "shtml"], "text/jade": ["jade"], "text/jsx": ["jsx"], "text/less": ["less"], "text/markdown": ["markdown", "md"], "text/mathml": ["mml"], "text/mdx": ["mdx"], "text/n3": ["n3"], "text/plain": ["txt", "text", "conf", "def", "list", "log", "in", "ini"], "text/richtext": ["rtx"], "text/rtf": ["*rtf"], "text/sgml": ["sgml", "sgm"], "text/shex": ["shex"], "text/slim": ["slim", "slm"], "text/spdx": ["spdx"], "text/stylus": ["stylus", "styl"], "text/tab-separated-values": ["tsv"], "text/troff": ["t", "tr", "roff", "man", "me", "ms"], "text/turtle": ["ttl"], "text/uri-list": ["uri", "uris", "urls"], "text/vcard": ["vcard"], "text/vtt": ["vtt"], "text/xml": ["*xml"], "text/yaml": ["yaml", "yml"], "video/3gpp": ["3gp", "3gpp"], "video/3gpp2": ["3g2"], "video/h261": ["h261"], "video/h263": ["h263"], "video/h264": ["h264"], "video/iso.segment": ["m4s"], "video/jpeg": ["jpgv"], "video/jpm": ["*jpm", "jpgm"], "video/mj2": ["mj2", "mjp2"], "video/mp2t": ["ts"], "video/mp4": ["mp4", "mp4v", "mpg4"], "video/mpeg": ["mpeg", "mpg", "mpe", "m1v", "m2v"], "video/ogg": ["ogv"], "video/quicktime": ["qt", "mov"], "video/webm": ["webm"] };
 
 /***/ }),
-/* 23 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -9214,7 +10061,7 @@ module.exports = { "application/andrew-inset": ["ez"], "application/applixware":
 module.exports = { "application/prs.cww": ["cww"], "application/vnd.1000minds.decision-model+xml": ["1km"], "application/vnd.3gpp.pic-bw-large": ["plb"], "application/vnd.3gpp.pic-bw-small": ["psb"], "application/vnd.3gpp.pic-bw-var": ["pvb"], "application/vnd.3gpp2.tcap": ["tcap"], "application/vnd.3m.post-it-notes": ["pwn"], "application/vnd.accpac.simply.aso": ["aso"], "application/vnd.accpac.simply.imp": ["imp"], "application/vnd.acucobol": ["acu"], "application/vnd.acucorp": ["atc", "acutc"], "application/vnd.adobe.air-application-installer-package+zip": ["air"], "application/vnd.adobe.formscentral.fcdt": ["fcdt"], "application/vnd.adobe.fxp": ["fxp", "fxpl"], "application/vnd.adobe.xdp+xml": ["xdp"], "application/vnd.adobe.xfdf": ["xfdf"], "application/vnd.ahead.space": ["ahead"], "application/vnd.airzip.filesecure.azf": ["azf"], "application/vnd.airzip.filesecure.azs": ["azs"], "application/vnd.amazon.ebook": ["azw"], "application/vnd.americandynamics.acc": ["acc"], "application/vnd.amiga.ami": ["ami"], "application/vnd.android.package-archive": ["apk"], "application/vnd.anser-web-certificate-issue-initiation": ["cii"], "application/vnd.anser-web-funds-transfer-initiation": ["fti"], "application/vnd.antix.game-component": ["atx"], "application/vnd.apple.installer+xml": ["mpkg"], "application/vnd.apple.keynote": ["key"], "application/vnd.apple.mpegurl": ["m3u8"], "application/vnd.apple.numbers": ["numbers"], "application/vnd.apple.pages": ["pages"], "application/vnd.apple.pkpass": ["pkpass"], "application/vnd.aristanetworks.swi": ["swi"], "application/vnd.astraea-software.iota": ["iota"], "application/vnd.audiograph": ["aep"], "application/vnd.balsamiq.bmml+xml": ["bmml"], "application/vnd.blueice.multipass": ["mpm"], "application/vnd.bmi": ["bmi"], "application/vnd.businessobjects": ["rep"], "application/vnd.chemdraw+xml": ["cdxml"], "application/vnd.chipnuts.karaoke-mmd": ["mmd"], "application/vnd.cinderella": ["cdy"], "application/vnd.citationstyles.style+xml": ["csl"], "application/vnd.claymore": ["cla"], "application/vnd.cloanto.rp9": ["rp9"], "application/vnd.clonk.c4group": ["c4g", "c4d", "c4f", "c4p", "c4u"], "application/vnd.cluetrust.cartomobile-config": ["c11amc"], "application/vnd.cluetrust.cartomobile-config-pkg": ["c11amz"], "application/vnd.commonspace": ["csp"], "application/vnd.contact.cmsg": ["cdbcmsg"], "application/vnd.cosmocaller": ["cmc"], "application/vnd.crick.clicker": ["clkx"], "application/vnd.crick.clicker.keyboard": ["clkk"], "application/vnd.crick.clicker.palette": ["clkp"], "application/vnd.crick.clicker.template": ["clkt"], "application/vnd.crick.clicker.wordbank": ["clkw"], "application/vnd.criticaltools.wbs+xml": ["wbs"], "application/vnd.ctc-posml": ["pml"], "application/vnd.cups-ppd": ["ppd"], "application/vnd.curl.car": ["car"], "application/vnd.curl.pcurl": ["pcurl"], "application/vnd.dart": ["dart"], "application/vnd.data-vision.rdz": ["rdz"], "application/vnd.dbf": ["dbf"], "application/vnd.dece.data": ["uvf", "uvvf", "uvd", "uvvd"], "application/vnd.dece.ttml+xml": ["uvt", "uvvt"], "application/vnd.dece.unspecified": ["uvx", "uvvx"], "application/vnd.dece.zip": ["uvz", "uvvz"], "application/vnd.denovo.fcselayout-link": ["fe_launch"], "application/vnd.dna": ["dna"], "application/vnd.dolby.mlp": ["mlp"], "application/vnd.dpgraph": ["dpg"], "application/vnd.dreamfactory": ["dfac"], "application/vnd.ds-keypoint": ["kpxx"], "application/vnd.dvb.ait": ["ait"], "application/vnd.dvb.service": ["svc"], "application/vnd.dynageo": ["geo"], "application/vnd.ecowin.chart": ["mag"], "application/vnd.enliven": ["nml"], "application/vnd.epson.esf": ["esf"], "application/vnd.epson.msf": ["msf"], "application/vnd.epson.quickanime": ["qam"], "application/vnd.epson.salt": ["slt"], "application/vnd.epson.ssf": ["ssf"], "application/vnd.eszigno3+xml": ["es3", "et3"], "application/vnd.ezpix-album": ["ez2"], "application/vnd.ezpix-package": ["ez3"], "application/vnd.fdf": ["fdf"], "application/vnd.fdsn.mseed": ["mseed"], "application/vnd.fdsn.seed": ["seed", "dataless"], "application/vnd.flographit": ["gph"], "application/vnd.fluxtime.clip": ["ftc"], "application/vnd.framemaker": ["fm", "frame", "maker", "book"], "application/vnd.frogans.fnc": ["fnc"], "application/vnd.frogans.ltf": ["ltf"], "application/vnd.fsc.weblaunch": ["fsc"], "application/vnd.fujitsu.oasys": ["oas"], "application/vnd.fujitsu.oasys2": ["oa2"], "application/vnd.fujitsu.oasys3": ["oa3"], "application/vnd.fujitsu.oasysgp": ["fg5"], "application/vnd.fujitsu.oasysprs": ["bh2"], "application/vnd.fujixerox.ddd": ["ddd"], "application/vnd.fujixerox.docuworks": ["xdw"], "application/vnd.fujixerox.docuworks.binder": ["xbd"], "application/vnd.fuzzysheet": ["fzs"], "application/vnd.genomatix.tuxedo": ["txd"], "application/vnd.geogebra.file": ["ggb"], "application/vnd.geogebra.tool": ["ggt"], "application/vnd.geometry-explorer": ["gex", "gre"], "application/vnd.geonext": ["gxt"], "application/vnd.geoplan": ["g2w"], "application/vnd.geospace": ["g3w"], "application/vnd.gmx": ["gmx"], "application/vnd.google-apps.document": ["gdoc"], "application/vnd.google-apps.presentation": ["gslides"], "application/vnd.google-apps.spreadsheet": ["gsheet"], "application/vnd.google-earth.kml+xml": ["kml"], "application/vnd.google-earth.kmz": ["kmz"], "application/vnd.grafeq": ["gqf", "gqs"], "application/vnd.groove-account": ["gac"], "application/vnd.groove-help": ["ghf"], "application/vnd.groove-identity-message": ["gim"], "application/vnd.groove-injector": ["grv"], "application/vnd.groove-tool-message": ["gtm"], "application/vnd.groove-tool-template": ["tpl"], "application/vnd.groove-vcard": ["vcg"], "application/vnd.hal+xml": ["hal"], "application/vnd.handheld-entertainment+xml": ["zmm"], "application/vnd.hbci": ["hbci"], "application/vnd.hhe.lesson-player": ["les"], "application/vnd.hp-hpgl": ["hpgl"], "application/vnd.hp-hpid": ["hpid"], "application/vnd.hp-hps": ["hps"], "application/vnd.hp-jlyt": ["jlt"], "application/vnd.hp-pcl": ["pcl"], "application/vnd.hp-pclxl": ["pclxl"], "application/vnd.hydrostatix.sof-data": ["sfd-hdstx"], "application/vnd.ibm.minipay": ["mpy"], "application/vnd.ibm.modcap": ["afp", "listafp", "list3820"], "application/vnd.ibm.rights-management": ["irm"], "application/vnd.ibm.secure-container": ["sc"], "application/vnd.iccprofile": ["icc", "icm"], "application/vnd.igloader": ["igl"], "application/vnd.immervision-ivp": ["ivp"], "application/vnd.immervision-ivu": ["ivu"], "application/vnd.insors.igm": ["igm"], "application/vnd.intercon.formnet": ["xpw", "xpx"], "application/vnd.intergeo": ["i2g"], "application/vnd.intu.qbo": ["qbo"], "application/vnd.intu.qfx": ["qfx"], "application/vnd.ipunplugged.rcprofile": ["rcprofile"], "application/vnd.irepository.package+xml": ["irp"], "application/vnd.is-xpr": ["xpr"], "application/vnd.isac.fcs": ["fcs"], "application/vnd.jam": ["jam"], "application/vnd.jcp.javame.midlet-rms": ["rms"], "application/vnd.jisp": ["jisp"], "application/vnd.joost.joda-archive": ["joda"], "application/vnd.kahootz": ["ktz", "ktr"], "application/vnd.kde.karbon": ["karbon"], "application/vnd.kde.kchart": ["chrt"], "application/vnd.kde.kformula": ["kfo"], "application/vnd.kde.kivio": ["flw"], "application/vnd.kde.kontour": ["kon"], "application/vnd.kde.kpresenter": ["kpr", "kpt"], "application/vnd.kde.kspread": ["ksp"], "application/vnd.kde.kword": ["kwd", "kwt"], "application/vnd.kenameaapp": ["htke"], "application/vnd.kidspiration": ["kia"], "application/vnd.kinar": ["kne", "knp"], "application/vnd.koan": ["skp", "skd", "skt", "skm"], "application/vnd.kodak-descriptor": ["sse"], "application/vnd.las.las+xml": ["lasxml"], "application/vnd.llamagraphics.life-balance.desktop": ["lbd"], "application/vnd.llamagraphics.life-balance.exchange+xml": ["lbe"], "application/vnd.lotus-1-2-3": ["123"], "application/vnd.lotus-approach": ["apr"], "application/vnd.lotus-freelance": ["pre"], "application/vnd.lotus-notes": ["nsf"], "application/vnd.lotus-organizer": ["org"], "application/vnd.lotus-screencam": ["scm"], "application/vnd.lotus-wordpro": ["lwp"], "application/vnd.macports.portpkg": ["portpkg"], "application/vnd.mapbox-vector-tile": ["mvt"], "application/vnd.mcd": ["mcd"], "application/vnd.medcalcdata": ["mc1"], "application/vnd.mediastation.cdkey": ["cdkey"], "application/vnd.mfer": ["mwf"], "application/vnd.mfmp": ["mfm"], "application/vnd.micrografx.flo": ["flo"], "application/vnd.micrografx.igx": ["igx"], "application/vnd.mif": ["mif"], "application/vnd.mobius.daf": ["daf"], "application/vnd.mobius.dis": ["dis"], "application/vnd.mobius.mbk": ["mbk"], "application/vnd.mobius.mqy": ["mqy"], "application/vnd.mobius.msl": ["msl"], "application/vnd.mobius.plc": ["plc"], "application/vnd.mobius.txf": ["txf"], "application/vnd.mophun.application": ["mpn"], "application/vnd.mophun.certificate": ["mpc"], "application/vnd.mozilla.xul+xml": ["xul"], "application/vnd.ms-artgalry": ["cil"], "application/vnd.ms-cab-compressed": ["cab"], "application/vnd.ms-excel": ["xls", "xlm", "xla", "xlc", "xlt", "xlw"], "application/vnd.ms-excel.addin.macroenabled.12": ["xlam"], "application/vnd.ms-excel.sheet.binary.macroenabled.12": ["xlsb"], "application/vnd.ms-excel.sheet.macroenabled.12": ["xlsm"], "application/vnd.ms-excel.template.macroenabled.12": ["xltm"], "application/vnd.ms-fontobject": ["eot"], "application/vnd.ms-htmlhelp": ["chm"], "application/vnd.ms-ims": ["ims"], "application/vnd.ms-lrm": ["lrm"], "application/vnd.ms-officetheme": ["thmx"], "application/vnd.ms-outlook": ["msg"], "application/vnd.ms-pki.seccat": ["cat"], "application/vnd.ms-pki.stl": ["*stl"], "application/vnd.ms-powerpoint": ["ppt", "pps", "pot"], "application/vnd.ms-powerpoint.addin.macroenabled.12": ["ppam"], "application/vnd.ms-powerpoint.presentation.macroenabled.12": ["pptm"], "application/vnd.ms-powerpoint.slide.macroenabled.12": ["sldm"], "application/vnd.ms-powerpoint.slideshow.macroenabled.12": ["ppsm"], "application/vnd.ms-powerpoint.template.macroenabled.12": ["potm"], "application/vnd.ms-project": ["mpp", "mpt"], "application/vnd.ms-word.document.macroenabled.12": ["docm"], "application/vnd.ms-word.template.macroenabled.12": ["dotm"], "application/vnd.ms-works": ["wps", "wks", "wcm", "wdb"], "application/vnd.ms-wpl": ["wpl"], "application/vnd.ms-xpsdocument": ["xps"], "application/vnd.mseq": ["mseq"], "application/vnd.musician": ["mus"], "application/vnd.muvee.style": ["msty"], "application/vnd.mynfc": ["taglet"], "application/vnd.neurolanguage.nlu": ["nlu"], "application/vnd.nitf": ["ntf", "nitf"], "application/vnd.noblenet-directory": ["nnd"], "application/vnd.noblenet-sealer": ["nns"], "application/vnd.noblenet-web": ["nnw"], "application/vnd.nokia.n-gage.ac+xml": ["*ac"], "application/vnd.nokia.n-gage.data": ["ngdat"], "application/vnd.nokia.n-gage.symbian.install": ["n-gage"], "application/vnd.nokia.radio-preset": ["rpst"], "application/vnd.nokia.radio-presets": ["rpss"], "application/vnd.novadigm.edm": ["edm"], "application/vnd.novadigm.edx": ["edx"], "application/vnd.novadigm.ext": ["ext"], "application/vnd.oasis.opendocument.chart": ["odc"], "application/vnd.oasis.opendocument.chart-template": ["otc"], "application/vnd.oasis.opendocument.database": ["odb"], "application/vnd.oasis.opendocument.formula": ["odf"], "application/vnd.oasis.opendocument.formula-template": ["odft"], "application/vnd.oasis.opendocument.graphics": ["odg"], "application/vnd.oasis.opendocument.graphics-template": ["otg"], "application/vnd.oasis.opendocument.image": ["odi"], "application/vnd.oasis.opendocument.image-template": ["oti"], "application/vnd.oasis.opendocument.presentation": ["odp"], "application/vnd.oasis.opendocument.presentation-template": ["otp"], "application/vnd.oasis.opendocument.spreadsheet": ["ods"], "application/vnd.oasis.opendocument.spreadsheet-template": ["ots"], "application/vnd.oasis.opendocument.text": ["odt"], "application/vnd.oasis.opendocument.text-master": ["odm"], "application/vnd.oasis.opendocument.text-template": ["ott"], "application/vnd.oasis.opendocument.text-web": ["oth"], "application/vnd.olpc-sugar": ["xo"], "application/vnd.oma.dd2+xml": ["dd2"], "application/vnd.openblox.game+xml": ["obgx"], "application/vnd.openofficeorg.extension": ["oxt"], "application/vnd.openstreetmap.data+xml": ["osm"], "application/vnd.openxmlformats-officedocument.presentationml.presentation": ["pptx"], "application/vnd.openxmlformats-officedocument.presentationml.slide": ["sldx"], "application/vnd.openxmlformats-officedocument.presentationml.slideshow": ["ppsx"], "application/vnd.openxmlformats-officedocument.presentationml.template": ["potx"], "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ["xlsx"], "application/vnd.openxmlformats-officedocument.spreadsheetml.template": ["xltx"], "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ["docx"], "application/vnd.openxmlformats-officedocument.wordprocessingml.template": ["dotx"], "application/vnd.osgeo.mapguide.package": ["mgp"], "application/vnd.osgi.dp": ["dp"], "application/vnd.osgi.subsystem": ["esa"], "application/vnd.palm": ["pdb", "pqa", "oprc"], "application/vnd.pawaafile": ["paw"], "application/vnd.pg.format": ["str"], "application/vnd.pg.osasli": ["ei6"], "application/vnd.picsel": ["efif"], "application/vnd.pmi.widget": ["wg"], "application/vnd.pocketlearn": ["plf"], "application/vnd.powerbuilder6": ["pbd"], "application/vnd.previewsystems.box": ["box"], "application/vnd.proteus.magazine": ["mgz"], "application/vnd.publishare-delta-tree": ["qps"], "application/vnd.pvi.ptid1": ["ptid"], "application/vnd.quark.quarkxpress": ["qxd", "qxt", "qwd", "qwt", "qxl", "qxb"], "application/vnd.rar": ["rar"], "application/vnd.realvnc.bed": ["bed"], "application/vnd.recordare.musicxml": ["mxl"], "application/vnd.recordare.musicxml+xml": ["musicxml"], "application/vnd.rig.cryptonote": ["cryptonote"], "application/vnd.rim.cod": ["cod"], "application/vnd.rn-realmedia": ["rm"], "application/vnd.rn-realmedia-vbr": ["rmvb"], "application/vnd.route66.link66+xml": ["link66"], "application/vnd.sailingtracker.track": ["st"], "application/vnd.seemail": ["see"], "application/vnd.sema": ["sema"], "application/vnd.semd": ["semd"], "application/vnd.semf": ["semf"], "application/vnd.shana.informed.formdata": ["ifm"], "application/vnd.shana.informed.formtemplate": ["itp"], "application/vnd.shana.informed.interchange": ["iif"], "application/vnd.shana.informed.package": ["ipk"], "application/vnd.simtech-mindmapper": ["twd", "twds"], "application/vnd.smaf": ["mmf"], "application/vnd.smart.teacher": ["teacher"], "application/vnd.software602.filler.form+xml": ["fo"], "application/vnd.solent.sdkm+xml": ["sdkm", "sdkd"], "application/vnd.spotfire.dxp": ["dxp"], "application/vnd.spotfire.sfs": ["sfs"], "application/vnd.stardivision.calc": ["sdc"], "application/vnd.stardivision.draw": ["sda"], "application/vnd.stardivision.impress": ["sdd"], "application/vnd.stardivision.math": ["smf"], "application/vnd.stardivision.writer": ["sdw", "vor"], "application/vnd.stardivision.writer-global": ["sgl"], "application/vnd.stepmania.package": ["smzip"], "application/vnd.stepmania.stepchart": ["sm"], "application/vnd.sun.wadl+xml": ["wadl"], "application/vnd.sun.xml.calc": ["sxc"], "application/vnd.sun.xml.calc.template": ["stc"], "application/vnd.sun.xml.draw": ["sxd"], "application/vnd.sun.xml.draw.template": ["std"], "application/vnd.sun.xml.impress": ["sxi"], "application/vnd.sun.xml.impress.template": ["sti"], "application/vnd.sun.xml.math": ["sxm"], "application/vnd.sun.xml.writer": ["sxw"], "application/vnd.sun.xml.writer.global": ["sxg"], "application/vnd.sun.xml.writer.template": ["stw"], "application/vnd.sus-calendar": ["sus", "susp"], "application/vnd.svd": ["svd"], "application/vnd.symbian.install": ["sis", "sisx"], "application/vnd.syncml+xml": ["xsm"], "application/vnd.syncml.dm+wbxml": ["bdm"], "application/vnd.syncml.dm+xml": ["xdm"], "application/vnd.syncml.dmddf+xml": ["ddf"], "application/vnd.tao.intent-module-archive": ["tao"], "application/vnd.tcpdump.pcap": ["pcap", "cap", "dmp"], "application/vnd.tmobile-livetv": ["tmo"], "application/vnd.trid.tpt": ["tpt"], "application/vnd.triscape.mxs": ["mxs"], "application/vnd.trueapp": ["tra"], "application/vnd.ufdl": ["ufd", "ufdl"], "application/vnd.uiq.theme": ["utz"], "application/vnd.umajin": ["umj"], "application/vnd.unity": ["unityweb"], "application/vnd.uoml+xml": ["uoml"], "application/vnd.vcx": ["vcx"], "application/vnd.visio": ["vsd", "vst", "vss", "vsw"], "application/vnd.visionary": ["vis"], "application/vnd.vsf": ["vsf"], "application/vnd.wap.wbxml": ["wbxml"], "application/vnd.wap.wmlc": ["wmlc"], "application/vnd.wap.wmlscriptc": ["wmlsc"], "application/vnd.webturbo": ["wtb"], "application/vnd.wolfram.player": ["nbp"], "application/vnd.wordperfect": ["wpd"], "application/vnd.wqd": ["wqd"], "application/vnd.wt.stf": ["stf"], "application/vnd.xara": ["xar"], "application/vnd.xfdl": ["xfdl"], "application/vnd.yamaha.hv-dic": ["hvd"], "application/vnd.yamaha.hv-script": ["hvs"], "application/vnd.yamaha.hv-voice": ["hvp"], "application/vnd.yamaha.openscoreformat": ["osf"], "application/vnd.yamaha.openscoreformat.osfpvg+xml": ["osfpvg"], "application/vnd.yamaha.smaf-audio": ["saf"], "application/vnd.yamaha.smaf-phrase": ["spf"], "application/vnd.yellowriver-custom-menu": ["cmp"], "application/vnd.zul": ["zir", "zirz"], "application/vnd.zzazz.deck+xml": ["zaz"], "application/x-7z-compressed": ["7z"], "application/x-abiword": ["abw"], "application/x-ace-compressed": ["ace"], "application/x-apple-diskimage": ["*dmg"], "application/x-arj": ["arj"], "application/x-authorware-bin": ["aab", "x32", "u32", "vox"], "application/x-authorware-map": ["aam"], "application/x-authorware-seg": ["aas"], "application/x-bcpio": ["bcpio"], "application/x-bdoc": ["*bdoc"], "application/x-bittorrent": ["torrent"], "application/x-blorb": ["blb", "blorb"], "application/x-bzip": ["bz"], "application/x-bzip2": ["bz2", "boz"], "application/x-cbr": ["cbr", "cba", "cbt", "cbz", "cb7"], "application/x-cdlink": ["vcd"], "application/x-cfs-compressed": ["cfs"], "application/x-chat": ["chat"], "application/x-chess-pgn": ["pgn"], "application/x-chrome-extension": ["crx"], "application/x-cocoa": ["cco"], "application/x-conference": ["nsc"], "application/x-cpio": ["cpio"], "application/x-csh": ["csh"], "application/x-debian-package": ["*deb", "udeb"], "application/x-dgc-compressed": ["dgc"], "application/x-director": ["dir", "dcr", "dxr", "cst", "cct", "cxt", "w3d", "fgd", "swa"], "application/x-doom": ["wad"], "application/x-dtbncx+xml": ["ncx"], "application/x-dtbook+xml": ["dtb"], "application/x-dtbresource+xml": ["res"], "application/x-dvi": ["dvi"], "application/x-envoy": ["evy"], "application/x-eva": ["eva"], "application/x-font-bdf": ["bdf"], "application/x-font-ghostscript": ["gsf"], "application/x-font-linux-psf": ["psf"], "application/x-font-pcf": ["pcf"], "application/x-font-snf": ["snf"], "application/x-font-type1": ["pfa", "pfb", "pfm", "afm"], "application/x-freearc": ["arc"], "application/x-futuresplash": ["spl"], "application/x-gca-compressed": ["gca"], "application/x-glulx": ["ulx"], "application/x-gnumeric": ["gnumeric"], "application/x-gramps-xml": ["gramps"], "application/x-gtar": ["gtar"], "application/x-hdf": ["hdf"], "application/x-httpd-php": ["php"], "application/x-install-instructions": ["install"], "application/x-iso9660-image": ["*iso"], "application/x-iwork-keynote-sffkey": ["*key"], "application/x-iwork-numbers-sffnumbers": ["*numbers"], "application/x-iwork-pages-sffpages": ["*pages"], "application/x-java-archive-diff": ["jardiff"], "application/x-java-jnlp-file": ["jnlp"], "application/x-keepass2": ["kdbx"], "application/x-latex": ["latex"], "application/x-lua-bytecode": ["luac"], "application/x-lzh-compressed": ["lzh", "lha"], "application/x-makeself": ["run"], "application/x-mie": ["mie"], "application/x-mobipocket-ebook": ["prc", "mobi"], "application/x-ms-application": ["application"], "application/x-ms-shortcut": ["lnk"], "application/x-ms-wmd": ["wmd"], "application/x-ms-wmz": ["wmz"], "application/x-ms-xbap": ["xbap"], "application/x-msaccess": ["mdb"], "application/x-msbinder": ["obd"], "application/x-mscardfile": ["crd"], "application/x-msclip": ["clp"], "application/x-msdos-program": ["*exe"], "application/x-msdownload": ["*exe", "*dll", "com", "bat", "*msi"], "application/x-msmediaview": ["mvb", "m13", "m14"], "application/x-msmetafile": ["*wmf", "*wmz", "*emf", "emz"], "application/x-msmoney": ["mny"], "application/x-mspublisher": ["pub"], "application/x-msschedule": ["scd"], "application/x-msterminal": ["trm"], "application/x-mswrite": ["wri"], "application/x-netcdf": ["nc", "cdf"], "application/x-ns-proxy-autoconfig": ["pac"], "application/x-nzb": ["nzb"], "application/x-perl": ["pl", "pm"], "application/x-pilot": ["*prc", "*pdb"], "application/x-pkcs12": ["p12", "pfx"], "application/x-pkcs7-certificates": ["p7b", "spc"], "application/x-pkcs7-certreqresp": ["p7r"], "application/x-rar-compressed": ["*rar"], "application/x-redhat-package-manager": ["rpm"], "application/x-research-info-systems": ["ris"], "application/x-sea": ["sea"], "application/x-sh": ["sh"], "application/x-shar": ["shar"], "application/x-shockwave-flash": ["swf"], "application/x-silverlight-app": ["xap"], "application/x-sql": ["sql"], "application/x-stuffit": ["sit"], "application/x-stuffitx": ["sitx"], "application/x-subrip": ["srt"], "application/x-sv4cpio": ["sv4cpio"], "application/x-sv4crc": ["sv4crc"], "application/x-t3vm-image": ["t3"], "application/x-tads": ["gam"], "application/x-tar": ["tar"], "application/x-tcl": ["tcl", "tk"], "application/x-tex": ["tex"], "application/x-tex-tfm": ["tfm"], "application/x-texinfo": ["texinfo", "texi"], "application/x-tgif": ["*obj"], "application/x-ustar": ["ustar"], "application/x-virtualbox-hdd": ["hdd"], "application/x-virtualbox-ova": ["ova"], "application/x-virtualbox-ovf": ["ovf"], "application/x-virtualbox-vbox": ["vbox"], "application/x-virtualbox-vbox-extpack": ["vbox-extpack"], "application/x-virtualbox-vdi": ["vdi"], "application/x-virtualbox-vhd": ["vhd"], "application/x-virtualbox-vmdk": ["vmdk"], "application/x-wais-source": ["src"], "application/x-web-app-manifest+json": ["webapp"], "application/x-x509-ca-cert": ["der", "crt", "pem"], "application/x-xfig": ["fig"], "application/x-xliff+xml": ["*xlf"], "application/x-xpinstall": ["xpi"], "application/x-xz": ["xz"], "application/x-zmachine": ["z1", "z2", "z3", "z4", "z5", "z6", "z7", "z8"], "audio/vnd.dece.audio": ["uva", "uvva"], "audio/vnd.digital-winds": ["eol"], "audio/vnd.dra": ["dra"], "audio/vnd.dts": ["dts"], "audio/vnd.dts.hd": ["dtshd"], "audio/vnd.lucent.voice": ["lvp"], "audio/vnd.ms-playready.media.pya": ["pya"], "audio/vnd.nuera.ecelp4800": ["ecelp4800"], "audio/vnd.nuera.ecelp7470": ["ecelp7470"], "audio/vnd.nuera.ecelp9600": ["ecelp9600"], "audio/vnd.rip": ["rip"], "audio/x-aac": ["aac"], "audio/x-aiff": ["aif", "aiff", "aifc"], "audio/x-caf": ["caf"], "audio/x-flac": ["flac"], "audio/x-m4a": ["*m4a"], "audio/x-matroska": ["mka"], "audio/x-mpegurl": ["m3u"], "audio/x-ms-wax": ["wax"], "audio/x-ms-wma": ["wma"], "audio/x-pn-realaudio": ["ram", "ra"], "audio/x-pn-realaudio-plugin": ["rmp"], "audio/x-realaudio": ["*ra"], "audio/x-wav": ["*wav"], "chemical/x-cdx": ["cdx"], "chemical/x-cif": ["cif"], "chemical/x-cmdf": ["cmdf"], "chemical/x-cml": ["cml"], "chemical/x-csml": ["csml"], "chemical/x-xyz": ["xyz"], "image/prs.btif": ["btif"], "image/prs.pti": ["pti"], "image/vnd.adobe.photoshop": ["psd"], "image/vnd.airzip.accelerator.azv": ["azv"], "image/vnd.dece.graphic": ["uvi", "uvvi", "uvg", "uvvg"], "image/vnd.djvu": ["djvu", "djv"], "image/vnd.dvb.subtitle": ["*sub"], "image/vnd.dwg": ["dwg"], "image/vnd.dxf": ["dxf"], "image/vnd.fastbidsheet": ["fbs"], "image/vnd.fpx": ["fpx"], "image/vnd.fst": ["fst"], "image/vnd.fujixerox.edmics-mmr": ["mmr"], "image/vnd.fujixerox.edmics-rlc": ["rlc"], "image/vnd.microsoft.icon": ["ico"], "image/vnd.ms-dds": ["dds"], "image/vnd.ms-modi": ["mdi"], "image/vnd.ms-photo": ["wdp"], "image/vnd.net-fpx": ["npx"], "image/vnd.pco.b16": ["b16"], "image/vnd.tencent.tap": ["tap"], "image/vnd.valve.source.texture": ["vtf"], "image/vnd.wap.wbmp": ["wbmp"], "image/vnd.xiff": ["xif"], "image/vnd.zbrush.pcx": ["pcx"], "image/x-3ds": ["3ds"], "image/x-cmu-raster": ["ras"], "image/x-cmx": ["cmx"], "image/x-freehand": ["fh", "fhc", "fh4", "fh5", "fh7"], "image/x-icon": ["*ico"], "image/x-jng": ["jng"], "image/x-mrsid-image": ["sid"], "image/x-ms-bmp": ["*bmp"], "image/x-pcx": ["*pcx"], "image/x-pict": ["pic", "pct"], "image/x-portable-anymap": ["pnm"], "image/x-portable-bitmap": ["pbm"], "image/x-portable-graymap": ["pgm"], "image/x-portable-pixmap": ["ppm"], "image/x-rgb": ["rgb"], "image/x-tga": ["tga"], "image/x-xbitmap": ["xbm"], "image/x-xpixmap": ["xpm"], "image/x-xwindowdump": ["xwd"], "message/vnd.wfa.wsc": ["wsc"], "model/vnd.collada+xml": ["dae"], "model/vnd.dwf": ["dwf"], "model/vnd.gdl": ["gdl"], "model/vnd.gtw": ["gtw"], "model/vnd.mts": ["mts"], "model/vnd.opengex": ["ogex"], "model/vnd.parasolid.transmit.binary": ["x_b"], "model/vnd.parasolid.transmit.text": ["x_t"], "model/vnd.sap.vds": ["vds"], "model/vnd.usdz+zip": ["usdz"], "model/vnd.valve.source.compiled-map": ["bsp"], "model/vnd.vtu": ["vtu"], "text/prs.lines.tag": ["dsc"], "text/vnd.curl": ["curl"], "text/vnd.curl.dcurl": ["dcurl"], "text/vnd.curl.mcurl": ["mcurl"], "text/vnd.curl.scurl": ["scurl"], "text/vnd.dvb.subtitle": ["sub"], "text/vnd.fly": ["fly"], "text/vnd.fmi.flexstor": ["flx"], "text/vnd.graphviz": ["gv"], "text/vnd.in3d.3dml": ["3dml"], "text/vnd.in3d.spot": ["spot"], "text/vnd.sun.j2me.app-descriptor": ["jad"], "text/vnd.wap.wml": ["wml"], "text/vnd.wap.wmlscript": ["wmls"], "text/x-asm": ["s", "asm"], "text/x-c": ["c", "cc", "cxx", "cpp", "h", "hh", "dic"], "text/x-component": ["htc"], "text/x-fortran": ["f", "for", "f77", "f90"], "text/x-handlebars-template": ["hbs"], "text/x-java-source": ["java"], "text/x-lua": ["lua"], "text/x-markdown": ["mkd"], "text/x-nfo": ["nfo"], "text/x-opml": ["opml"], "text/x-org": ["*org"], "text/x-pascal": ["p", "pas"], "text/x-processing": ["pde"], "text/x-sass": ["sass"], "text/x-scss": ["scss"], "text/x-setext": ["etx"], "text/x-sfv": ["sfv"], "text/x-suse-ymp": ["ymp"], "text/x-uuencode": ["uu"], "text/x-vcalendar": ["vcs"], "text/x-vcard": ["vcf"], "video/vnd.dece.hd": ["uvh", "uvvh"], "video/vnd.dece.mobile": ["uvm", "uvvm"], "video/vnd.dece.pd": ["uvp", "uvvp"], "video/vnd.dece.sd": ["uvs", "uvvs"], "video/vnd.dece.video": ["uvv", "uvvv"], "video/vnd.dvb.file": ["dvb"], "video/vnd.fvt": ["fvt"], "video/vnd.mpegurl": ["mxu", "m4u"], "video/vnd.ms-playready.media.pyv": ["pyv"], "video/vnd.uvvu.mp4": ["uvu", "uvvu"], "video/vnd.vivo": ["viv"], "video/x-f4v": ["f4v"], "video/x-fli": ["fli"], "video/x-flv": ["flv"], "video/x-m4v": ["m4v"], "video/x-matroska": ["mkv", "mk3d", "mks"], "video/x-mng": ["mng"], "video/x-ms-asf": ["asf", "asx"], "video/x-ms-vob": ["vob"], "video/x-ms-wm": ["wm"], "video/x-ms-wmv": ["wmv"], "video/x-ms-wmx": ["wmx"], "video/x-ms-wvx": ["wvx"], "video/x-msvideo": ["avi"], "video/x-sgi-movie": ["movie"], "video/x-smv": ["smv"], "x-conference/x-cooltalk": ["ice"] };
 
 /***/ }),
-/* 24 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -9222,9 +10069,9 @@ module.exports = { "application/prs.cww": ["cww"], "application/vnd.1000minds.de
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
-var session = __webpack_require__(5);
-var Async = __webpack_require__(25);
-var EventProxy = __webpack_require__(4).EventProxy;
+var session = __webpack_require__(6);
+var Async = __webpack_require__(28);
+var EventProxy = __webpack_require__(5).EventProxy;
 var util = __webpack_require__(0);
 
 // 文件分块上传全过程，暴露的分块上传接口
@@ -10423,7 +11270,7 @@ module.exports.init = function (COS, task) {
 };
 
 /***/ }),
-/* 25 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
