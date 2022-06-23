@@ -9394,7 +9394,11 @@ function getAuthorizationAsync(params, callback) {
 
     var calcAuthByTmpKey = function calcAuthByTmpKey() {
         var KeyTime = '';
-        if (StsData.StartTime && params.Expires) KeyTime = StsData.StartTime + ';' + (StsData.StartTime + params.Expires * 1);else if (StsData.StartTime && StsData.ExpiredTime) KeyTime = StsData.StartTime + ';' + StsData.ExpiredTime;
+        if (StsData.StartTime && params.Expires) {
+            KeyTime = StsData.StartTime + ';' + (StsData.StartTime + params.Expires * 1);
+        } else if (StsData.StartTime && StsData.ExpiredTime) {
+            KeyTime = StsData.StartTime + ';' + StsData.ExpiredTime;
+        }
         var Authorization = util.getAuth({
             SecretId: StsData.TmpSecretId,
             SecretKey: StsData.TmpSecretKey,
