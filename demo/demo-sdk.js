@@ -402,6 +402,7 @@ var bucketDao = {
         cos.putBucketCors({
             Bucket: config.Bucket,
             Region: config.Region,
+            ResponseVary: "true",
             CORSRules: [{
                 "AllowedOrigin": ["*"],
                 "AllowedMethod": ["GET", "POST", "PUT", "DELETE", "HEAD"],
