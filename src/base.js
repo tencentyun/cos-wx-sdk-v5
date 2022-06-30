@@ -1978,6 +1978,7 @@ function postObject(params, callback) {
         headers: headers,
         qs: params.Query,
         filePath: filePath,
+        TaskId: params.TaskId,
         onProgress: onProgress,
     }, function (err, data) {
         onProgress(null, true);
@@ -2995,7 +2996,7 @@ function getObjectUrl(params, callback) {
         var signUrl = url;
         signUrl += '?' + (AuthData.Authorization.indexOf('q-signature') > -1 ?
             replaceUrlParamList(AuthData.Authorization) : 'sign=' + encodeURIComponent(AuthData.Authorization));
-        AuthData.XCosSecurityToken && (signUrl += '&x-cos-security-token=' + AuthData.XCosSecurityToken);
+        AuthData.SecurityToken && (signUrl += '&x-cos-security-token=' + AuthData.SecurityToken);
         AuthData.ClientIP && (signUrl += '&clientIP=' + AuthData.ClientIP);
         AuthData.ClientUA && (signUrl += '&clientUA=' + AuthData.ClientUA);
         AuthData.Token && (signUrl += '&token=' + AuthData.Token);
@@ -3007,7 +3008,7 @@ function getObjectUrl(params, callback) {
 
     if (AuthData) {
         syncUrl += '?' + AuthData.Authorization +
-            (AuthData.XCosSecurityToken ? '&x-cos-security-token=' + AuthData.XCosSecurityToken : '');
+            (AuthData.SecurityToken ? '&x-cos-security-token=' + AuthData.SecurityToken : '');
         queryParamsStr && (syncUrl += '&' + queryParamsStr);
     } else {
         queryParamsStr && (syncUrl += '?' + queryParamsStr);
@@ -3149,7 +3150,6 @@ var getSignHost = function (opt) {
 
 // 异步获取签名
 function getAuthorizationAsync(params, callback) {
-
     var headers = util.clone(params.Headers);
     var headerHost = '';
     util.each(headers, function (v, k) {
@@ -3162,38 +3162,17 @@ function getAuthorizationAsync(params, callback) {
     // Host 加入签名计算
     if (!headerHost && params.SignHost && forceSignHost) headers.Host = params.SignHost;
 
-    var cb = function (AuthData) {
-
-        // 检查签名格式
-        var formatAllow = false;
-        var auth = AuthData.Authorization;
-        if (auth) {
-            if (auth.indexOf(' ') > -1) {
-                formatAllow = false;
-            } else if (auth.indexOf('q-sign-algorithm=') > -1 &&
-                auth.indexOf('q-ak=') > -1 &&
-                auth.indexOf('q-sign-time=') > -1 &&
-                auth.indexOf('q-key-time=') > -1 &&
-                auth.indexOf('q-url-param-list=') > -1) {
-                formatAllow = true;
-            } else {
-                try {
-                    auth = base64.atob(auth);
-                    if (auth.indexOf('a=') > -1 &&
-                        auth.indexOf('k=') > -1 &&
-                        auth.indexOf('t=') > -1 &&
-                        auth.indexOf('r=') > -1 &&
-                        auth.indexOf('b=') > -1) {
-                        formatAllow = true;
-                    }
-                } catch (e) {}
-            }
+    // 获取凭证的回调，避免用户 callback 多次
+    var cbDone = false;
+    var cb = function (err, AuthData) {
+        if (cbDone) return;
+        cbDone = true;
+        if (AuthData && AuthData.XCosSecurityToken && !AuthData.SecurityToken) {
+            AuthData = util.clone(AuthData);
+            AuthData.SecurityToken = AuthData.XCosSecurityToken;
+            delete AuthData.XCosSecurityToken;
         }
-        if (formatAllow) {
-            callback && callback(null, AuthData);
-        } else {
-            callback && callback('authorization error');
-        }
+        callback && callback(err, AuthData);
     };
 
     var self = this;
@@ -3261,13 +3240,52 @@ function getAuthorizationAsync(params, callback) {
         });
         var AuthData = {
             Authorization: Authorization,
-            XCosSecurityToken: StsData.XCosSecurityToken || '',
+            SecurityToken: StsData.SecurityToken || StsData.XCosSecurityToken || '',
             Token: StsData.Token || '',
             ClientIP: StsData.ClientIP || '',
             ClientUA: StsData.ClientUA || '',
         };
-        cb(AuthData);
+        cb(null, AuthData);
     };
+
+    var checkAuthError = function (AuthData) {
+      if (AuthData.Authorization) {
+          // 检查签名格式
+          var formatAllow = false;
+          var auth = AuthData.Authorization;
+          if (auth) {
+              if (auth.indexOf(' ') > -1) {
+                  formatAllow = false;
+              } else if (auth.indexOf('q-sign-algorithm=') > -1 &&
+                  auth.indexOf('q-ak=') > -1 &&
+                  auth.indexOf('q-sign-time=') > -1 &&
+                  auth.indexOf('q-key-time=') > -1 &&
+                  auth.indexOf('q-url-param-list=') > -1) {
+                  formatAllow = true;
+              } else {
+                  try {
+                      auth = atob(auth);
+                      if (auth.indexOf('a=') > -1 &&
+                          auth.indexOf('k=') > -1 &&
+                          auth.indexOf('t=') > -1 &&
+                          auth.indexOf('r=') > -1 &&
+                          auth.indexOf('b=') > -1) {
+                          formatAllow = true;
+                      }
+                  } catch (e) {}
+              }
+          }
+          if (!formatAllow) return util.error(new Error('getAuthorization callback params format error'));
+      } else {
+          if (!AuthData.TmpSecretId) return util.error(new Error('getAuthorization callback params missing "TmpSecretId"'));
+          if (!AuthData.TmpSecretKey) return util.error(new Error('getAuthorization callback params missing "TmpSecretKey"'));
+          if (!AuthData.SecurityToken && !AuthData.XCosSecurityToken) return util.error(new Error('getAuthorization callback params missing "SecurityToken"'));
+          if (!AuthData.ExpiredTime) return util.error(new Error('getAuthorization callback params missing "ExpiredTime"'));
+          if (AuthData.ExpiredTime && AuthData.ExpiredTime.toString().length !== 10) return util.error(new Error('getAuthorization callback params "ExpiredTime" should be 10 digits'));
+          if (AuthData.StartTime && AuthData.StartTime.toString().length !== 10) return util.error(new Error('getAuthorization callback params "StartTime" should be 10 StartTime'));
+      }
+      return false;
+  };
 
     // 先判断是否有临时密钥
     if (StsData.ExpiredTime && StsData.ExpiredTime - (util.getSkewTime(self.options.SystemClockOffset) / 1000) > 60) { // 如果缓存的临时密钥有效，并还有超过60秒有效期就直接使用
@@ -3288,17 +3306,16 @@ function getAuthorizationAsync(params, callback) {
             if (typeof AuthData === 'string') {
                 AuthData = {Authorization: AuthData};
             }
-            if (AuthData.TmpSecretId &&
-                AuthData.TmpSecretKey &&
-                AuthData.XCosSecurityToken &&
-                AuthData.ExpiredTime) {
+            var AuthError = checkAuthError(AuthData);
+            if (AuthError) return cb(AuthError);
+            if (AuthData.Authorization) {
+                cb(null, AuthData);
+            } else {
                 StsData = AuthData || {};
                 StsData.Scope = Scope;
                 StsData.ScopeKey = ScopeKey;
                 self._StsCache.push(StsData);
                 calcAuthByTmpKey();
-            } else {
-                cb(AuthData);
             }
         });
     } else if (self.options.getSTS) { // 外部获取临时密钥
@@ -3309,8 +3326,10 @@ function getAuthorizationAsync(params, callback) {
             StsData = data || {};
             StsData.Scope = Scope;
             StsData.ScopeKey = ScopeKey;
-            StsData.TmpSecretId = StsData.SecretId;
-            StsData.TmpSecretKey = StsData.SecretKey;
+            if (!StsData.TmpSecretId) StsData.TmpSecretId = StsData.SecretId;
+            if (!StsData.TmpSecretKey) StsData.TmpSecretKey = StsData.SecretKey;
+            var AuthError = checkAuthError(StsData);
+            if (AuthError) return cb(AuthError);
             self._StsCache.push(StsData);
             calcAuthByTmpKey();
         });
@@ -3329,9 +3348,9 @@ function getAuthorizationAsync(params, callback) {
             });
             var AuthData = {
                 Authorization: Authorization,
-                XCosSecurityToken: self.options.XCosSecurityToken,
+                SecurityToken: self.options.SecurityToken || self.options.XCosSecurityToken,
             };
-            cb(AuthData);
+            cb(null, AuthData);
             return AuthData;
         })();
     }
@@ -3487,7 +3506,7 @@ function _submitRequest(params, callback) {
     params.AuthData.Token && (opt.headers['token'] = params.AuthData.Token);
     params.AuthData.ClientIP && (opt.headers['clientIP'] = params.AuthData.ClientIP);
     params.AuthData.ClientUA && (opt.headers['clientUA'] = params.AuthData.ClientUA);
-    params.AuthData.XCosSecurityToken && (opt.headers[token] = params.AuthData.XCosSecurityToken);
+    params.AuthData.SecurityToken && (opt.headers[token] = params.AuthData.SecurityToken);
 
     // 清理 undefined 和 null 字段
     opt.headers && (opt.headers = util.clearKey(opt.headers));
