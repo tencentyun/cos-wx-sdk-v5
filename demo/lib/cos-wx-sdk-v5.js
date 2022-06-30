@@ -2749,7 +2749,7 @@ var advance = __webpack_require__(27);
 var defaultOptions = {
     SecretId: '',
     SecretKey: '',
-    XCosSecurityToken: '', // 使用临时密钥需要注意自行刷新 Token
+    SecurityToken: '', // 使用临时密钥需要注意自行刷新 Token
     ChunkRetryTimes: 2,
     FileParallelLimit: 3,
     ChunkParallelLimit: 3,
@@ -2811,7 +2811,7 @@ COS.util = {
     json2xml: util.json2xml
 };
 COS.getAuthorization = util.getAuth;
-COS.version = '1.1.8';
+COS.version = '1.2.0';
 
 module.exports = COS;
 
