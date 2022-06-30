@@ -585,6 +585,32 @@ var isCIHost = function(url) {
     return /^https?:\/\/([^/]+\.)?ci\.[^/]+/.test(url);
 }
 
+var error = function (err, opt) {
+  var sourceErr = err;
+  err.message = err.message || null;
+
+  if (typeof opt === 'string') {
+      err.error = opt;
+      err.message = opt;
+  } else if (typeof opt === 'object' && opt !== null) {
+      extend(err, opt);
+      if (opt.code || opt.name) err.code = opt.code || opt.name;
+      if (opt.message) err.message = opt.message;
+      if (opt.stack) err.stack = opt.stack;
+  }
+
+  if (typeof Object.defineProperty === 'function') {
+      Object.defineProperty(err, 'name', {writable: true, enumerable: false});
+      Object.defineProperty(err, 'message', {enumerable: true});
+  }
+
+  err.name = opt && opt.name || err.name || err.code || 'Error';
+  if (!err.code) err.code = err.name;
+  if (!err.error) err.error = clone(sourceErr); // 兼容老的错误格式
+
+  return err;
+}
+
 var util = {
     noop: noop,
     formatParams: formatParams,
@@ -616,6 +642,7 @@ var util = {
     compareVersion: compareVersion,
     canFileSlice: canFileSlice,
     isCIHost: isCIHost,
+    error: error,
 };
 
 module.exports = util;
