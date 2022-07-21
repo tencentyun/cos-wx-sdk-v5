@@ -2772,7 +2772,8 @@ var defaultOptions = {
     UploadCheckContentMd5: false,
     UploadIdCacheLimit: 50,
     UseAccelerate: false,
-    ForceSignHost: true // 默认将host加入签名计算，关闭后可能导致越权风险，建议保持为true
+    ForceSignHost: true, // 默认将host加入签名计算，关闭后可能导致越权风险，建议保持为true
+    HttpDNSServiceId: '' // HttpDNS 服务商 Id,填写后代表开启 HttpDNS 服务。HttpDNS 用法详见https://developers.weixin.qq.com/miniprogram/dev/framework/ability/HTTPDNS.html
 };
 
 // 对外暴露的类
@@ -2811,7 +2812,7 @@ COS.util = {
     json2xml: util.json2xml
 };
 COS.getAuthorization = util.getAuth;
-COS.version = '1.2.0';
+COS.version = '1.2.1';
 
 module.exports = COS;
 
@@ -9641,6 +9642,7 @@ function _submitRequest(params, callback) {
     var body = params.body;
     var json = params.json;
     var rawBody = params.rawBody;
+    var httpDNSServiceId = self.options.HttpDNSServiceId;
 
     // url
     if (self.options.UseAccelerate) {
@@ -9672,7 +9674,8 @@ function _submitRequest(params, callback) {
         qs: params.qs,
         filePath: params.filePath,
         body: body,
-        json: json
+        json: json,
+        httpDNSServiceId: httpDNSServiceId
     };
 
     // 兼容ci接口
@@ -9906,6 +9909,7 @@ var request = function request(params, callback) {
     var url = params.url || params.Url;
     var method = params.method;
     var onProgress = params.onProgress;
+    var httpDNSServiceId = params.httpDNSServiceId;
     var requestTask;
 
     var cb = function cb(err, response) {
@@ -9971,7 +9975,7 @@ var request = function request(params, callback) {
             url += (url.indexOf('?') > -1 ? '&' : '?') + qsStr;
         }
         headers['Content-Length'] && delete headers['Content-Length'];
-        requestTask = wx.request({
+        var requestParams = {
             url: url,
             method: method,
             header: headers,
@@ -9984,7 +9988,14 @@ var request = function request(params, callback) {
             fail: function fail(response) {
                 cb(response.errMsg, response);
             }
-        });
+        };
+        if (httpDNSServiceId) {
+            Object.assign(requestParams, {
+                enableHttpDNS: true,
+                httpDNSServiceId: httpDNSServiceId
+            });
+        }
+        requestTask = wx.request(requestParams);
     }
 
     return requestTask;

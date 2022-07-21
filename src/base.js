@@ -3461,6 +3461,7 @@ function _submitRequest(params, callback) {
     var body = params.body;
     var json = params.json;
     var rawBody = params.rawBody;
+    var httpDNSServiceId = self.options.HttpDNSServiceId;
 
     // url
     if (self.options.UseAccelerate) {
@@ -3493,6 +3494,7 @@ function _submitRequest(params, callback) {
         filePath: params.filePath,
         body: body,
         json: json,
+        httpDNSServiceId: httpDNSServiceId,
     };
 
     // 兼容ci接口
