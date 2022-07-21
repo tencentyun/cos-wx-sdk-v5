@@ -9294,10 +9294,6 @@ function getUrl(params) {
             domain = '{Bucket}.' + domain;
         }
     }
-    // 使用后缀式先过滤掉前缀{Bucket}.
-    if (params.ForcePathStyle) {
-        domain = domain.replace(/\{\{Bucket\}\}./ig, '').replace(/\{Bucket\}./ig, '');
-    }
     domain = domain.replace(/\{\{AppId\}\}/ig, appId).replace(/\{\{Bucket\}\}/ig, shortBucket).replace(/\{\{Region\}\}/ig, region).replace(/\{\{.*?\}\}/ig, '');
     domain = domain.replace(/\{AppId\}/ig, appId).replace(/\{BucketName\}/ig, shortBucket).replace(/\{Bucket\}/ig, longBucket).replace(/\{Region\}/ig, region).replace(/\{.*?\}/ig, '');
     if (!/^[a-zA-Z]+:\/\//.test(domain)) {
