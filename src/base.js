@@ -3099,6 +3099,10 @@ function getUrl(params) {
             domain = '{Bucket}.' + domain;
         }
     }
+    // 使用后缀式先过滤掉前缀{Bucket}.
+    if (params.ForcePathStyle) {
+        domain = domain.replace(/\{\{Bucket\}\}./ig, '').replace(/\{Bucket\}./ig, '');
+    }
     domain = domain.replace(/\{\{AppId\}\}/ig, appId)
         .replace(/\{\{Bucket\}\}/ig, shortBucket)
         .replace(/\{\{Region\}\}/ig, region)
@@ -3461,6 +3465,7 @@ function _submitRequest(params, callback) {
     var body = params.body;
     var json = params.json;
     var rawBody = params.rawBody;
+    var httpDNSServiceId = self.options.HttpDNSServiceId;
 
     // url
     if (self.options.UseAccelerate) {
@@ -3493,6 +3498,7 @@ function _submitRequest(params, callback) {
         filePath: params.filePath,
         body: body,
         json: json,
+        httpDNSServiceId: httpDNSServiceId,
     };
 
     // 兼容ci接口

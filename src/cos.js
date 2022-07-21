@@ -33,6 +33,7 @@ var defaultOptions = {
     UploadIdCacheLimit: 50,
     UseAccelerate: false,
     ForceSignHost: true, // 默认将host加入签名计算，关闭后可能导致越权风险，建议保持为true
+    HttpDNSServiceId: '', // HttpDNS 服务商 Id,填写后代表开启 HttpDNS 服务
 };
 
 // 对外暴露的类
@@ -71,6 +72,6 @@ COS.util = {
   json2xml: util.json2xml,
 };
 COS.getAuthorization = util.getAuth;
-COS.version = '1.2.0';
+COS.version = '1.2.1';
 
 module.exports = COS;
