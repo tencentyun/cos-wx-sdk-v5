@@ -7,10 +7,14 @@ var util = require('./util');
 function sliceUploadFile(params, callback) {
     var self = this;
 
-    // 如果小程序版本不支持获取文件分片内容，统一转到 postObject 接口上传
+    // 如果小程序版本不支持获取文件分片内容，统一转到 简单上传 接口上传
     if (!util.canFileSlice()) {
         params.SkipTask = true;
-        self.postObject(params, callback);
+        if (self.options.SimpleUploadMethod === 'postObject') {
+          self.postObject(params, callback);
+        } else {
+          self.putObject(params, callback);
+        }
         return;
     }
 
@@ -847,7 +851,8 @@ function uploadFile(params, callback) {
   };
 
   // 添加上传任务
-  var api = FileSize > SliceSize ? 'sliceUploadFile' : 'postObject';
+  var simpleUploadMethod = self.options.SimpleUploadMethod === 'postObject' ? 'postObject' : 'putObject';
+  var api = FileSize > SliceSize ? 'sliceUploadFile' : simpleUploadMethod;
   taskList.push({
       api: api,
       params: params,
@@ -928,7 +933,8 @@ function uploadFiles(params, callback) {
         };
 
         // 添加上传任务
-        var api = FileSize > SliceSize ? 'sliceUploadFile' : 'postObject';
+        var simpleUploadMethod = self.options.SimpleUploadMethod === 'postObject' ? 'postObject' : 'putObject';
+        var api = FileSize > SliceSize ? 'sliceUploadFile' : simpleUploadMethod;
         taskList.push({
             api: api,
             params: fileParams,

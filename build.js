@@ -32,6 +32,7 @@ var replaceDevCode = function (list) {
 replaceVersion();
 
 var config = {
+    mode: process.env.NODE_ENV,
     watch: true,
     entry: path.resolve(__dirname, './index.js'),
     output: {
@@ -46,11 +47,12 @@ var config = {
             {
                 test: /\.m?js$/,
                 loader: 'babel-loader',
-                options: {
-                  presets: ['es2015']
-               }
+                exclude: /node_modules/,
             }
-        ]
+        ],
+    },
+    optimization: {
+        minimize: false
     },
     devServer: {
         historyApiFallback: true,
@@ -70,20 +72,14 @@ if (process.env.NODE_ENV === 'production') {
     ]);
     config.watch = false;
     config.output.filename = 'cos-wx-sdk-v5.min.js';
+    config.optimization = {
+      minimize: true
+    };
     config.plugins = (config.plugins || []).concat([
         new webpack.DefinePlugin({
             'process.env': {
                 NODE_ENV: '"production"'
             }
-        }),
-        new webpack.optimize.UglifyJsPlugin({
-            sourceMap: true,
-            output: {
-                ascii_only: true,
-            },
-            compress: {
-                warnings: false,
-            },
         }),
         new webpack.LoaderOptionsPlugin({
             minimize: true

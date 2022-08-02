@@ -155,8 +155,9 @@ var initTask = function (cos) {
 
     cos._addTask = function (api, params, callback, ignoreAddEvent) {
 
-        // 如果小程序版本不支持获取文件分片内容，统一转到 postObject 接口上传
-        if (api === 'sliceUploadFile' && !util.canFileSlice()) api = 'postObject';
+        // 如果小程序版本不支持获取文件分片内容，统一转到 简单上传 接口上传
+        var simpleUploadMethod = cos.options.SimpleUploadMethod === 'postObject' ? 'postObject' : 'putObject';
+        if (api === 'sliceUploadFile' && !util.canFileSlice()) api = simpleUploadMethod;
 
         // 复制参数对象
         params = util.formatParams(api, params);
