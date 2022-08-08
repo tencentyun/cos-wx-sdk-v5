@@ -534,6 +534,7 @@ var getFileSize = async function (api, params, callback) {
           } catch (e) {
             params.Body = undefined;
             callback({error: `readFile error, ${e}`});
+            return;
           }
         }
         if (params.Body !== undefined) {
