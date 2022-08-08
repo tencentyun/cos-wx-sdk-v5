@@ -2,6 +2,7 @@ var webpack = require('webpack');
 var path = require('path');
 var fs = require('fs');
 var pkg = require('./package.json');
+const TerserPlugin = require('terser-webpack-plugin');
 
 var replaceVersion = function () {
     var filePath = path.resolve(__dirname, 'src/cos.js');
@@ -52,7 +53,15 @@ var config = {
         ],
     },
     optimization: {
-        minimize: false
+        minimize: false,
+        minimizer: [
+          new TerserPlugin({
+            cache: true,
+            parallel: true,
+            sourceMap: true,
+            extractComments: false,
+          }),
+        ],
     },
     devServer: {
         historyApiFallback: true,
@@ -73,16 +82,27 @@ if (process.env.NODE_ENV === 'production') {
     config.watch = false;
     config.output.filename = 'cos-wx-sdk-v5.min.js';
     config.optimization = {
-      minimize: true
+      minimize: true,
+      minimizer: [
+        new TerserPlugin({
+          cache: true,
+          parallel: true,
+          sourceMap: true,
+          extractComments: false,
+          terserOptions: {
+            compress: {
+              drop_debugger: true,
+              drop_console: true,
+            }
+          },
+        }),
+      ],
     };
     config.plugins = (config.plugins || []).concat([
         new webpack.DefinePlugin({
             'process.env': {
                 NODE_ENV: '"production"'
             }
-        }),
-        new webpack.LoaderOptionsPlugin({
-            minimize: true
         }),
     ]);
 }

@@ -516,8 +516,8 @@ var getFileBody = function (FilePath) {
       success: function (res) {
         resolve(res.data);
       },
-      fail: function () {
-        reject(null);
+      fail: function (res) {
+        reject(res?.errMsg || '');
       },
     });
   });
@@ -533,6 +533,7 @@ var getFileSize = async function (api, params, callback) {
             params.Body = await getFileBody(params.FilePath);
           } catch (e) {
             params.Body = undefined;
+            callback({error: `readFile error, ${e}`});
           }
         }
         if (params.Body !== undefined) {
