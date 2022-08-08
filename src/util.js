@@ -510,18 +510,17 @@ var throttleOnProgress = function (total, onProgress) {
 
 // 通过FilePath获取上传文件的内容
 var getFileBody = function (FilePath) {
-  return new Promise((resolve, reject) => {
-    wxfs.readFile({
-      filePath: FilePath,
-      success: function (res) {
-        resolve(res.data);
-      },
-      fail: function (res) {
-        reject(res?.errMsg || '');
-      },
+    return new Promise((resolve, reject) => {
+        wxfs.readFile({
+            filePath: FilePath,
+            success: function (res) {
+                resolve(res.data);
+            },
+            fail: function (res) {
+                reject(res?.errMsg || '');
+            },
+        });
     });
-  });
-  
 }
 
 var getFileSize = async function (api, params, callback) {
@@ -529,13 +528,13 @@ var getFileSize = async function (api, params, callback) {
         callback();
     } else if (api === 'putObject') {
         if (params.Body === undefined && params.FilePath) {
-          try {
-            params.Body = await getFileBody(params.FilePath);
-          } catch (e) {
-            params.Body = undefined;
-            callback({error: `readFile error, ${e}`});
-            return;
-          }
+            try {
+                params.Body = await getFileBody(params.FilePath);
+            } catch (e) {
+                params.Body = undefined;
+                callback({error: `readFile error, ${e}`});
+                return;
+            }
         }
         if (params.Body !== undefined) {
             params.ContentLength = params.Body.byteLength;
