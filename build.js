@@ -2,6 +2,7 @@ var webpack = require('webpack');
 var path = require('path');
 var fs = require('fs');
 var pkg = require('./package.json');
+const TerserPlugin = require('terser-webpack-plugin');
 
 var replaceVersion = function () {
     var filePath = path.resolve(__dirname, 'src/cos.js');
@@ -32,6 +33,8 @@ var replaceDevCode = function (list) {
 replaceVersion();
 
 var config = {
+    mode: process.env.NODE_ENV,
+    devtool: "none",
     watch: true,
     entry: path.resolve(__dirname, './index.js'),
     output: {
@@ -46,11 +49,20 @@ var config = {
             {
                 test: /\.m?js$/,
                 loader: 'babel-loader',
-                options: {
-                  presets: ['es2015']
-               }
+                exclude: /node_modules/,
             }
-        ]
+        ],
+    },
+    optimization: {
+        minimize: false,
+        minimizer: [
+          new TerserPlugin({
+            cache: true,
+            parallel: true,
+            sourceMap: true,
+            extractComments: false,
+          }),
+        ],
     },
     devServer: {
         historyApiFallback: true,
@@ -70,23 +82,28 @@ if (process.env.NODE_ENV === 'production') {
     ]);
     config.watch = false;
     config.output.filename = 'cos-wx-sdk-v5.min.js';
+    config.optimization = {
+      minimize: true,
+      minimizer: [
+        new TerserPlugin({
+          cache: true,
+          parallel: true,
+          sourceMap: true,
+          extractComments: false,
+          terserOptions: {
+            compress: {
+              drop_debugger: true,
+              drop_console: true,
+            }
+          },
+        }),
+      ],
+    };
     config.plugins = (config.plugins || []).concat([
         new webpack.DefinePlugin({
             'process.env': {
                 NODE_ENV: '"production"'
             }
-        }),
-        new webpack.optimize.UglifyJsPlugin({
-            sourceMap: true,
-            output: {
-                ascii_only: true,
-            },
-            compress: {
-                warnings: false,
-            },
-        }),
-        new webpack.LoaderOptionsPlugin({
-            minimize: true
         }),
     ]);
 }
@@ -95,10 +112,12 @@ webpack(config, function (err, stats) {
     // 每次运行 npm run build，将 sourcePath 代码复制一份放入 targetPath
     var sourcePath = path.resolve(__dirname, './demo/lib/cos-wx-sdk-v5.js');
     var targetPath = path.resolve(__dirname, './demo-album/lib/cos-wx-sdk-v5.js');
-    var minSourcePath = path.resolve(__dirname, './demo/lib/cos-wx-sdk-v5.min.js');
-    var mintTargetPath = path.resolve(__dirname, './demo-album/lib/cos-wx-sdk-v5.min.js');
     fs.createReadStream(sourcePath).pipe(fs.createWriteStream(targetPath));
-    fs.createReadStream(minSourcePath).pipe(fs.createWriteStream(mintTargetPath));
+    if (process.env.NODE_ENV === 'production') {
+      var minSourcePath = path.resolve(__dirname, './demo/lib/cos-wx-sdk-v5.min.js');
+      var mintTargetPath = path.resolve(__dirname, './demo-album/lib/cos-wx-sdk-v5.min.js');
+      fs.createReadStream(minSourcePath).pipe(fs.createWriteStream(mintTargetPath));
+    }
     if (err) throw err
     process.stdout.write(stats.toString({
         colors: true,
