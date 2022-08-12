@@ -5,6 +5,7 @@ var event = require('./event');
 var task = require('./task');
 var base = require('./base');
 var advance = require('./advance');
+var pkg = require('../package.json');
 
 var defaultOptions = {
     SecretId: '',
@@ -78,6 +79,6 @@ COS.util = {
   json2xml: util.json2xml,
 };
 COS.getAuthorization = util.getAuth;
-COS.version = '1.3.0';
+COS.version = pkg.version;
 
 module.exports = COS;
