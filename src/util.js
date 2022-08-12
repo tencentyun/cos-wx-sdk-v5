@@ -7,6 +7,7 @@ var json2xml = require('../lib/json2xml');
 var base64 = require('../lib/base64');
 var btoa = base64.btoa;
 var wxfs = wx.getFileSystemManager();
+var Tracker = require('./tracker');
 
 function camSafeUrlEncode(str) {
     return encodeURIComponent(str)
@@ -350,6 +351,8 @@ var formatParams = function (apiName, params) {
                 'x-cos-grant-read-acp': 'GrantReadAcp',
                 'x-cos-grant-write-acp': 'GrantWriteAcp',
                 'x-cos-storage-class': 'StorageClass',
+                'x-cos-traffic-limit': 'TrafficLimit',
+                'x-cos-mime-limit': 'MimeLimit',
                 // SSE-C
                 'x-cos-server-side-encryption-customer-algorithm': 'SSECustomerAlgorithm',
                 'x-cos-server-side-encryption-customer-key': 'SSECustomerKey',
@@ -386,6 +389,34 @@ var apiWrapper = function (apiName, apiFn) {
         // 整理参数格式
         params = formatParams(apiName, params);
 
+        // tracker传递
+        var tracker;
+        if (self.options.EnableTracker) {
+          if (params.calledBySdk === 'sliceUploadFile') {
+            // 分块上传内部方法使用sliceUploadFile的子链路
+            tracker = params.tracker && params.tracker.generateSubTracker({ apiName: apiName });
+          } else if (['uploadFile', 'uploadFiles'].includes(apiName)) {
+            // uploadFile、uploadFiles方法在内部处理，此处不处理
+            tracker = null;
+          } else {
+            var fileSize = -1;
+            if (params.Body) {
+              fileSize = typeof params.Body === 'string' ? params.Body.length : params.Body.size || params.Body.byteLength || -1;
+            }
+            tracker = new Tracker({
+              bucket: params.Bucket,
+              region: params.Region,
+              apiName: apiName,
+              fileKey: params.Key,
+              fileSize: fileSize,
+              deepTracker: self.options.DeepTracker,
+              customId: self.options.CustomId,
+              delay: self.options.TrackerDelay,
+            });
+          }
+        }
+        params.tracker = tracker;
+
         // 代理回调函数
         var formatResult = function (result) {
             if (result && result.headers) {
@@ -397,6 +428,8 @@ var apiWrapper = function (apiName, apiFn) {
             return result;
         };
         var _callback = function (err, data) {
+            // 格式化上报参数并上报
+            tracker && tracker.formatResult(err, data);
             callback && callback(formatResult(err), formatResult(data));
         };
 
