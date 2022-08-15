@@ -19,6 +19,87 @@ const getBeacon = (delay) => {
   return beacon;
 };
 
+const utils = {
+    // 生成uid 每个链路对应唯一一条uid
+    getUid() {
+      var S4 = function () {
+          return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+      };
+      return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
+    },
+    // 获取网络类型
+    getNetType() {
+      return new Promise(resolve => {
+        if (wx.canIUse('getNetworkType')) {
+          try {
+            wx.getNetworkType({
+              success (res) {
+                resolve(res.networkType);
+              }
+            });
+          } catch (e) {
+            resolve('can_not_get_network_type');
+          }
+        } else {
+          resolve('can_not_get_network_type');
+        }
+      });
+    },
+    // 获取系统信息
+    getSystemInfo() {
+      const defaultInfo = {
+        devicePlatform: '',
+        wxVersion: '',
+        wxSystem: '',
+        wxSdkVersion: '',
+      };
+      return new Promise(resolve => {
+        if (wx.canIUse('getSystemInfo')) {
+          try {
+            wx.getSystemInfo({
+              success(res) {
+                const { platform, version, system, SDKVersion } = res;
+                Object.assign(defaultInfo, {
+                  devicePlatform: platform,
+                  wxVersion: version,
+                  wxSystem: system,
+                  wxSdkVersion: SDKVersion,
+                });
+                resolve(defaultInfo);
+              }
+            })
+          } catch (e) {
+            resolve({
+              devicePlatform: 'can_not_get_system_info',
+              wxVersion: 'can_not_get_system_info',
+              wxSystem: 'can_not_get_system_info',
+              wxSdkVersion: 'can_not_get_system_info',
+            });
+          }
+        } else {
+          resolve({
+            devicePlatform: 'can_not_get_system_info',
+            wxVersion: 'can_not_get_system_info',
+            wxSystem: 'can_not_get_system_info',
+            wxSdkVersion: 'can_not_get_system_info',
+          });
+        }
+      });
+    },
+};
+
+// 设备信息，只取一次值
+const deviceInfo = {
+  // ↓上报项
+  devicePlatform: '',  // ios/anroid/windows/mac/devtools
+  wxVersion: '',
+  wxSystem: '',
+  wxSdkVersion: '',
+};
+utils.getSystemInfo().then(res => {
+  Object.assign(deviceInfo, res);
+});
+
 
 // 分块上传原子方法
 const sliceUploadMethods = ['multipartInit', 'multipartUpload', 'multipartComplete', 'multipartList', 'multipartListPart', 'multipartAbort'];
@@ -44,9 +125,11 @@ function formatParams(params) {
   const formattedParams = {};
   const allReporterKeys = ['tracePlatform', 'cossdkVersion', 'region', 'networkType', 'host', 'accelerate', 'requestPath', 'size', 'httpMd5',
   'httpSign', 'httpFull', 'name', 'result', 'tookTime', 'errorNode', 'errorCode', 'errorMessage', 'errorRequestId', 'errorStatusCode', 'errorServiceName',
-  'errorType', 'traceId', 'bucket', 'appid', 'partNumber', 'retryTimes', 'reqUrl', 'customId', 'fullError'];
+  'errorType', 'traceId', 'bucket', 'appid', 'partNumber', 'retryTimes', 'reqUrl', 'customId', 'fullError',
+  'devicePlatform', 'wxVersion', 'wxSystem', 'wxSdkVersion'];
   const successKeys = ['tracePlatform', 'cossdkVersion', 'region', 'bucket', 'appid', 'networkType', 'host', 'accelerate', 'requestPath',
-    'partNumber', 'size', 'name', 'result', 'tookTime', 'errorRequestId', 'retryTimes', 'reqUrl', 'customId'];
+    'partNumber', 'size', 'name', 'result', 'tookTime', 'errorRequestId', 'retryTimes', 'reqUrl', 'customId',
+    'devicePlatform', 'wxVersion', 'wxSystem', 'wxSdkVersion'];
   // 需要上报的参数字段
   const reporterKeys = params.result === 'Success' ? successKeys : allReporterKeys;
   for (let key in params) {
@@ -63,6 +146,8 @@ class Tracker {
     const { parent, traceId, bucket, region, apiName, fileKey, fileSize, accelerate, customId, delay, deepTracker } = opt;
     const appid = bucket && bucket.substr(bucket.lastIndexOf('-') + 1) || '';
     this.parent = parent;
+    this.deepTracker = deepTracker;
+    // 上报用到的字段
     this.params = {
       // 通用字段
       cossdkVersion: pkg.version,
@@ -87,13 +172,17 @@ class Tracker {
 
       // 小程序补充字段
       tracePlatform: 'mp', // 上报平台=小程序
-      traceId: traceId || this.getUid(), // 每条上报唯一标识
+      traceId: traceId || utils.getUid(), // 每条上报唯一标识
       bucket,
       appid,
       partNumber: 0, // 分块上传编号
       retryTimes: 0, // sdk内部发起的请求重试
       reqUrl: '', // 请求url
       customId: customId || '', // 业务id
+      devicePlatform: deviceInfo.devicePlatform,
+      wxVersion: deviceInfo.wxVersion,
+      wxSystem: deviceInfo.wxSystem,
+      wxSdkVersion: deviceInfo.wxSdkVersion,
 
       md5StartTime: 0, // md5计算开始时间
       md5EndTime: 0, // md5计算结束时间
@@ -103,43 +192,15 @@ class Tracker {
       httpEndTime: 0, // 网路请求结束时间
       startTime: new Date().getTime(), // sdk api调用起始时间，不是纯网络耗时
       endTime: 0, //  sdk api调用结束时间，不是纯网络耗时
-      deepTracker,
     };
     this.beacon = getBeacon(delay);
-  }
-
-  // 生成uid 每个链路对应唯一一条uid
-  getUid() {
-    var S4 = function () {
-        return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
-    };
-    return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
-  };
-
-  // 获取网络类型
-  getNetType() {
-    return new Promise(resolve => {
-      if (wx.canIUse('getNetworkType')) {
-        try {
-          wx.getNetworkType({
-            success (res) {
-              resolve(res.networkType);
-            }
-          });
-        } catch (e) {
-          resolve('can_not_get_network_type');
-        }
-      } else {
-        resolve('can_not_get_network_type');
-      }
-    });
   }
 
   // 格式化sdk回调
   async formatResult(err, data) {
     const now = new Date().getTime();
     const tookTime = now - this.params.startTime;
-    const networkType = await this.getNetType();
+    const networkType = await utils.getNetType();
     const errorCode = err ? err?.error?.Code : '';
     const errorMessage = err ? err?.error?.Message : '';
     const errorStatusCode = err ? err?.statusCode : data.statusCode;
@@ -174,7 +235,6 @@ class Tracker {
       } catch (e) {
         this.params.host = this.params.reqUrl;
       }
-      
     }
     this.sendEvents();
   }
@@ -187,11 +247,12 @@ class Tracker {
   // 使用灯塔延时上报
   sendEvents() {
     // DeepTracker模式下才会上报分块上传内部细节
-    if (sliceUploadMethods.includes(this.params.name) && !this.params.deepTracker) {
+    if (sliceUploadMethods.includes(this.params.name) && !this.deepTracker) {
       return;
     }
     const eventCode = getEventCode(this.params.name);
     const formattedParams = formatParams(this.params);
+    console.log(eventCode, formattedParams);
     if (this.params.delay === 0) {
       // 实时上报
       this.beacon.onDirectUserAction(eventCode, formattedParams);
@@ -207,13 +268,13 @@ class Tracker {
   generateSubTracker(subParams) {
     Object.assign(subParams, {
       parent: this,
+      deepTracker: this.deepTracker,
       traceId: this.params.traceId,
       bucket: this.params.bucket,
       region: this.params.region,
       fileKey: this.params.requestPath,
       customId: this.params.customId,
       delay: this.params.delay,
-      deepTracker: this.params.deepTracker,
     });
     return new Tracker(subParams);
   }

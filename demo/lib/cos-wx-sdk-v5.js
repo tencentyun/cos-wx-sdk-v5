@@ -12583,8 +12583,92 @@ var getBeacon = function getBeacon(delay) {
   }
 
   return beacon;
-}; // 分块上传原子方法
+};
 
+var utils = {
+  // 生成uid 每个链路对应唯一一条uid
+  getUid: function getUid() {
+    var S4 = function S4() {
+      return ((1 + Math.random()) * 0x10000 | 0).toString(16).substring(1);
+    };
+
+    return S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4();
+  },
+  // 获取网络类型
+  getNetType: function getNetType() {
+    return new Promise(function (resolve) {
+      if (wx.canIUse('getNetworkType')) {
+        try {
+          wx.getNetworkType({
+            success: function success(res) {
+              resolve(res.networkType);
+            }
+          });
+        } catch (e) {
+          resolve('can_not_get_network_type');
+        }
+      } else {
+        resolve('can_not_get_network_type');
+      }
+    });
+  },
+  // 获取系统信息
+  getSystemInfo: function getSystemInfo() {
+    var defaultInfo = {
+      devicePlatform: '',
+      wxVersion: '',
+      wxSystem: '',
+      wxSdkVersion: ''
+    };
+    return new Promise(function (resolve) {
+      if (wx.canIUse('getSystemInfo')) {
+        try {
+          wx.getSystemInfo({
+            success: function success(res) {
+              var platform = res.platform,
+                  version = res.version,
+                  system = res.system,
+                  SDKVersion = res.SDKVersion;
+              Object.assign(defaultInfo, {
+                devicePlatform: platform,
+                wxVersion: version,
+                wxSystem: system,
+                wxSdkVersion: SDKVersion
+              });
+              resolve(defaultInfo);
+            }
+          });
+        } catch (e) {
+          resolve({
+            devicePlatform: 'can_not_get_system_info',
+            wxVersion: 'can_not_get_system_info',
+            wxSystem: 'can_not_get_system_info',
+            wxSdkVersion: 'can_not_get_system_info'
+          });
+        }
+      } else {
+        resolve({
+          devicePlatform: 'can_not_get_system_info',
+          wxVersion: 'can_not_get_system_info',
+          wxSystem: 'can_not_get_system_info',
+          wxSdkVersion: 'can_not_get_system_info'
+        });
+      }
+    });
+  }
+}; // 设备信息，只取一次值
+
+var deviceInfo = {
+  // ↓上报项
+  devicePlatform: '',
+  // ios/anroid/windows/mac/devtools
+  wxVersion: '',
+  wxSystem: '',
+  wxSdkVersion: ''
+};
+utils.getSystemInfo().then(function (res) {
+  Object.assign(deviceInfo, res);
+}); // 分块上传原子方法
 
 var sliceUploadMethods = ['multipartInit', 'multipartUpload', 'multipartComplete', 'multipartList', 'multipartListPart', 'multipartAbort'];
 var uploadApi = ['putObject', 'postObject', 'appendObject', 'sliceUploadFile', 'uploadFile', 'uploadFiles'].concat(sliceUploadMethods);
@@ -12609,8 +12693,8 @@ function camel2underline(key) {
 
 function formatParams(params) {
   var formattedParams = {};
-  var allReporterKeys = ['tracePlatform', 'cossdkVersion', 'region', 'networkType', 'host', 'accelerate', 'requestPath', 'size', 'httpMd5', 'httpSign', 'httpFull', 'name', 'result', 'tookTime', 'errorNode', 'errorCode', 'errorMessage', 'errorRequestId', 'errorStatusCode', 'errorServiceName', 'errorType', 'traceId', 'bucket', 'appid', 'partNumber', 'retryTimes', 'reqUrl', 'customId', 'fullError'];
-  var successKeys = ['tracePlatform', 'cossdkVersion', 'region', 'bucket', 'appid', 'networkType', 'host', 'accelerate', 'requestPath', 'partNumber', 'size', 'name', 'result', 'tookTime', 'errorRequestId', 'retryTimes', 'reqUrl', 'customId']; // 需要上报的参数字段
+  var allReporterKeys = ['tracePlatform', 'cossdkVersion', 'region', 'networkType', 'host', 'accelerate', 'requestPath', 'size', 'httpMd5', 'httpSign', 'httpFull', 'name', 'result', 'tookTime', 'errorNode', 'errorCode', 'errorMessage', 'errorRequestId', 'errorStatusCode', 'errorServiceName', 'errorType', 'traceId', 'bucket', 'appid', 'partNumber', 'retryTimes', 'reqUrl', 'customId', 'fullError', 'devicePlatform', 'wxVersion', 'wxSystem', 'wxSdkVersion'];
+  var successKeys = ['tracePlatform', 'cossdkVersion', 'region', 'bucket', 'appid', 'networkType', 'host', 'accelerate', 'requestPath', 'partNumber', 'size', 'name', 'result', 'tookTime', 'errorRequestId', 'retryTimes', 'reqUrl', 'customId', 'devicePlatform', 'wxVersion', 'wxSystem', 'wxSdkVersion']; // 需要上报的参数字段
 
   var reporterKeys = params.result === 'Success' ? successKeys : allReporterKeys;
 
@@ -12641,6 +12725,8 @@ var Tracker = /*#__PURE__*/function () {
         deepTracker = opt.deepTracker;
     var appid = bucket && bucket.substr(bucket.lastIndexOf('-') + 1) || '';
     this.parent = parent;
+    this.deepTracker = deepTracker; // 上报用到的字段
+
     this.params = {
       // 通用字段
       cossdkVersion: pkg.version,
@@ -12670,7 +12756,7 @@ var Tracker = /*#__PURE__*/function () {
       // 小程序补充字段
       tracePlatform: 'mp',
       // 上报平台=小程序
-      traceId: traceId || this.getUid(),
+      traceId: traceId || utils.getUid(),
       // 每条上报唯一标识
       bucket: bucket,
       appid: appid,
@@ -12682,6 +12768,10 @@ var Tracker = /*#__PURE__*/function () {
       // 请求url
       customId: customId || '',
       // 业务id
+      devicePlatform: deviceInfo.devicePlatform,
+      wxVersion: deviceInfo.wxVersion,
+      wxSystem: deviceInfo.wxSystem,
+      wxSdkVersion: deviceInfo.wxSdkVersion,
       md5StartTime: 0,
       // md5计算开始时间
       md5EndTime: 0,
@@ -12696,45 +12786,14 @@ var Tracker = /*#__PURE__*/function () {
       // 网路请求结束时间
       startTime: new Date().getTime(),
       // sdk api调用起始时间，不是纯网络耗时
-      endTime: 0,
-      //  sdk api调用结束时间，不是纯网络耗时
-      deepTracker: deepTracker
+      endTime: 0 //  sdk api调用结束时间，不是纯网络耗时
+
     };
     this.beacon = getBeacon(delay);
-  } // 生成uid 每个链路对应唯一一条uid
+  } // 格式化sdk回调
 
 
   _createClass(Tracker, [{
-    key: "getUid",
-    value: function getUid() {
-      var S4 = function S4() {
-        return ((1 + Math.random()) * 0x10000 | 0).toString(16).substring(1);
-      };
-
-      return S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4();
-    }
-  }, {
-    key: "getNetType",
-    value: // 获取网络类型
-    function getNetType() {
-      return new Promise(function (resolve) {
-        if (wx.canIUse('getNetworkType')) {
-          try {
-            wx.getNetworkType({
-              success: function success(res) {
-                resolve(res.networkType);
-              }
-            });
-          } catch (e) {
-            resolve('can_not_get_network_type');
-          }
-        } else {
-          resolve('can_not_get_network_type');
-        }
-      });
-    } // 格式化sdk回调
-
-  }, {
     key: "formatResult",
     value: function () {
       var _formatResult = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee(err, data) {
@@ -12748,7 +12807,7 @@ var Tracker = /*#__PURE__*/function () {
                 now = new Date().getTime();
                 tookTime = now - this.params.startTime;
                 _context.next = 4;
-                return this.getNetType();
+                return utils.getNetType();
 
               case 4:
                 networkType = _context.sent;
@@ -12818,12 +12877,13 @@ var Tracker = /*#__PURE__*/function () {
     key: "sendEvents",
     value: function sendEvents() {
       // DeepTracker模式下才会上报分块上传内部细节
-      if (sliceUploadMethods.includes(this.params.name) && !this.params.deepTracker) {
+      if (sliceUploadMethods.includes(this.params.name) && !this.deepTracker) {
         return;
       }
 
       var eventCode = getEventCode(this.params.name);
       var formattedParams = formatParams(this.params);
+      console.log(eventCode, formattedParams);
 
       if (this.params.delay === 0) {
         // 实时上报
@@ -12842,13 +12902,13 @@ var Tracker = /*#__PURE__*/function () {
     value: function generateSubTracker(subParams) {
       Object.assign(subParams, {
         parent: this,
+        deepTracker: this.deepTracker,
         traceId: this.params.traceId,
         bucket: this.params.bucket,
         region: this.params.region,
         fileKey: this.params.requestPath,
         customId: this.params.customId,
-        delay: this.params.delay,
-        deepTracker: this.params.deepTracker
+        delay: this.params.delay
       });
       return new Tracker(subParams);
     } // 链路结束后销毁实例
