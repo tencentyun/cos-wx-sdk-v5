@@ -12755,7 +12755,7 @@ var Tracker = /*#__PURE__*/function () {
       errorStatusCode: 0,
       errorServiceName: '',
       // 小程序补充字段
-      tracePlatform: 'mp',
+      tracePlatform: 'cos-wx-sdk-v5',
       // 上报平台=小程序
       traceId: traceId || utils.getUid(),
       // 每条上报唯一标识

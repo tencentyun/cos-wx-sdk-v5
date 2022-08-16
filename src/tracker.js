@@ -171,7 +171,7 @@ class Tracker {
       errorServiceName: '',
 
       // 小程序补充字段
-      tracePlatform: 'mp', // 上报平台=小程序
+      tracePlatform: 'cos-wx-sdk-v5', // 上报平台=小程序
       traceId: traceId || utils.getUid(), // 每条上报唯一标识
       bucket,
       appid,
