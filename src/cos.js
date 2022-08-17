@@ -38,9 +38,9 @@ var defaultOptions = {
     HttpDNSServiceId: '', // HttpDNS 服务商 Id,填写后代表开启 HttpDNS 服务。HttpDNS 用法详见https://developers.weixin.qq.com/miniprogram/dev/framework/ability/HTTPDNS.html
     SimpleUploadMethod: 'postObject', // 高级上传内部判断需要走简单上传时，指定的上传方法，可选postObject或putObject
     EnableTracker: false, // 默认关闭上报 
-    DeepTracker: false,
-    TrackerDelay: 5000,
-    CustomId: '',
+    DeepTracker: false, // 上报时是否对每个分块上传做单独上报
+    TrackerDelay: 5000, // 周期性上报，单位毫秒。0代表实时上报
+    CustomId: '', // 自定义上报id
 };
 
 // 对外暴露的类
