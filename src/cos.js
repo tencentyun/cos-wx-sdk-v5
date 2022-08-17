@@ -5,6 +5,7 @@ var event = require('./event');
 var task = require('./task');
 var base = require('./base');
 var advance = require('./advance');
+var pkg = require('../package.json');
 
 var defaultOptions = {
     SecretId: '',
@@ -30,11 +31,16 @@ var defaultOptions = {
     CorrectClockSkew: true,
     SystemClockOffset: 0, // 单位毫秒，ms
     UploadCheckContentMd5: false,
+    UploadAddMetaMd5: false,
     UploadIdCacheLimit: 50,
     UseAccelerate: false,
     ForceSignHost: true, // 默认将host加入签名计算，关闭后可能导致越权风险，建议保持为true
     HttpDNSServiceId: '', // HttpDNS 服务商 Id,填写后代表开启 HttpDNS 服务。HttpDNS 用法详见https://developers.weixin.qq.com/miniprogram/dev/framework/ability/HTTPDNS.html
     SimpleUploadMethod: 'postObject', // 高级上传内部判断需要走简单上传时，指定的上传方法，可选postObject或putObject
+    EnableTracker: false, // 默认关闭上报 
+    DeepTracker: false, // 上报时是否对每个分块上传做单独上报
+    TrackerDelay: 5000, // 周期性上报，单位毫秒。0代表实时上报
+    CustomId: '', // 自定义上报id
 };
 
 // 对外暴露的类
@@ -73,6 +79,6 @@ COS.util = {
   json2xml: util.json2xml,
 };
 COS.getAuthorization = util.getAuth;
-COS.version = '1.3.0';
+COS.version = pkg.version;
 
 module.exports = COS;

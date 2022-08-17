@@ -270,6 +270,733 @@ module.exports = Base64;
 
 /***/ }),
 
+/***/ "./lib/beacon_mp.min.js":
+/*!******************************!*\
+  !*** ./lib/beacon_mp.min.js ***!
+  \******************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(module) {var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+/*! For license information please see beacon_mp.min.js.LICENSE.txt */
+!function (t, e) {
+  "object" == ( false ? undefined : _typeof(exports)) && "object" == ( false ? undefined : _typeof(module)) ? module.exports = e() :  true ? !(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_FACTORY__ = (e),
+				__WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ?
+				(__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__)) : undefined;
+}(window, function () {
+  return function (t) {
+    var e = {};
+
+    function n(r) {
+      if (e[r]) return e[r].exports;
+      var o = e[r] = {
+        i: r,
+        l: !1,
+        exports: {}
+      };
+      return t[r].call(o.exports, o, o.exports, n), o.l = !0, o.exports;
+    }
+
+    return n.m = t, n.c = e, n.d = function (t, e, r) {
+      n.o(t, e) || Object.defineProperty(t, e, {
+        enumerable: !0,
+        get: r
+      });
+    }, n.r = function (t) {
+      "undefined" != typeof Symbol && Symbol.toStringTag && Object.defineProperty(t, Symbol.toStringTag, {
+        value: "Module"
+      }), Object.defineProperty(t, "__esModule", {
+        value: !0
+      });
+    }, n.t = function (t, e) {
+      if (1 & e && (t = n(t)), 8 & e) return t;
+      if (4 & e && "object" == _typeof(t) && t && t.__esModule) return t;
+      var r = Object.create(null);
+      if (n.r(r), Object.defineProperty(r, "default", {
+        enumerable: !0,
+        value: t
+      }), 2 & e && "string" != typeof t) for (var o in t) {
+        n.d(r, o, function (e) {
+          return t[e];
+        }.bind(null, o));
+      }
+      return r;
+    }, n.n = function (t) {
+      var e = t && t.__esModule ? function () {
+        return t["default"];
+      } : function () {
+        return t;
+      };
+      return n.d(e, "a", e), e;
+    }, n.o = function (t, e) {
+      return Object.prototype.hasOwnProperty.call(t, e);
+    }, n.p = "", n(n.s = 6);
+  }([function (t, e, n) {
+    "use strict";
+
+    Object.defineProperty(e, "__esModule", {
+      value: !0
+    }), e.BEACON_ATTA_REQUEST_URL = e.BEACON_ATTA_TOKEN = e.BEACON_ATTA_ID = e.BEACON_CONFIG_HTTPS_URL = e.BEACON_CONFIG_REQUEST_TIME = e.BEACON_CONFIG = e.BEACON_SENDING_IDS_KEY = e.BEACON_NORMAL_LOG_ID_KEY = e.BEACON_DRIECT_LOG_ID_KEY = e.BEACON_LASE_REPORT_TIME_KEY = e.BEACON_DEVICE_ID_KEY = e.BEACON_STORE_PREFIX = e.BEACON_LOG_ID_KEY = e.BEACON_IS_REALTIME_KEY = e.BEACON_DELAY_DEFAULT = e.BEACON_HTTPS_URL = e.BEACON_HTTP_URL = void 0, e.BEACON_HTTP_URL = "http://oth.eve.mdt.qq.com:8080/analytics/v2_upload", e.BEACON_HTTPS_URL = "https://otheve.beacon.qq.com/analytics/v2_upload", e.BEACON_DELAY_DEFAULT = 3e3, e.BEACON_IS_REALTIME_KEY = "A99", e.BEACON_LOG_ID_KEY = "A100", e.BEACON_STORE_PREFIX = "__BEACON_", e.BEACON_DEVICE_ID_KEY = "__BEACON_deviceId", e.BEACON_LASE_REPORT_TIME_KEY = "last_report_time", e.BEACON_DRIECT_LOG_ID_KEY = "direct_log_id", e.BEACON_NORMAL_LOG_ID_KEY = "normal_log_id", e.BEACON_SENDING_IDS_KEY = "sending_event_ids", e.BEACON_CONFIG = "beacon_config", e.BEACON_CONFIG_REQUEST_TIME = "beacon_config_request_time", e.BEACON_CONFIG_HTTPS_URL = "https://oth.str.beacon.qq.com/trpc.beacon.configserver.BeaconConfigService/QueryConfig", e.BEACON_ATTA_ID = "00400014144", e.BEACON_ATTA_TOKEN = "6478159937", e.BEACON_ATTA_REQUEST_URL = "https://h.trace.qq.com/kv";
+  }, function (t, e, n) {
+    "use strict";
+
+    Object.defineProperty(e, "__esModule", {
+      value: !0
+    }), e.getEventId = e.replaceSymbol = e.replace = e.assert = void 0;
+    var r = n(0),
+        o = n(9);
+
+    function i(t) {
+      if ("string" != typeof t) return t;
+
+      try {
+        return t.replace(new RegExp("\\|", "g"), "%7C").replace(new RegExp("\\&", "g"), "%26").replace(new RegExp("\\=", "g"), "%3D").replace(new RegExp("\\+", "g"), "%2B");
+      } catch (t) {
+        return "";
+      }
+    }
+
+    Object.defineProperty(e, "EventEmiter", {
+      enumerable: !0,
+      get: function get() {
+        return o.EventEmiter;
+      }
+    }), e.assert = function (t, e) {
+      if (!t) throw e instanceof Error ? e : new Error(e);
+    }, e.replace = function (t, e) {
+      for (var n = {}, r = 0, o = Object.keys(t); r < o.length; r++) {
+        var s = o[r],
+            a = t[s];
+        if ("string" == typeof a) n[i(s)] = i(a);else {
+          if (e) throw new Error("value mast be string  !!!!");
+          n[i(String(s))] = i(String(a));
+        }
+      }
+
+      return n;
+    }, e.replaceSymbol = i, e.getEventId = function (t) {
+      return String(t[r.BEACON_IS_REALTIME_KEY]) + String(t[r.BEACON_LOG_ID_KEY]);
+    };
+  }, function (t, e, n) {
+    "use strict";
+
+    Object.defineProperty(e, "__esModule", {
+      value: !0
+    }), e.createPipeline = void 0;
+
+    var r = function r() {};
+
+    e.createPipeline = function (t) {
+      if (!t || !t.reduce || !t.length) throw new TypeError("createPipeline 方法需要传入至少有一个 pipe 的数组");
+      return 1 === t.length ? function (e, n) {
+        t[0](e, n || r);
+      } : t.reduce(function (t, e) {
+        return function (n, o) {
+          return void 0 === o && (o = r), t(n, function (t) {
+            return null == e ? void 0 : e(t, o);
+          });
+        };
+      });
+    };
+  }, function (t, e, n) {
+    "use strict";
+
+    Object.defineProperty(e, "__esModule", {
+      value: !0
+    });
+
+    var r = n(0),
+        o = function () {
+      function t(t, e, n, o) {
+        this.requestParams = {}, this.network = o, this.requestParams.attaid = r.BEACON_ATTA_ID, this.requestParams.token = r.BEACON_ATTA_TOKEN, this.requestParams.product_id = t.appkey, this.requestParams.platform = n, this.requestParams.uin = e.deviceId, this.requestParams.model = "", this.requestParams.os = n, this.requestParams.app_version = t.appVersion, this.requestParams.sdk_version = e.sdkVersion, this.requestParams.error_stack = "";
+      }
+
+      return t.prototype.reportError = function (t, e) {
+        this.requestParams._dc = Math.random(), this.requestParams.error_msg = e, this.requestParams.error_code = t, this.network.get(r.BEACON_ATTA_REQUEST_URL, {
+          params: this.requestParams
+        });
+      }, t;
+    }();
+
+    e["default"] = o;
+  }, function (t, e, n) {
+    "use strict";
+
+    Object.defineProperty(e, "__esModule", {
+      value: !0
+    }), e.Config = void 0;
+
+    var r = function r() {};
+
+    e.Config = r;
+  }, function (t, e, n) {
+    "use strict";
+
+    Object.defineProperty(e, "__esModule", {
+      value: !0
+    });
+
+    var r = n(0),
+        o = function () {
+      function t(t, e, n, o) {
+        this.strategy = {
+          isEventUpOnOff: !0,
+          httpsUploadUrl: r.BEACON_HTTPS_URL,
+          requestInterval: 30,
+          blacklist: [],
+          samplelist: []
+        }, this.realSample = {}, this.appkey = "", this.appkey = t.appkey, this.storage = n;
+
+        try {
+          var i = JSON.parse(this.storage.getItem(r.BEACON_CONFIG));
+          i && this.processData(i);
+        } catch (t) {}
+
+        this.needRequestConfig() && this.requestConfig(t.appVersion, e, o);
+      }
+
+      return t.prototype.requestConfig = function (t, e, n) {
+        var o = this;
+        this.storage.setItem(r.BEACON_CONFIG_REQUEST_TIME, Date.now().toString()), n.post(r.BEACON_CONFIG_HTTPS_URL, {
+          platformId: "undefined" == typeof wx ? "3" : "4",
+          mainAppKey: this.appkey,
+          appVersion: t,
+          sdkVersion: e.sdkVersion,
+          osVersion: e.userAgent,
+          model: "",
+          packageName: "",
+          params: {
+            A3: e.deviceId
+          }
+        }).then(function (t) {
+          if (0 == t.data.ret) try {
+            var e = JSON.parse(t.data.beaconConfig);
+            e && (o.processData(e), o.storage.setItem(r.BEACON_CONFIG, t.data.beaconConfig));
+          } catch (t) {} else o.processData(null), o.storage.setItem(r.BEACON_CONFIG, "");
+        })["catch"](function (t) {});
+      }, t.prototype.processData = function (t) {
+        var e, n, r, o, i;
+        this.strategy.isEventUpOnOff = null !== (e = null == t ? void 0 : t.isEventUpOnOff) && void 0 !== e ? e : this.strategy.isEventUpOnOff, this.strategy.httpsUploadUrl = null !== (n = null == t ? void 0 : t.httpsUploadUrl) && void 0 !== n ? n : this.strategy.httpsUploadUrl, this.strategy.requestInterval = null !== (r = null == t ? void 0 : t.requestInterval) && void 0 !== r ? r : this.strategy.requestInterval, this.strategy.blacklist = null !== (o = null == t ? void 0 : t.blacklist) && void 0 !== o ? o : this.strategy.blacklist, this.strategy.samplelist = null !== (i = null == t ? void 0 : t.samplelist) && void 0 !== i ? i : this.strategy.samplelist;
+
+        for (var s = 0, a = this.strategy.samplelist; s < a.length; s++) {
+          var c = a[s].split(",");
+          2 == c.length && (this.realSample[c[0]] = c[1]);
+        }
+      }, t.prototype.needRequestConfig = function () {
+        var t = Number(this.storage.getItem(r.BEACON_CONFIG_REQUEST_TIME));
+        return Date.now() - t > 60 * this.strategy.requestInterval * 1e3;
+      }, t.prototype.getUploadUrl = function () {
+        return this.strategy.httpsUploadUrl + "?appkey=" + this.appkey;
+      }, t.prototype.isBlackEvent = function (t) {
+        return -1 != this.strategy.blacklist.indexOf(t);
+      }, t.prototype.isEventUpOnOff = function () {
+        return this.strategy.isEventUpOnOff;
+      }, t.prototype.isSampleEvent = function (t) {
+        return !!Object.prototype.hasOwnProperty.call(this.realSample, t) && this.realSample[t] < Math.floor(Math.random() * Math.floor(1e4));
+      }, t;
+    }();
+
+    e["default"] = o;
+  }, function (t, e, n) {
+    "use strict";
+
+    var _r,
+        o = this && this.__extends || (_r = function r(t, e) {
+      return (_r = Object.setPrototypeOf || {
+        __proto__: []
+      } instanceof Array && function (t, e) {
+        t.__proto__ = e;
+      } || function (t, e) {
+        for (var n in e) {
+          e.hasOwnProperty(n) && (t[n] = e[n]);
+        }
+      })(t, e);
+    }, function (t, e) {
+      function n() {
+        this.constructor = t;
+      }
+
+      _r(t, e), t.prototype = null === e ? Object.create(e) : (n.prototype = e.prototype, new n());
+    }),
+        i = this && this.__assign || function () {
+      return (i = Object.assign || function (t) {
+        for (var e, n = 1, r = arguments.length; n < r; n++) {
+          for (var o in e = arguments[n]) {
+            Object.prototype.hasOwnProperty.call(e, o) && (t[o] = e[o]);
+          }
+        }
+
+        return t;
+      }).apply(this, arguments);
+    },
+        s = this && this.__importDefault || function (t) {
+      return t && t.__esModule ? t : {
+        "default": t
+      };
+    };
+
+    Object.defineProperty(e, "__esModule", {
+      value: !0
+    }), e.WeappOpts = void 0;
+
+    var a = s(n(7)),
+        c = s(n(3)),
+        u = n(0),
+        p = n(1),
+        f = n(4),
+        l = s(n(5)),
+        d = function (t) {
+      function e() {
+        return null !== t && t.apply(this, arguments) || this;
+      }
+
+      return o(e, t), e;
+    }(f.Config);
+
+    e.WeappOpts = d;
+
+    var _ = wx || qq,
+        h = function (t) {
+      function e(e) {
+        var n = t.call(this, e) || this;
+        return n.send = function (t, e, r) {
+          if (!n.config.appkey) throw new Error("please call init before");
+          n.network.post(n.strategy.getUploadUrl(), t.data).then(function (r) {
+            100 == r.data.result ? n.delayTime = 1e3 * r.data.delayTime : n.delayTime = 0, e && e(t.data), n.cleanEvents(t.data.events);
+          })["catch"](function (e) {
+            var o = t.data.events;
+            n.errorReport.reportError(e.code ? e.code.toString() : "600", e.message), r && r(t.data), n.concatEvents(o);
+          });
+        }, n.network = new g(), n.storage = new y(e.appkey), n.initCommonInfo(e, n), n.errorReport = new c["default"](n.config, n.commonInfo, "weapp", n.network), n.strategy = new l["default"](n.config, n.commonInfo, n.storage, n.network), n.storage.setItem(u.BEACON_SENDING_IDS_KEY, JSON.stringify([])), n.onDirectUserAction("rqd_weapp_init", {}), setTimeout(function () {
+          return n.lifeCycle.emit("init");
+        }, 0), n.initDelayTime = e.delay ? e.delay : 2e3, n.cycleSend(n.initDelayTime), n;
+      }
+
+      return o(e, t), e.prototype.initCommonInfo = function (t, e) {
+        _.getNetworkType({
+          success: function success(t) {
+            e.storage.setItem("nt", t.networkType);
+          }
+        }), this.commonInfo = {
+          deviceId: this.storage.createDeviceId(),
+          language: "",
+          query: "",
+          userAgent: "",
+          pixel: "",
+          channelID: t.channelID ? String(t.channelID) : "",
+          openid: t.openid ? String(t.openid) : "",
+          unid: t.unionid ? String(t.unionid) : "",
+          sdkVersion: "4.2.6-weapp"
+        }, this.config.appVersion = t.versionCode ? String(t.versionCode) : "", this.config.strictMode = t.strictMode;
+      }, e.prototype.cycleSend = function (t) {
+        var e = this;
+        setTimeout(function () {
+          e.realSend(e.getEvents()), e.cycleSend(0 == e.delayTime ? e.initDelayTime : e.delayTime);
+        }, t);
+      }, e.prototype.onReport = function (t, e, n) {
+        var r = [],
+            o = "4.2.6-weapp_" + (n ? u.BEACON_DRIECT_LOG_ID_KEY : u.BEACON_NORMAL_LOG_ID_KEY),
+            s = Number(this.storage.getItem(o));
+        s = s || 1, e = i(i({}, e), {
+          A99: n ? "Y" : "N",
+          A100: String(s),
+          A72: this.commonInfo.sdkVersion
+        }), s++, this.storage.setItem(o, String(s)), r.push({
+          eventCode: t,
+          eventTime: Date.now().toString(),
+          mapValue: p.replace(e, this.config.strictMode)
+        }), n && 0 == this.delayTime ? this.realSend(r) : this.concatEvents(r);
+      }, e.prototype.realSend = function (t) {
+        var e, n;
+
+        if (0 != t.length) {
+          var r = this.getSystemInfo(),
+              o = {
+            appVersion: this.config.appVersion ? p.replaceSymbol(this.config.appVersion) : "",
+            sdkVersion: "4.2.6-weapp",
+            sdkId: "weapp",
+            mainAppKey: this.config.appkey,
+            platformId: 4,
+            common: p.replace(i(i({}, this.additionalParams), {
+              env: "undefined" == typeof qq ? "wechat" : "qq",
+              A2: this.commonInfo.deviceId,
+              A8: String(this.commonInfo.openid),
+              A9: this.getSystemInfo().brand,
+              A10: encodeURIComponent(r.model),
+              A12: r.language,
+              A23: this.commonInfo.channelID,
+              A33: this.getNetworkType(),
+              A50: String(this.commonInfo.unid),
+              A95: r.version,
+              A102: null === (n = null === (e = getCurrentPages()) || void 0 === e ? void 0 : e.pop()) || void 0 === n ? void 0 : n.route,
+              A114: encodeURIComponent(r.system),
+              A115: encodeURIComponent(r.platform),
+              A116: r.windowWidth + "*" + r.windowHeight + "*" + r.pixelRatio,
+              A117: this.getUserInfo(),
+              A118: this.getLocation()
+            }), !1),
+            events: t
+          };
+
+          this._normalLogPipeline(o);
+        }
+      }, e.prototype.setUserInfo = function (t) {
+        this.storage.setItem("ui", JSON.stringify(t.userInfo));
+      }, e.prototype.setLocation = function (t) {
+        this.storage.setItem("lt", JSON.stringify(t));
+      }, e.prototype.getSystemInfo = function () {
+        return _.getSystemInfoSync();
+      }, e.prototype.getNetworkType = function () {
+        return this.storage.getItem("nt");
+      }, e.prototype.getUserInfo = function () {
+        return this.storage.getItem("ui");
+      }, e.prototype.getLocation = function () {
+        return this.storage.getItem("lt");
+      }, e.prototype.concatEvents = function (t) {
+        var e = this.getLocalEvents();
+        e = e || {};
+
+        for (var n = 0, r = t; n < r.length; n++) {
+          var o = r[n],
+              i = p.getEventId(o.mapValue);
+          this.removeSendingId(i), e[i] = o;
+        }
+
+        this.setLocalEvents(e);
+      }, e.prototype.getEvents = function () {
+        var t = [],
+            e = [],
+            n = this.getLocalEvents();
+        if (!n) return t;
+
+        try {
+          e = JSON.parse(this.storage.getItem(u.BEACON_SENDING_IDS_KEY));
+        } catch (t) {}
+
+        for (var r = 0, o = Object.getOwnPropertyNames(n); r < o.length; r++) {
+          var i = o[r],
+              s = n[i];
+          -1 == e.indexOf(i) && (t.push(s), e.push(i));
+        }
+
+        return this.storage.setItem(u.BEACON_SENDING_IDS_KEY, JSON.stringify(e)), t;
+      }, e.prototype.cleanEvents = function (t) {
+        for (var e = this.getLocalEvents(), n = 0, r = t; n < r.length; n++) {
+          var o = r[n],
+              i = p.getEventId(o.mapValue);
+          this.removeSendingId(i), delete e[i];
+        }
+
+        this.setLocalEvents(e);
+      }, e.prototype.setLocalEvents = function (t) {
+        try {
+          this.storage.setItem("BEACON_EVENT", JSON.stringify(t));
+        } catch (t) {}
+      }, e.prototype.getLocalEvents = function () {
+        try {
+          return JSON.parse(this.storage.getItem("BEACON_EVENT"));
+        } catch (t) {
+          return {};
+        }
+      }, e;
+    }(a["default"]);
+
+    e["default"] = h;
+
+    var g = function () {
+      function t() {}
+
+      return t.prototype.get = function (t, e) {
+        return new Promise(function (n, r) {
+          _.request({
+            method: "GET",
+            data: null == e ? void 0 : e.params,
+            url: t,
+            success: function success(t) {
+              n(t);
+            },
+            fail: function fail(t) {
+              r(t);
+            }
+          });
+        });
+      }, t.prototype.post = function (t, e, n) {
+        var r = this;
+        return new Promise(function (o, i) {
+          _.request({
+            method: "POST",
+            url: t,
+            data: e,
+            success: function success(t) {
+              var e = {
+                data: t.data,
+                status: t.statusCode,
+                statusText: "",
+                headers: t.header,
+                config: n,
+                request: r
+              };
+              o(e);
+            },
+            fail: function fail(t) {
+              var e = {
+                message: t.errMsg,
+                code: "600",
+                request: r
+              };
+              i(e);
+            }
+          });
+        });
+      }, t;
+    }(),
+        y = function () {
+      function t(t) {
+        this.appkey = t;
+      }
+
+      return t.prototype.getItem = function (t) {
+        try {
+          return _.getStorageSync(this.getStoreKey(t));
+        } catch (t) {
+          return "";
+        }
+      }, t.prototype.removeItem = function (t) {
+        try {
+          _.removeStorageSync(this.getStoreKey(t));
+        } catch (t) {}
+      }, t.prototype.setItem = function (t, e) {
+        try {
+          _.setStorageSync(this.getStoreKey(t), e);
+        } catch (t) {}
+      }, t.prototype.createDeviceId = function () {
+        var t = _.getStorageSync("beacon_u");
+
+        return t && "" != t || (t = this.getRandom(36), _.setStorageSync("beacon_u", t)), t;
+      }, t.prototype.getRandom = function (t) {
+        return (1e6 * Date.now() + Math.floor(1e6 * Math.random())).toString(t) || "";
+      }, t.prototype.getStoreKey = function (t) {
+        return "beaconV2__" + this.appkey + "_" + t;
+      }, t;
+    }();
+  }, function (t, e, n) {
+    "use strict";
+
+    var r = this && this.__createBinding || (Object.create ? function (t, e, n, r) {
+      void 0 === r && (r = n), Object.defineProperty(t, r, {
+        enumerable: !0,
+        get: function get() {
+          return e[n];
+        }
+      });
+    } : function (t, e, n, r) {
+      void 0 === r && (r = n), t[r] = e[n];
+    }),
+        o = this && this.__exportStar || function (t, e) {
+      for (var n in t) {
+        "default" === n || e.hasOwnProperty(n) || r(e, t, n);
+      }
+    },
+        i = this && this.__importDefault || function (t) {
+      return t && t.__esModule ? t : {
+        "default": t
+      };
+    };
+
+    Object.defineProperty(e, "__esModule", {
+      value: !0
+    });
+    var s = i(n(8));
+    e["default"] = s["default"], o(n(10), e), o(n(2), e), o(n(11), e), o(n(1), e);
+  }, function (t, e, n) {
+    "use strict";
+
+    var r = this && this.__assign || function () {
+      return (r = Object.assign || function (t) {
+        for (var e, n = 1, r = arguments.length; n < r; n++) {
+          for (var o in e = arguments[n]) {
+            Object.prototype.hasOwnProperty.call(e, o) && (t[o] = e[o]);
+          }
+        }
+
+        return t;
+      }).apply(this, arguments);
+    };
+
+    Object.defineProperty(e, "__esModule", {
+      value: !0
+    });
+
+    var o = n(1),
+        i = n(2),
+        s = n(1),
+        a = n(0),
+        c = function () {
+      function t(t) {
+        var e = this;
+        this.lifeCycle = new o.EventEmiter(), this.uploadJobQueue = [], this.additionalParams = {}, this.delayTime = 0, this._normalLogPipeline = i.createPipeline([function (t) {
+          e.send({
+            url: e.strategy.getUploadUrl(),
+            data: t,
+            method: "post",
+            contentType: "application/json;charset=UTF-8"
+          }, function () {
+            var n = e.config.onReportSuccess;
+            "function" == typeof n && n(JSON.stringify(t.events));
+          }, function () {
+            var n = e.config.onReportFail;
+            "function" == typeof n && n(JSON.stringify(t.events));
+          });
+        }]), s.assert(Boolean(t.appkey), "appkey must be initial"), this.config = r({}, t);
+      }
+
+      return t.prototype.onUserAction = function (t, e) {
+        this.preReport(t, e, !1);
+      }, t.prototype.onDirectUserAction = function (t, e) {
+        this.preReport(t, e, !0);
+      }, t.prototype.preReport = function (t, e, n) {
+        t ? this.strategy.isEventUpOnOff() && (this.strategy.isBlackEvent(t) || this.strategy.isSampleEvent(t) || this.onReport(t, e, n)) : this.errorReport.reportError("602", " no eventCode");
+      }, t.prototype.addAdditionalParams = function (t) {
+        for (var e = 0, n = Object.keys(t); e < n.length; e++) {
+          var r = n[e];
+          this.additionalParams[r] = t[r];
+        }
+      }, t.prototype.setChannelId = function (t) {
+        this.commonInfo.channelID = String(t);
+      }, t.prototype.setOpenId = function (t) {
+        this.commonInfo.openid = String(t);
+      }, t.prototype.setUnionid = function (t) {
+        this.commonInfo.unid = String(t);
+      }, t.prototype.getDeviceId = function () {
+        return this.commonInfo.deviceId;
+      }, t.prototype.getCommonInfo = function () {
+        return this.commonInfo;
+      }, t.prototype.removeSendingId = function (t) {
+        var e = JSON.parse(this.storage.getItem(a.BEACON_SENDING_IDS_KEY)),
+            n = e.indexOf(t);
+        -1 != n && (e.splice(n, 1), this.storage.setItem(a.BEACON_SENDING_IDS_KEY, JSON.stringify(e)));
+      }, t;
+    }();
+
+    e["default"] = c;
+  }, function (t, e, n) {
+    "use strict";
+
+    Object.defineProperty(e, "__esModule", {
+      value: !0
+    }), e.EventEmiter = void 0;
+
+    var r = function () {
+      function t() {
+        var t = this;
+        this.emit = function (e, n) {
+          if (t) {
+            var r,
+                o = t.__EventsList[e];
+
+            if (null == o ? void 0 : o.length) {
+              o = o.slice();
+
+              for (var i = 0; i < o.length; i++) {
+                r = o[i];
+
+                try {
+                  var s = r.callback.apply(t, [n]);
+                  if (1 === r.type && t.remove(e, r.callback), !1 === s) break;
+                } catch (t) {
+                  throw t;
+                }
+              }
+            }
+
+            return t;
+          }
+        }, this.__EventsList = {};
+      }
+
+      return t.prototype.indexOf = function (t, e) {
+        for (var n = 0; n < t.length; n++) {
+          if (t[n].callback === e) return n;
+        }
+
+        return -1;
+      }, t.prototype.on = function (t, e, n) {
+        if (void 0 === n && (n = 0), this) {
+          var r = this.__EventsList[t];
+
+          if (r || (r = this.__EventsList[t] = []), -1 === this.indexOf(r, e)) {
+            var o = {
+              name: t,
+              type: n || 0,
+              callback: e
+            };
+            return r.push(o), this;
+          }
+
+          return this;
+        }
+      }, t.prototype.one = function (t, e) {
+        this.on(t, e, 1);
+      }, t.prototype.remove = function (t, e) {
+        if (this) {
+          var n = this.__EventsList[t];
+          if (!n) return null;
+
+          if (!e) {
+            try {
+              delete this.__EventsList[t];
+            } catch (t) {}
+
+            return null;
+          }
+
+          if (n.length) {
+            var r = this.indexOf(n, e);
+            n.splice(r, 1);
+          }
+
+          return this;
+        }
+      }, t;
+    }();
+
+    e.EventEmiter = r;
+  }, function (t, e, n) {
+    "use strict";
+
+    Object.defineProperty(e, "__esModule", {
+      value: !0
+    });
+  }, function (t, e, n) {
+    "use strict";
+
+    var r = this && this.__createBinding || (Object.create ? function (t, e, n, r) {
+      void 0 === r && (r = n), Object.defineProperty(t, r, {
+        enumerable: !0,
+        get: function get() {
+          return e[n];
+        }
+      });
+    } : function (t, e, n, r) {
+      void 0 === r && (r = n), t[r] = e[n];
+    }),
+        o = this && this.__exportStar || function (t, e) {
+      for (var n in t) {
+        "default" === n || e.hasOwnProperty(n) || r(e, t, n);
+      }
+    };
+
+    Object.defineProperty(e, "__esModule", {
+      value: !0
+    }), o(n(3), e), o(n(4), e), o(n(5), e);
+  }])["default"];
+});
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../node_modules/webpack/buildin/module.js */ "./node_modules/webpack/buildin/module.js")(module)))
+
+/***/ }),
+
 /***/ "./lib/crypto.js":
 /*!***********************!*\
   !*** ./lib/crypto.js ***!
@@ -5716,6 +6443,17 @@ module.exports = function(module) {
 
 /***/ }),
 
+/***/ "./package.json":
+/*!**********************!*\
+  !*** ./package.json ***!
+  \**********************/
+/*! exports provided: name, version, description, main, scripts, repository, author, license, dependencies, devDependencies, default */
+/***/ (function(module) {
+
+module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.4.0\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"mime\":\"^2.4.6\",\"@xmldom/xmldom\":\"^0.8.2\"},\"devDependencies\":{\"babel-core\":\"6.26.3\",\"babel-loader\":\"8.2.5\",\"@babel/preset-env\":\"7.16.11\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+
+/***/ }),
+
 /***/ "./src/advance.js":
 /*!************************!*\
   !*** ./src/advance.js ***!
@@ -5731,7 +6469,9 @@ var Async = __webpack_require__(/*! ./async */ "./src/async.js");
 
 var EventProxy = __webpack_require__(/*! ./event */ "./src/event.js").EventProxy;
 
-var util = __webpack_require__(/*! ./util */ "./src/util.js"); // 文件分块上传全过程，暴露的分块上传接口
+var util = __webpack_require__(/*! ./util */ "./src/util.js");
+
+var Tracker = __webpack_require__(/*! ./tracker */ "./src/tracker.js"); // 文件分块上传全过程，暴露的分块上传接口
 
 
 function sliceUploadFile(params, callback) {
@@ -5761,13 +6501,18 @@ function sliceUploadFile(params, callback) {
   var ServerSideEncryption = params.ServerSideEncryption;
   var FileSize;
   var onProgress;
-  var onHashProgress = params.onHashProgress; // 上传过程中出现错误，返回错误
+  var onHashProgress = params.onHashProgress;
+  var tracker = params.tracker;
+  tracker && tracker.setParams({
+    chunkSize: ChunkSize
+  }); // 上传过程中出现错误，返回错误
 
   ep.on('error', function (err) {
     if (!self._isRunningTask(TaskId)) return;
     var _err = {
       UploadId: params.UploadData.UploadId || '',
-      err: err
+      err: err,
+      error: err
     };
     return callback(_err);
   }); // 上传分块完成，开始 uploadSliceComplete 操作
@@ -5786,7 +6531,8 @@ function sliceUploadFile(params, callback) {
       Region: Region,
       Key: Key,
       UploadId: UploadData.UploadId,
-      SliceList: UploadData.SliceList
+      SliceList: UploadData.SliceList,
+      tracker: tracker
     }, function (err, data) {
       if (!self._isRunningTask(TaskId)) return;
       session.removeUsing(UploadData.UploadId);
@@ -5826,7 +6572,8 @@ function sliceUploadFile(params, callback) {
       AsyncLimit: AsyncLimit,
       ServerSideEncryption: ServerSideEncryption,
       UploadData: UploadData,
-      onProgress: onProgress
+      onProgress: onProgress,
+      tracker: tracker
     }, function (err, data) {
       if (!self._isRunningTask(TaskId)) return;
 
@@ -5855,7 +6602,8 @@ function sliceUploadFile(params, callback) {
         FilePath: FilePath,
         FileSize: FileSize,
         SliceSize: ChunkSize,
-        onHashProgress: onHashProgress
+        onHashProgress: onHashProgress,
+        tracker: tracker
       }, params);
 
       getUploadIdAndPartList.call(self, _params, function (err, UploadData) {
@@ -6044,7 +6792,9 @@ function getUploadIdAndPartList(params, callback) {
       Key: Key,
       Headers: util.clone(params.Headers),
       Query: util.clone(params.Query),
-      StorageClass: StorageClass
+      StorageClass: StorageClass,
+      calledBySdk: 'sliceUploadFile',
+      tracker: params.tracker
     }, params);
 
     self.multipartInit(_params, function (err, data) {
@@ -6082,7 +6832,8 @@ function getUploadIdAndPartList(params, callback) {
         Bucket: Bucket,
         Region: Region,
         Key: Key,
-        UploadId: UploadId
+        UploadId: UploadId,
+        tracker: params.tracker
       }, function (err, PartListData) {
         if (!self._isRunningTask(TaskId)) return;
 
@@ -6159,7 +6910,8 @@ function getUploadIdAndPartList(params, callback) {
         Bucket: Bucket,
         Region: Region,
         Key: Key,
-        UploadId: UploadId
+        UploadId: UploadId,
+        tracker: params.tracker
       }, function (err, PartListData) {
         if (!self._isRunningTask(TaskId)) return;
 
@@ -6185,7 +6937,8 @@ function getUploadIdAndPartList(params, callback) {
     wholeMultipartList.call(self, {
       Bucket: Bucket,
       Region: Region,
-      Key: Key
+      Key: Key,
+      tracker: params.tracker
     }, function (err, data) {
       if (!self._isRunningTask(TaskId)) return;
 
@@ -6228,7 +6981,9 @@ function wholeMultipartList(params, callback) {
   var sendParams = {
     Bucket: params.Bucket,
     Region: params.Region,
-    Prefix: params.Key
+    Prefix: params.Key,
+    calledBySdk: params.calledBySdk || 'sliceUploadFile',
+    tracker: params.tracker
   };
 
   var next = function next() {
@@ -6260,7 +7015,9 @@ function wholeMultipartListPart(params, callback) {
     Bucket: params.Bucket,
     Region: params.Region,
     Key: params.Key,
-    UploadId: params.UploadId
+    UploadId: params.UploadId,
+    calledBySdk: 'sliceUploadFile',
+    tracker: params.tracker
   };
 
   var next = function next() {
@@ -6340,7 +7097,8 @@ function uploadSliceList(params, cb) {
           loaded: FinishSize,
           total: FileSize
         });
-      }
+      },
+      tracker: params.tracker
     }, function (err, data) {
       if (!self._isRunningTask(TaskId)) return;
 
@@ -6417,7 +7175,9 @@ function uploadSliceItem(params, callback) {
         Body: Body,
         Headers: headers,
         onProgress: params.onProgress,
-        ContentMD5: contentMd5
+        ContentMD5: contentMd5,
+        calledBySdk: 'sliceUploadFile',
+        tracker: params.tracker
       }, function (err, data) {
         if (!self._isRunningTask(TaskId)) return;
 
@@ -6457,7 +7217,9 @@ function uploadSliceComplete(params, callback) {
       Region: Region,
       Key: Key,
       UploadId: UploadId,
-      Parts: Parts
+      Parts: Parts,
+      calledBySdk: 'sliceUploadFile',
+      tracker: params.tracker
     }, tryCallback);
   }, function (err, data) {
     callback(err, data);
@@ -6505,7 +7267,8 @@ function abortUploadTask(params, callback) {
     // Bucket 级别的任务抛弃，抛弃该 Bucket 下的全部上传任务
     wholeMultipartList.call(self, {
       Bucket: Bucket,
-      Region: Region
+      Region: Region,
+      calledBySdk: 'abortUploadTask'
     }, function (err, data) {
       if (err) {
         return callback(err);
@@ -6521,7 +7284,8 @@ function abortUploadTask(params, callback) {
     wholeMultipartList.call(self, {
       Bucket: Bucket,
       Region: Region,
-      Key: Key
+      Key: Key,
+      calledBySdk: 'abortUploadTask'
     }, function (err, data) {
       if (err) {
         return callback(err);
@@ -6628,7 +7392,23 @@ function uploadFile(params, callback) {
   var FileSize = params.FileSize;
   var fileInfo = {
     TaskId: ''
-  }; // 整理 option，用于返回给回调
+  }; // 上传链路
+
+  if (self.options.EnableTracker) {
+    var accelerate = self.options.UseAccelerate || self.options.Domain.includes('accelerate.');
+    params.tracker = new Tracker({
+      bucket: params.Bucket,
+      region: params.Region,
+      apiName: 'uploadFile',
+      fileKey: params.Key,
+      fileSize: FileSize,
+      accelerate: accelerate,
+      deepTracker: self.options.DeepTracker,
+      customId: self.options.CustomId,
+      delay: self.options.TrackerDelay
+    });
+  } // 整理 option，用于返回给回调
+
 
   util.each(params, function (v, k) {
     if (_typeof(v) !== 'object' && typeof v !== 'function') {
@@ -6647,6 +7427,8 @@ function uploadFile(params, callback) {
   var _onFileFinish = params.onFileFinish;
 
   var onFileFinish = function onFileFinish(err, data) {
+    // 格式化上报参数并上报
+    params.tracker && params.tracker.formatResult(err, data);
     _onFileFinish && _onFileFinish(err, data, fileInfo);
     callback && callback(err, data);
   }; // 添加上传任务
@@ -6702,7 +7484,23 @@ function uploadFiles(params, callback) {
       TaskId: ''
     }; // 更新文件总大小
 
-    TotalSize += FileSize; // 整理 option，用于返回给回调
+    TotalSize += FileSize; // 单个文件上传链路
+
+    if (self.options.EnableTracker) {
+      var accelerate = self.options.UseAccelerate || self.options.Domain.includes('accelerate.');
+      fileParams.tracker = new Tracker({
+        bucket: fileParams.Bucket,
+        region: fileParams.Region,
+        apiName: 'uploadFiles',
+        fileKey: fileParams.Key,
+        fileSize: FileSize,
+        accelerate: accelerate,
+        deepTracker: self.options.DeepTracker,
+        customId: self.options.CustomId,
+        delay: self.options.TrackerDelay
+      });
+    } // 整理 option，用于返回给回调
+
 
     util.each(fileParams, function (v, k) {
       if (_typeof(v) !== 'object' && typeof v !== 'function') {
@@ -6735,6 +7533,8 @@ function uploadFiles(params, callback) {
     var _onFileFinish = fileParams.onFileFinish;
 
     var onFileFinish = function onFileFinish(err, data) {
+      // 格式化上报参数并上报
+      fileParams.tracker && fileParams.tracker.formatResult(err, data);
       _onFileFinish && _onFileFinish(err, data);
       onTotalFileFinish && onTotalFileFinish(err, data, fileInfo);
     }; // 添加上传任务
@@ -6788,7 +7588,8 @@ function sliceCopyFile(params, callback) {
       Region: Region,
       Key: Key,
       UploadId: UploadData.UploadId,
-      Parts: UploadData.PartList
+      Parts: UploadData.PartList,
+      calledBySdk: 'sliceCopyFile'
     }, function (err, data) {
       if (err) {
         _onProgress3(null, true);
@@ -6921,7 +7722,8 @@ function sliceCopyFile(params, callback) {
       Bucket: Bucket,
       Region: Region,
       Key: Key,
-      Headers: TargetHeader
+      Headers: TargetHeader,
+      calledBySdk: 'sliceCopyFile'
     }, function (err, data) {
       if (err) {
         return callback(err);
@@ -9063,6 +9865,10 @@ function listObjectVersions(params, callback) {
 function getObject(params, callback) {
   var reqParams = params.Query || {};
   var reqParamsStr = params.QueryString || '';
+  var tracker = params.tracker;
+  tracker && tracker.setParams({
+    signStartTime: new Date().getTime()
+  });
   reqParams['response-content-type'] = params['ResponseContentType'];
   reqParams['response-content-language'] = params['ResponseContentLanguage'];
   reqParams['response-expires'] = params['ResponseExpires'];
@@ -9080,7 +9886,8 @@ function getObject(params, callback) {
     headers: params.Headers,
     qs: reqParams,
     qsStr: reqParamsStr,
-    rawBody: true
+    rawBody: true,
+    tracker: tracker
   }, function (err, data) {
     if (err) {
       var statusCode = err.statusCode;
@@ -9138,8 +9945,20 @@ function putObject(params, callback) {
   var headers = params.Headers;
   if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
   if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = mime.getType(params.Key) || 'application/octet-stream';
-  util.getBodyMd5(self.options.UploadCheckContentMd5, params.Body, function (md5) {
-    if (md5) headers['Content-MD5'] = util.binaryBase64(md5);
+  var needCalcMd5 = params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5 || self.options.UploadCheckContentMd5;
+  var tracker = params.tracker;
+  needCalcMd5 && tracker && tracker.setParams({
+    md5StartTime: new Date().getTime()
+  });
+  util.getBodyMd5(needCalcMd5, params.Body, function (md5) {
+    if (md5) {
+      tracker && tracker.setParams({
+        md5EndTime: new Date().getTime()
+      });
+      if (self.options.UploadCheckContentMd5) headers['Content-MD5'] = util.binaryBase64(md5);
+      if (params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5) headers['x-cos-meta-md5'] = md5;
+    }
+
     if (params.ContentLength !== undefined) headers['Content-Length'] = params.ContentLength;
     onProgress(null, true); // 任务状态开始 uploading
 
@@ -9153,7 +9972,8 @@ function putObject(params, callback) {
       headers: params.Headers,
       qs: params.Query,
       body: params.Body,
-      onProgress: onProgress
+      onProgress: onProgress,
+      tracker: tracker
     }, function (err, data) {
       if (err) {
         onProgress(null, true);
@@ -9837,7 +10657,8 @@ function deleteObjectTagging(params, callback) {
 
 function multipartInit(params, callback) {
   var self = this;
-  var headers = params.Headers; // 特殊处理 Cache-Control、Content-Type
+  var headers = params.Headers;
+  var tracker = params.tracker; // 特殊处理 Cache-Control、Content-Type
 
   if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
   if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = mime.getType(params.Key) || 'application/octet-stream';
@@ -9849,9 +10670,16 @@ function multipartInit(params, callback) {
     Key: params.Key,
     action: 'uploads',
     headers: params.Headers,
-    qs: params.Query
+    qs: params.Query,
+    tracker: tracker
   }, function (err, data) {
-    if (err) return callback(err);
+    if (err) {
+      tracker && tracker.parent && tracker.parent.setParams({
+        errorNode: 'multipartInit'
+      });
+      return callback(err);
+    }
+
     data = util.clone(data || {});
 
     if (data && data.InitiateMultipartUploadResult) {
@@ -9885,8 +10713,22 @@ function multipartInit(params, callback) {
 function multipartUpload(params, callback) {
   var self = this;
   util.getFileSize('multipartUpload', params, function () {
-    util.getBodyMd5(self.options.UploadCheckContentMd5, params.Body, function (md5) {
-      if (md5) params.Headers['Content-MD5'] = util.binaryBase64(md5);
+    var tracker = params.tracker;
+    var needCalcMd5 = self.options.UploadCheckContentMd5;
+    needCalcMd5 && tracker && tracker.setParams({
+      md5StartTime: new Date().getTime()
+    });
+    util.getBodyMd5(needCalcMd5, params.Body, function (md5) {
+      if (md5) {
+        params.Headers['Content-MD5'] = util.binaryBase64(md5);
+        needCalcMd5 && tracker && tracker.setParams({
+          md5EndTime: new Date().getTime()
+        });
+      }
+
+      tracker && tracker.setParams({
+        partNumber: params.PartNumber
+      });
       submitRequest.call(self, {
         Action: 'name/cos:UploadPart',
         TaskId: params.TaskId,
@@ -9900,9 +10742,16 @@ function multipartUpload(params, callback) {
         },
         headers: params.Headers,
         onProgress: params.onProgress,
-        body: params.Body || null
+        body: params.Body || null,
+        tracker: tracker
       }, function (err, data) {
-        if (err) return callback(err);
+        if (err) {
+          tracker && tracker.parent && tracker.parent.setParams({
+            errorNode: 'multipartUpload'
+          });
+          return callback(err);
+        }
+
         callback(null, {
           ETag: util.attr(data.headers, 'etag', {}),
           statusCode: data.statusCode,
@@ -9932,6 +10781,7 @@ function multipartComplete(params, callback) {
   var self = this;
   var UploadId = params.UploadId;
   var Parts = params['Parts'];
+  var tracker = params.tracker;
 
   for (var i = 0, len = Parts.length; i < len; i++) {
     if (Parts[i]['ETag'].indexOf('"') === 0) {
@@ -9959,9 +10809,16 @@ function multipartComplete(params, callback) {
       uploadId: UploadId
     },
     body: xml,
-    headers: headers
+    headers: headers,
+    tracker: tracker
   }, function (err, data) {
-    if (err) return callback(err);
+    if (err) {
+      tracker && tracker.parent && tracker.parent.setParams({
+        errorNode: 'multipartComplete'
+      });
+      return callback(err);
+    }
+
     var url = getUrl({
       ForcePathStyle: self.options.ForcePathStyle,
       protocol: self.options.Protocol,
@@ -10007,6 +10864,10 @@ function multipartList(params, callback) {
   reqParams['key-marker'] = params['KeyMarker'];
   reqParams['upload-id-marker'] = params['UploadIdMarker'];
   reqParams = util.clearKey(reqParams);
+  var tracker = params.tracker;
+  tracker && tracker.setParams({
+    signStartTime: new Date().getTime()
+  });
   submitRequest.call(this, {
     Action: 'name/cos:ListMultipartUploads',
     ResourceKey: reqParams['prefix'],
@@ -10015,9 +10876,15 @@ function multipartList(params, callback) {
     Region: params.Region,
     headers: params.Headers,
     qs: reqParams,
-    action: 'uploads'
+    action: 'uploads',
+    tracker: tracker
   }, function (err, data) {
-    if (err) return callback(err);
+    if (err) {
+      tracker && tracker.parent && tracker.parent.setParams({
+        errorNode: 'multipartList'
+      });
+      return callback(err);
+    }
 
     if (data && data.ListMultipartUploadsResult) {
       var Upload = data.ListMultipartUploadsResult.Upload || [];
@@ -10068,7 +10935,13 @@ function multipartListPart(params, callback) {
     headers: params.Headers,
     qs: reqParams
   }, function (err, data) {
-    if (err) return callback(err);
+    if (err) {
+      tracker && tracker.parent && tracker.parent.setParams({
+        errorNode: 'multipartListPart'
+      });
+      return callback(err);
+    }
+
     var ListPartsResult = data.ListPartsResult || {};
     var Part = ListPartsResult.Part || [];
     Part = util.isArray(Part) ? Part : [Part];
@@ -10749,9 +11622,14 @@ function submitRequest(params, callback) {
     Region: params.Region,
     Url: paramsUrl
   });
+  var tracker = params.tracker;
 
   var next = function next(tryTimes) {
     var oldClockOffset = self.options.SystemClockOffset;
+    tracker && tracker.setParams({
+      signStartTime: new Date().getTime(),
+      retryTimes: tryTimes - 1
+    });
     getAuthorizationAsync.call(self, {
       Bucket: params.Bucket || '',
       Region: params.Region || '',
@@ -10770,16 +11648,25 @@ function submitRequest(params, callback) {
         return;
       }
 
+      tracker && tracker.setParams({
+        signEndTime: new Date().getTime(),
+        httpStartTime: new Date().getTime()
+      });
       params.AuthData = AuthData;
 
       _submitRequest.call(self, params, function (err, data) {
+        tracker && tracker.setParams({
+          httpEndTime: new Date().getTime()
+        });
+
         if (err && tryTimes < 2 && (oldClockOffset !== self.options.SystemClockOffset || allowRetry.call(self, err))) {
           if (params.headers) {
             delete params.headers.Authorization;
             delete params.headers['token'];
             delete params.headers['clientIP'];
             delete params.headers['clientUA'];
-            delete params.headers['x-cos-security-token'];
+            params.headers['x-cos-security-token'] && delete params.headers['x-cos-security-token'];
+            params.headers['x-ci-security-token'] && delete params.headers['x-ci-security-token'];
           }
 
           next(tryTimes + 1);
@@ -10877,6 +11764,20 @@ function _submitRequest(params, callback) {
 
   self.options.ForcePathStyle && (opt.pathStyle = self.options.ForcePathStyle);
   self.emit('before-send', opt);
+  var useAccelerate = opt.url.includes('accelerate.');
+  var queryString = Object.keys(opt.qs).map(function (key) {
+    return "".concat(key, "=").concat(opt.qs[key]);
+  }).join('&');
+  var fullUrl = queryString ? opt.url + '?' + queryString : opt.url;
+  params.tracker && params.tracker.setParams({
+    reqUrl: fullUrl,
+    accelerate: useAccelerate ? 'Y' : 'N'
+  }); // 分块上传时给父级tracker设置url信息
+
+  params.tracker && params.tracker.parent && params.tracker.parent.setParams({
+    reqUrl: fullUrl,
+    accelerate: useAccelerate ? 'Y' : 'N'
+  });
   var sender = REQUEST(opt, function (err, response, body) {
     if (err === 'abort') return; // 返回内容添加 状态码 和 headers
 
@@ -11077,6 +11978,8 @@ var base = __webpack_require__(/*! ./base */ "./src/base.js");
 
 var advance = __webpack_require__(/*! ./advance */ "./src/advance.js");
 
+var pkg = __webpack_require__(/*! ../package.json */ "./package.json");
+
 var defaultOptions = {
   SecretId: '',
   SecretKey: '',
@@ -11104,13 +12007,22 @@ var defaultOptions = {
   SystemClockOffset: 0,
   // 单位毫秒，ms
   UploadCheckContentMd5: false,
+  UploadAddMetaMd5: false,
   UploadIdCacheLimit: 50,
   UseAccelerate: false,
   ForceSignHost: true,
   // 默认将host加入签名计算，关闭后可能导致越权风险，建议保持为true
   HttpDNSServiceId: '',
   // HttpDNS 服务商 Id,填写后代表开启 HttpDNS 服务。HttpDNS 用法详见https://developers.weixin.qq.com/miniprogram/dev/framework/ability/HTTPDNS.html
-  SimpleUploadMethod: 'postObject' // 高级上传内部判断需要走简单上传时，指定的上传方法，可选postObject或putObject
+  SimpleUploadMethod: 'postObject',
+  // 高级上传内部判断需要走简单上传时，指定的上传方法，可选postObject或putObject
+  EnableTracker: false,
+  // 默认关闭上报 
+  DeepTracker: false,
+  // 上报时是否对每个分块上传做单独上报
+  TrackerDelay: 5000,
+  // 周期性上报，单位毫秒。0代表实时上报
+  CustomId: '' // 自定义上报id
 
 }; // 对外暴露的类
 
@@ -11152,7 +12064,7 @@ COS.util = {
   json2xml: util.json2xml
 };
 COS.getAuthorization = util.getAuth;
-COS.version = '1.3.0';
+COS.version = pkg.version;
 module.exports = COS;
 
 /***/ }),
@@ -11627,6 +12539,399 @@ module.exports.init = initTask;
 
 /***/ }),
 
+/***/ "./src/tracker.js":
+/*!************************!*\
+  !*** ./src/tracker.js ***!
+  \************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+function _regeneratorRuntime() { "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */ _regeneratorRuntime = function _regeneratorRuntime() { return exports; }; var exports = {}, Op = Object.prototype, hasOwn = Op.hasOwnProperty, $Symbol = "function" == typeof Symbol ? Symbol : {}, iteratorSymbol = $Symbol.iterator || "@@iterator", asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator", toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag"; function define(obj, key, value) { return Object.defineProperty(obj, key, { value: value, enumerable: !0, configurable: !0, writable: !0 }), obj[key]; } try { define({}, ""); } catch (err) { define = function define(obj, key, value) { return obj[key] = value; }; } function wrap(innerFn, outerFn, self, tryLocsList) { var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator, generator = Object.create(protoGenerator.prototype), context = new Context(tryLocsList || []); return generator._invoke = function (innerFn, self, context) { var state = "suspendedStart"; return function (method, arg) { if ("executing" === state) throw new Error("Generator is already running"); if ("completed" === state) { if ("throw" === method) throw arg; return doneResult(); } for (context.method = method, context.arg = arg;;) { var delegate = context.delegate; if (delegate) { var delegateResult = maybeInvokeDelegate(delegate, context); if (delegateResult) { if (delegateResult === ContinueSentinel) continue; return delegateResult; } } if ("next" === context.method) context.sent = context._sent = context.arg;else if ("throw" === context.method) { if ("suspendedStart" === state) throw state = "completed", context.arg; context.dispatchException(context.arg); } else "return" === context.method && context.abrupt("return", context.arg); state = "executing"; var record = tryCatch(innerFn, self, context); if ("normal" === record.type) { if (state = context.done ? "completed" : "suspendedYield", record.arg === ContinueSentinel) continue; return { value: record.arg, done: context.done }; } "throw" === record.type && (state = "completed", context.method = "throw", context.arg = record.arg); } }; }(innerFn, self, context), generator; } function tryCatch(fn, obj, arg) { try { return { type: "normal", arg: fn.call(obj, arg) }; } catch (err) { return { type: "throw", arg: err }; } } exports.wrap = wrap; var ContinueSentinel = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} var IteratorPrototype = {}; define(IteratorPrototype, iteratorSymbol, function () { return this; }); var getProto = Object.getPrototypeOf, NativeIteratorPrototype = getProto && getProto(getProto(values([]))); NativeIteratorPrototype && NativeIteratorPrototype !== Op && hasOwn.call(NativeIteratorPrototype, iteratorSymbol) && (IteratorPrototype = NativeIteratorPrototype); var Gp = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(IteratorPrototype); function defineIteratorMethods(prototype) { ["next", "throw", "return"].forEach(function (method) { define(prototype, method, function (arg) { return this._invoke(method, arg); }); }); } function AsyncIterator(generator, PromiseImpl) { function invoke(method, arg, resolve, reject) { var record = tryCatch(generator[method], generator, arg); if ("throw" !== record.type) { var result = record.arg, value = result.value; return value && "object" == _typeof(value) && hasOwn.call(value, "__await") ? PromiseImpl.resolve(value.__await).then(function (value) { invoke("next", value, resolve, reject); }, function (err) { invoke("throw", err, resolve, reject); }) : PromiseImpl.resolve(value).then(function (unwrapped) { result.value = unwrapped, resolve(result); }, function (error) { return invoke("throw", error, resolve, reject); }); } reject(record.arg); } var previousPromise; this._invoke = function (method, arg) { function callInvokeWithMethodAndArg() { return new PromiseImpl(function (resolve, reject) { invoke(method, arg, resolve, reject); }); } return previousPromise = previousPromise ? previousPromise.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg(); }; } function maybeInvokeDelegate(delegate, context) { var method = delegate.iterator[context.method]; if (undefined === method) { if (context.delegate = null, "throw" === context.method) { if (delegate.iterator["return"] && (context.method = "return", context.arg = undefined, maybeInvokeDelegate(delegate, context), "throw" === context.method)) return ContinueSentinel; context.method = "throw", context.arg = new TypeError("The iterator does not provide a 'throw' method"); } return ContinueSentinel; } var record = tryCatch(method, delegate.iterator, context.arg); if ("throw" === record.type) return context.method = "throw", context.arg = record.arg, context.delegate = null, ContinueSentinel; var info = record.arg; return info ? info.done ? (context[delegate.resultName] = info.value, context.next = delegate.nextLoc, "return" !== context.method && (context.method = "next", context.arg = undefined), context.delegate = null, ContinueSentinel) : info : (context.method = "throw", context.arg = new TypeError("iterator result is not an object"), context.delegate = null, ContinueSentinel); } function pushTryEntry(locs) { var entry = { tryLoc: locs[0] }; 1 in locs && (entry.catchLoc = locs[1]), 2 in locs && (entry.finallyLoc = locs[2], entry.afterLoc = locs[3]), this.tryEntries.push(entry); } function resetTryEntry(entry) { var record = entry.completion || {}; record.type = "normal", delete record.arg, entry.completion = record; } function Context(tryLocsList) { this.tryEntries = [{ tryLoc: "root" }], tryLocsList.forEach(pushTryEntry, this), this.reset(!0); } function values(iterable) { if (iterable) { var iteratorMethod = iterable[iteratorSymbol]; if (iteratorMethod) return iteratorMethod.call(iterable); if ("function" == typeof iterable.next) return iterable; if (!isNaN(iterable.length)) { var i = -1, next = function next() { for (; ++i < iterable.length;) { if (hasOwn.call(iterable, i)) return next.value = iterable[i], next.done = !1, next; } return next.value = undefined, next.done = !0, next; }; return next.next = next; } } return { next: doneResult }; } function doneResult() { return { value: undefined, done: !0 }; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, define(Gp, "constructor", GeneratorFunctionPrototype), define(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, toStringTagSymbol, "GeneratorFunction"), exports.isGeneratorFunction = function (genFun) { var ctor = "function" == typeof genFun && genFun.constructor; return !!ctor && (ctor === GeneratorFunction || "GeneratorFunction" === (ctor.displayName || ctor.name)); }, exports.mark = function (genFun) { return Object.setPrototypeOf ? Object.setPrototypeOf(genFun, GeneratorFunctionPrototype) : (genFun.__proto__ = GeneratorFunctionPrototype, define(genFun, toStringTagSymbol, "GeneratorFunction")), genFun.prototype = Object.create(Gp), genFun; }, exports.awrap = function (arg) { return { __await: arg }; }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, asyncIteratorSymbol, function () { return this; }), exports.AsyncIterator = AsyncIterator, exports.async = function (innerFn, outerFn, self, tryLocsList, PromiseImpl) { void 0 === PromiseImpl && (PromiseImpl = Promise); var iter = new AsyncIterator(wrap(innerFn, outerFn, self, tryLocsList), PromiseImpl); return exports.isGeneratorFunction(outerFn) ? iter : iter.next().then(function (result) { return result.done ? result.value : iter.next(); }); }, defineIteratorMethods(Gp), define(Gp, toStringTagSymbol, "Generator"), define(Gp, iteratorSymbol, function () { return this; }), define(Gp, "toString", function () { return "[object Generator]"; }), exports.keys = function (object) { var keys = []; for (var key in object) { keys.push(key); } return keys.reverse(), function next() { for (; keys.length;) { var key = keys.pop(); if (key in object) return next.value = key, next.done = !1, next; } return next.done = !0, next; }; }, exports.values = values, Context.prototype = { constructor: Context, reset: function reset(skipTempReset) { if (this.prev = 0, this.next = 0, this.sent = this._sent = undefined, this.done = !1, this.delegate = null, this.method = "next", this.arg = undefined, this.tryEntries.forEach(resetTryEntry), !skipTempReset) for (var name in this) { "t" === name.charAt(0) && hasOwn.call(this, name) && !isNaN(+name.slice(1)) && (this[name] = undefined); } }, stop: function stop() { this.done = !0; var rootRecord = this.tryEntries[0].completion; if ("throw" === rootRecord.type) throw rootRecord.arg; return this.rval; }, dispatchException: function dispatchException(exception) { if (this.done) throw exception; var context = this; function handle(loc, caught) { return record.type = "throw", record.arg = exception, context.next = loc, caught && (context.method = "next", context.arg = undefined), !!caught; } for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i], record = entry.completion; if ("root" === entry.tryLoc) return handle("end"); if (entry.tryLoc <= this.prev) { var hasCatch = hasOwn.call(entry, "catchLoc"), hasFinally = hasOwn.call(entry, "finallyLoc"); if (hasCatch && hasFinally) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } else if (hasCatch) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); } else { if (!hasFinally) throw new Error("try statement without catch or finally"); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } } } }, abrupt: function abrupt(type, arg) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc <= this.prev && hasOwn.call(entry, "finallyLoc") && this.prev < entry.finallyLoc) { var finallyEntry = entry; break; } } finallyEntry && ("break" === type || "continue" === type) && finallyEntry.tryLoc <= arg && arg <= finallyEntry.finallyLoc && (finallyEntry = null); var record = finallyEntry ? finallyEntry.completion : {}; return record.type = type, record.arg = arg, finallyEntry ? (this.method = "next", this.next = finallyEntry.finallyLoc, ContinueSentinel) : this.complete(record); }, complete: function complete(record, afterLoc) { if ("throw" === record.type) throw record.arg; return "break" === record.type || "continue" === record.type ? this.next = record.arg : "return" === record.type ? (this.rval = this.arg = record.arg, this.method = "return", this.next = "end") : "normal" === record.type && afterLoc && (this.next = afterLoc), ContinueSentinel; }, finish: function finish(finallyLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.finallyLoc === finallyLoc) return this.complete(entry.completion, entry.afterLoc), resetTryEntry(entry), ContinueSentinel; } }, "catch": function _catch(tryLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc === tryLoc) { var record = entry.completion; if ("throw" === record.type) { var thrown = record.arg; resetTryEntry(entry); } return thrown; } } throw new Error("illegal catch attempt"); }, delegateYield: function delegateYield(iterable, resultName, nextLoc) { return this.delegate = { iterator: values(iterable), resultName: resultName, nextLoc: nextLoc }, "next" === this.method && (this.arg = undefined), ContinueSentinel; } }, exports; }
+
+function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
+
+function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+var pkg = __webpack_require__(/*! ../package.json */ "./package.json");
+
+var BeaconAction = __webpack_require__(/*! ../lib/beacon_mp.min */ "./lib/beacon_mp.min.js");
+
+var beacon = null;
+
+var getBeacon = function getBeacon(delay) {
+  if (!beacon) {
+    beacon = new BeaconAction({
+      appkey: "0AND0VEVB24UBGDU",
+      versionCode: pkg.version,
+      channelID: 'mp_sdk',
+      //渠道,选填
+      openid: 'openid',
+      // 用户id, 选填
+      unionid: 'unid',
+      //用户unionid , 类似idfv,选填
+      strictMode: false,
+      //严苛模式开关, 打开严苛模式会主动抛出异常, 上线请务必关闭!!!
+      delay: delay,
+      // 普通事件延迟上报时间(单位毫秒), 默认1000(1秒),选填
+      sessionDuration: 60 * 1000 // session变更的时间间隔, 一个用户持续30分钟(默认值)没有任何上报则算另一次 session,每变更一次session上报一次启动事件(rqd_applaunched),使用毫秒(ms),最小值30秒,选填
+
+    });
+  }
+
+  return beacon;
+};
+
+var utils = {
+  // 生成uid 每个链路对应唯一一条uid
+  getUid: function getUid() {
+    var S4 = function S4() {
+      return ((1 + Math.random()) * 0x10000 | 0).toString(16).substring(1);
+    };
+
+    return S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4();
+  },
+  // 获取网络类型
+  getNetType: function getNetType() {
+    return new Promise(function (resolve) {
+      if (wx.canIUse('getNetworkType')) {
+        try {
+          wx.getNetworkType({
+            success: function success(res) {
+              resolve(res.networkType);
+            }
+          });
+        } catch (e) {
+          resolve('can_not_get_network_type');
+        }
+      } else {
+        resolve('can_not_get_network_type');
+      }
+    });
+  },
+  // 获取系统信息
+  getSystemInfo: function getSystemInfo() {
+    var defaultInfo = {
+      devicePlatform: '',
+      wxVersion: '',
+      wxSystem: '',
+      wxSdkVersion: ''
+    };
+    return new Promise(function (resolve) {
+      if (wx.canIUse('getSystemInfo')) {
+        try {
+          wx.getSystemInfo({
+            success: function success(res) {
+              var platform = res.platform,
+                  version = res.version,
+                  system = res.system,
+                  SDKVersion = res.SDKVersion;
+              Object.assign(defaultInfo, {
+                devicePlatform: platform,
+                wxVersion: version,
+                wxSystem: system,
+                wxSdkVersion: SDKVersion
+              });
+              resolve(defaultInfo);
+            }
+          });
+        } catch (e) {
+          resolve({
+            devicePlatform: 'can_not_get_system_info',
+            wxVersion: 'can_not_get_system_info',
+            wxSystem: 'can_not_get_system_info',
+            wxSdkVersion: 'can_not_get_system_info'
+          });
+        }
+      } else {
+        resolve({
+          devicePlatform: 'can_not_get_system_info',
+          wxVersion: 'can_not_get_system_info',
+          wxSystem: 'can_not_get_system_info',
+          wxSdkVersion: 'can_not_get_system_info'
+        });
+      }
+    });
+  }
+}; // 设备信息，只取一次值
+
+var deviceInfo = {
+  // ↓上报项
+  devicePlatform: '',
+  // ios/anroid/windows/mac/devtools
+  wxVersion: '',
+  wxSystem: '',
+  wxSdkVersion: ''
+};
+utils.getSystemInfo().then(function (res) {
+  Object.assign(deviceInfo, res);
+}); // 分块上传原子方法
+
+var sliceUploadMethods = ['multipartInit', 'multipartUpload', 'multipartComplete', 'multipartList', 'multipartListPart', 'multipartAbort'];
+var uploadApi = ['putObject', 'postObject', 'appendObject', 'sliceUploadFile', 'uploadFile', 'uploadFiles'].concat(sliceUploadMethods);
+var downloadApi = ['getObject'];
+
+function getEventCode(apiName) {
+  if (uploadApi.includes(apiName)) {
+    return 'cos_upload';
+  }
+
+  if (downloadApi.includes(apiName)) {
+    return 'cos_download';
+  }
+
+  return 'base_service';
+} // 上报参数驼峰改下划线
+
+
+function camel2underline(key) {
+  return key.replace(/([A-Z])/g, "_$1").toLowerCase();
+}
+
+function formatParams(params) {
+  var formattedParams = {};
+  var allReporterKeys = ['tracePlatform', 'cossdkVersion', 'region', 'networkType', 'host', 'accelerate', 'requestPath', 'size', 'httpMd5', 'httpSign', 'httpFull', 'name', 'result', 'tookTime', 'errorNode', 'errorCode', 'errorMessage', 'errorRequestId', 'errorStatusCode', 'errorServiceName', 'errorType', 'traceId', 'bucket', 'appid', 'partNumber', 'retryTimes', 'reqUrl', 'customId', 'fullError', 'devicePlatform', 'wxVersion', 'wxSystem', 'wxSdkVersion'];
+  var successKeys = ['tracePlatform', 'cossdkVersion', 'region', 'bucket', 'appid', 'networkType', 'host', 'accelerate', 'requestPath', 'partNumber', 'size', 'name', 'result', 'tookTime', 'errorRequestId', 'retryTimes', 'reqUrl', 'customId', 'devicePlatform', 'wxVersion', 'wxSystem', 'wxSdkVersion']; // 需要上报的参数字段
+
+  var reporterKeys = params.result === 'Success' ? successKeys : allReporterKeys;
+
+  for (var key in params) {
+    if (!reporterKeys.includes(key)) continue;
+    var formattedKey = camel2underline(key);
+    formattedParams[formattedKey] = params[key];
+  }
+
+  return formattedParams;
+} // 链路追踪器
+
+
+var Tracker = /*#__PURE__*/function () {
+  function Tracker(opt) {
+    _classCallCheck(this, Tracker);
+
+    var parent = opt.parent,
+        traceId = opt.traceId,
+        bucket = opt.bucket,
+        region = opt.region,
+        apiName = opt.apiName,
+        fileKey = opt.fileKey,
+        fileSize = opt.fileSize,
+        accelerate = opt.accelerate,
+        customId = opt.customId,
+        delay = opt.delay,
+        deepTracker = opt.deepTracker;
+    var appid = bucket && bucket.substr(bucket.lastIndexOf('-') + 1) || '';
+    this.parent = parent;
+    this.deepTracker = deepTracker; // 上报用到的字段
+
+    this.params = {
+      // 通用字段
+      cossdkVersion: pkg.version,
+      region: region,
+      networkType: '',
+      host: '',
+      accelerate: accelerate ? 'Y' : 'N',
+      requestPath: fileKey || '',
+      size: fileSize || -1,
+      httpMd5: 0,
+      // MD5耗时
+      httpSign: 0,
+      // 计算签名耗时
+      httpFull: 0,
+      // http请求耗时
+      name: apiName || '',
+      result: '',
+      // sdk api调用结果Success、Fail
+      tookTime: 0,
+      // 总耗时
+      errorNode: '',
+      errorCode: '',
+      errorMessage: '',
+      errorRequestId: '',
+      errorStatusCode: 0,
+      errorServiceName: '',
+      // 小程序补充字段
+      tracePlatform: 'cos-wx-sdk-v5',
+      // 上报平台=小程序
+      traceId: traceId || utils.getUid(),
+      // 每条上报唯一标识
+      bucket: bucket,
+      appid: appid,
+      partNumber: 0,
+      // 分块上传编号
+      retryTimes: 0,
+      // sdk内部发起的请求重试
+      reqUrl: '',
+      // 请求url
+      customId: customId || '',
+      // 业务id
+      devicePlatform: deviceInfo.devicePlatform,
+      wxVersion: deviceInfo.wxVersion,
+      wxSystem: deviceInfo.wxSystem,
+      wxSdkVersion: deviceInfo.wxSdkVersion,
+      md5StartTime: 0,
+      // md5计算开始时间
+      md5EndTime: 0,
+      // md5计算结束时间
+      signStartTime: 0,
+      // 计算签名开始时间
+      signEndTime: 0,
+      // 计算签名结束时间
+      httpStartTime: 0,
+      // 发起网络请求开始时间
+      httpEndTime: 0,
+      // 网路请求结束时间
+      startTime: new Date().getTime(),
+      // sdk api调用起始时间，不是纯网络耗时
+      endTime: 0 //  sdk api调用结束时间，不是纯网络耗时
+
+    };
+    this.beacon = getBeacon(delay);
+  } // 格式化sdk回调
+
+
+  _createClass(Tracker, [{
+    key: "formatResult",
+    value: function () {
+      var _formatResult = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee(err, data) {
+        var _err$error, _err$error2, _err$error3;
+
+        var now, tookTime, networkType, errorCode, errorMessage, errorStatusCode, errorServiceName, requestId, errorType, exec;
+        return _regeneratorRuntime().wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                now = new Date().getTime();
+                tookTime = now - this.params.startTime;
+                _context.next = 4;
+                return utils.getNetType();
+
+              case 4:
+                networkType = _context.sent;
+                errorCode = err ? err === null || err === void 0 ? void 0 : (_err$error = err.error) === null || _err$error === void 0 ? void 0 : _err$error.Code : '';
+                errorMessage = err ? err === null || err === void 0 ? void 0 : (_err$error2 = err.error) === null || _err$error2 === void 0 ? void 0 : _err$error2.Message : '';
+                errorStatusCode = err ? err === null || err === void 0 ? void 0 : err.statusCode : data.statusCode;
+                errorServiceName = err ? err === null || err === void 0 ? void 0 : (_err$error3 = err.error) === null || _err$error3 === void 0 ? void 0 : _err$error3.Resource : '';
+                requestId = err ? (err === null || err === void 0 ? void 0 : err.headers) && (err === null || err === void 0 ? void 0 : err.headers['x-cos-request-id']) : (data === null || data === void 0 ? void 0 : data.headers) && (data === null || data === void 0 ? void 0 : data.headers['x-cos-request-id']);
+                errorType = err ? requestId ? 'Server' : 'Client' : '';
+                Object.assign(this.params, {
+                  tookTime: tookTime,
+                  networkType: networkType,
+                  httpMd5: this.params.md5EndTime - this.params.md5StartTime,
+                  httpSign: this.params.signEndTime - this.params.signStartTime,
+                  httpFull: this.params.httpEndTime - this.params.httpStartTime,
+                  result: err ? 'Fail' : 'Success',
+                  errorType: errorType,
+                  errorCode: errorCode,
+                  errorStatusCode: errorStatusCode,
+                  errorMessage: errorMessage,
+                  errorServiceName: errorServiceName,
+                  errorRequestId: requestId
+                });
+
+                if (err && (!errorCode || !errorMessage)) {
+                  // 暂存全量err一段时间 观察是否所有err格式都可被解析
+                  this.params.fullError = err ? JSON.stringify(err) : '';
+                }
+
+                if (this.params.name === 'getObject') {
+                  this.params.size = data ? data.headers && data.headers['content-length'] : -1;
+                }
+
+                if (this.params.reqUrl) {
+                  try {
+                    exec = /^http(s)?:\/\/(.*?)\//.exec(this.params.reqUrl);
+                    this.params.host = exec[2];
+                  } catch (e) {
+                    this.params.host = this.params.reqUrl;
+                  }
+                }
+
+                this.sendEvents();
+
+              case 16:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee, this);
+      }));
+
+      function formatResult(_x, _x2) {
+        return _formatResult.apply(this, arguments);
+      }
+
+      return formatResult;
+    }() // 设置当前链路的参数
+
+  }, {
+    key: "setParams",
+    value: function setParams(params) {
+      Object.assign(this.params, params);
+    } // 使用灯塔延时上报
+
+  }, {
+    key: "sendEvents",
+    value: function sendEvents() {
+      // DeepTracker模式下才会上报分块上传内部细节
+      if (sliceUploadMethods.includes(this.params.name) && !this.deepTracker) {
+        return;
+      }
+
+      var eventCode = getEventCode(this.params.name);
+      var formattedParams = formatParams(this.params);
+      console.log(eventCode, formattedParams);
+
+      if (this.params.delay === 0) {
+        // 实时上报
+        this.beacon.onDirectUserAction(eventCode, formattedParams);
+      } else {
+        // 周期性上报
+        this.beacon.onUserAction(eventCode, formattedParams);
+      } // 上报结束即销毁
+
+
+      this.destroy();
+    } // 生成子实例，与父所属一个链路，可用于分块上传内部流程上报单个分块操作
+
+  }, {
+    key: "generateSubTracker",
+    value: function generateSubTracker(subParams) {
+      Object.assign(subParams, {
+        parent: this,
+        deepTracker: this.deepTracker,
+        traceId: this.params.traceId,
+        bucket: this.params.bucket,
+        region: this.params.region,
+        fileKey: this.params.requestPath,
+        customId: this.params.customId,
+        delay: this.params.delay
+      });
+      return new Tracker(subParams);
+    } // 链路结束后销毁实例
+
+  }, {
+    key: "destroy",
+    value: function destroy() {
+      this.beacon = null;
+      this.params = {};
+    }
+  }]);
+
+  return Tracker;
+}();
+
+module.exports = Tracker;
+
+/***/ }),
+
 /***/ "./src/util.js":
 /*!*********************!*\
   !*** ./src/util.js ***!
@@ -11657,6 +12962,8 @@ var base64 = __webpack_require__(/*! ../lib/base64 */ "./lib/base64.js");
 
 var btoa = base64.btoa;
 var wxfs = wx.getFileSystemManager();
+
+var Tracker = __webpack_require__(/*! ./tracker */ "./src/tracker.js");
 
 function camSafeUrlEncode(str) {
   return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/\*/g, '%2A');
@@ -11996,6 +13303,8 @@ var formatParams = function formatParams(apiName, params) {
         'x-cos-grant-read-acp': 'GrantReadAcp',
         'x-cos-grant-write-acp': 'GrantWriteAcp',
         'x-cos-storage-class': 'StorageClass',
+        'x-cos-traffic-limit': 'TrafficLimit',
+        'x-cos-mime-limit': 'MimeLimit',
         // SSE-C
         'x-cos-server-side-encryption-customer-algorithm': 'SSECustomerAlgorithm',
         'x-cos-server-side-encryption-customer-key': 'SSECustomerKey',
@@ -12027,7 +13336,40 @@ var apiWrapper = function apiWrapper(apiName, apiFn) {
     } // 整理参数格式
 
 
-    params = formatParams(apiName, params); // 代理回调函数
+    params = formatParams(apiName, params); // tracker传递
+
+    var tracker;
+
+    if (self.options.EnableTracker) {
+      if (params.calledBySdk === 'sliceUploadFile') {
+        // 分块上传内部方法使用sliceUploadFile的子链路
+        tracker = params.tracker && params.tracker.generateSubTracker({
+          apiName: apiName
+        });
+      } else if (['uploadFile', 'uploadFiles'].includes(apiName)) {
+        // uploadFile、uploadFiles方法在内部处理，此处不处理
+        tracker = null;
+      } else {
+        var fileSize = -1;
+
+        if (params.Body) {
+          fileSize = typeof params.Body === 'string' ? params.Body.length : params.Body.size || params.Body.byteLength || -1;
+        }
+
+        tracker = new Tracker({
+          bucket: params.Bucket,
+          region: params.Region,
+          apiName: apiName,
+          fileKey: params.Key,
+          fileSize: fileSize,
+          deepTracker: self.options.DeepTracker,
+          customId: self.options.CustomId,
+          delay: self.options.TrackerDelay
+        });
+      }
+    }
+
+    params.tracker = tracker; // 代理回调函数
 
     var formatResult = function formatResult(result) {
       if (result && result.headers) {
@@ -12041,6 +13383,8 @@ var apiWrapper = function apiWrapper(apiName, apiFn) {
     };
 
     var _callback = function _callback(err, data) {
+      // 格式化上报参数并上报
+      tracker && tracker.formatResult(err, data);
       callback && callback(formatResult(err), formatResult(data));
     };
 
