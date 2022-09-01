@@ -6450,7 +6450,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, scripts, repository, author, license, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.4.0\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"mime\":\"^2.4.6\",\"@xmldom/xmldom\":\"^0.8.2\"},\"devDependencies\":{\"babel-core\":\"6.26.3\",\"babel-loader\":\"8.2.5\",\"@babel/preset-env\":\"7.16.11\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.4.1\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"mime\":\"^2.4.6\",\"@xmldom/xmldom\":\"^0.8.2\"},\"devDependencies\":{\"babel-core\":\"6.26.3\",\"babel-loader\":\"8.2.5\",\"@babel/preset-env\":\"7.16.11\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -10922,6 +10922,7 @@ function multipartList(params, callback) {
 
 function multipartListPart(params, callback) {
   var reqParams = {};
+  var tracker = params.tracker;
   reqParams['uploadId'] = params['UploadId'];
   reqParams['encoding-type'] = params['EncodingType'];
   reqParams['max-parts'] = params['MaxParts'];
@@ -10933,7 +10934,8 @@ function multipartListPart(params, callback) {
     Region: params.Region,
     Key: params.Key,
     headers: params.Headers,
-    qs: reqParams
+    qs: reqParams,
+    tracker: tracker
   }, function (err, data) {
     if (err) {
       tracker && tracker.parent && tracker.parent.setParams({
@@ -11765,9 +11767,9 @@ function _submitRequest(params, callback) {
   self.options.ForcePathStyle && (opt.pathStyle = self.options.ForcePathStyle);
   self.emit('before-send', opt);
   var useAccelerate = opt.url.includes('accelerate.');
-  var queryString = Object.keys(opt.qs).map(function (key) {
+  var queryString = opt.qs ? Object.keys(opt.qs).map(function (key) {
     return "".concat(key, "=").concat(opt.qs[key]);
-  }).join('&');
+  }).join('&') : '';
   var fullUrl = queryString ? opt.url + '?' + queryString : opt.url;
   params.tracker && params.tracker.setParams({
     reqUrl: fullUrl,
