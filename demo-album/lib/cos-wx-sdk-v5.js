@@ -6450,7 +6450,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, scripts, repository, author, license, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.4.1\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"mime\":\"^2.4.6\",\"@xmldom/xmldom\":\"^0.8.2\"},\"devDependencies\":{\"babel-core\":\"6.26.3\",\"babel-loader\":\"8.2.5\",\"@babel/preset-env\":\"7.16.11\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.4.2\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"mime\":\"^2.4.6\",\"@xmldom/xmldom\":\"^0.8.2\"},\"devDependencies\":{\"babel-core\":\"6.26.3\",\"babel-loader\":\"8.2.5\",\"@babel/preset-env\":\"7.16.11\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -7395,7 +7395,7 @@ function uploadFile(params, callback) {
   }; // 上传链路
 
   if (self.options.EnableTracker) {
-    var accelerate = self.options.UseAccelerate || self.options.Domain.includes('accelerate.');
+    var accelerate = self.options.UseAccelerate || typeof self.options.Domain === 'string' && self.options.Domain.includes('accelerate.');
     params.tracker = new Tracker({
       bucket: params.Bucket,
       region: params.Region,
@@ -7487,7 +7487,7 @@ function uploadFiles(params, callback) {
     TotalSize += FileSize; // 单个文件上传链路
 
     if (self.options.EnableTracker) {
-      var accelerate = self.options.UseAccelerate || self.options.Domain.includes('accelerate.');
+      var accelerate = self.options.UseAccelerate || typeof self.options.Domain === 'string' && self.options.Domain.includes('accelerate.');
       fileParams.tracker = new Tracker({
         bucket: fileParams.Bucket,
         region: fileParams.Region,
@@ -12731,7 +12731,8 @@ var Tracker = /*#__PURE__*/function () {
         deepTracker = opt.deepTracker;
     var appid = bucket && bucket.substr(bucket.lastIndexOf('-') + 1) || '';
     this.parent = parent;
-    this.deepTracker = deepTracker; // 上报用到的字段
+    this.deepTracker = deepTracker;
+    this.delay = delay; // 上报用到的字段
 
     this.params = {
       // 通用字段
@@ -12888,19 +12889,19 @@ var Tracker = /*#__PURE__*/function () {
       }
 
       var eventCode = getEventCode(this.params.name);
-      var formattedParams = formatParams(this.params);
-      console.log(eventCode, formattedParams);
+      var formattedParams = formatParams(this.params); // 兜底处理
 
-      if (this.params.delay === 0) {
+      if (!this.beacon) {
+        this.beacon = getBeacon(this.delay || 5000);
+      }
+
+      if (this.delay === 0) {
         // 实时上报
-        this.beacon.onDirectUserAction(eventCode, formattedParams);
+        this.beacon && this.beacon.onDirectUserAction(eventCode, formattedParams);
       } else {
         // 周期性上报
-        this.beacon.onUserAction(eventCode, formattedParams);
-      } // 上报结束即销毁
-
-
-      this.destroy();
+        this.beacon && this.beacon.onUserAction(eventCode, formattedParams);
+      }
     } // 生成子实例，与父所属一个链路，可用于分块上传内部流程上报单个分块操作
 
   }, {
@@ -12914,16 +12915,9 @@ var Tracker = /*#__PURE__*/function () {
         region: this.params.region,
         fileKey: this.params.requestPath,
         customId: this.params.customId,
-        delay: this.params.delay
+        delay: this.delay
       });
       return new Tracker(subParams);
-    } // 链路结束后销毁实例
-
-  }, {
-    key: "destroy",
-    value: function destroy() {
-      this.beacon = null;
-      this.params = {};
     }
   }]);
 
