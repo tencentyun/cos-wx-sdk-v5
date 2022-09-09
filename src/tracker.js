@@ -147,6 +147,7 @@ class Tracker {
     const appid = bucket && bucket.substr(bucket.lastIndexOf('-') + 1) || '';
     this.parent = parent;
     this.deepTracker = deepTracker;
+    this.delay = delay;
     // 上报用到的字段
     this.params = {
       // 通用字段
@@ -252,16 +253,19 @@ class Tracker {
     }
     const eventCode = getEventCode(this.params.name);
     const formattedParams = formatParams(this.params);
-    console.log(eventCode, formattedParams);
+    
+    // 兜底处理
+    if (!this.beacon) {
+      this.beacon = getBeacon(this.delay || 5000);
+    }
+
     if (this.params.delay === 0) {
       // 实时上报
-      this.beacon.onDirectUserAction(eventCode, formattedParams);
+      this.beacon && this.beacon.onDirectUserAction(eventCode, formattedParams);
     } else {
       // 周期性上报
-      this.beacon.onUserAction(eventCode, formattedParams);
+      this.beacon && this.beacon.onUserAction(eventCode, formattedParams);
     }
-    // 上报结束即销毁
-    this.destroy();
   }
 
   // 生成子实例，与父所属一个链路，可用于分块上传内部流程上报单个分块操作
@@ -277,12 +281,6 @@ class Tracker {
       delay: this.params.delay,
     });
     return new Tracker(subParams);
-  }
-
-  // 链路结束后销毁实例
-  destroy() {
-    this.beacon = null;
-    this.params = {};
   }
 }
 
