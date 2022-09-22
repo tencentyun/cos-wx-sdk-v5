@@ -199,14 +199,31 @@ class Tracker {
 
   // 格式化sdk回调
   async formatResult(err, data) {
+    /**
+     * 解析到err的格式为:
+     * 1.服务端有返回时
+     * {
+     *  err: 同下方error,
+     *  error: {
+     *    error: {
+     *      Code: '', Message: '', Resource: '', RequestId: '', TraceId: '',
+     *    },
+     *    statusCode: xxx,
+     *    headers: {},
+     *    RequestId: '',
+     *  },
+     * }
+     * 2.本地抛出或小程序直接报错
+     * {error: 'message'}或{error: {error: 'message' }}
+     */
     const now = new Date().getTime();
     const tookTime = now - this.params.startTime;
     const networkType = await utils.getNetType();
-    const errorCode = err ? err?.error?.Code : '';
-    const errorMessage = err ? err?.error?.Message : '';
-    const errorStatusCode = err ? err?.statusCode : data.statusCode;
-    const errorServiceName = err ? err?.error?.Resource : '';
-    const requestId = err ? (err?.headers && err?.headers['x-cos-request-id']) : (data?.headers && data?.headers['x-cos-request-id']);
+    const errorCode = err ? (err?.error?.error?.Code || 'Error') : '';
+    const errorMessage = err ? (err?.error?.error?.Message || err?.error?.error || err?.error || '') : '';
+    const errorStatusCode = err ? err?.error?.statusCode : data.statusCode;
+    const errorServiceName = err ? err?.error?.error?.Resource : '';
+    const requestId = err ? (err?.error?.RequestId || '') : (data?.RequestId || '');
     const errorType = err ? (requestId ? 'Server' : 'Client'): '';
     Object.assign(this.params, {
       tookTime,

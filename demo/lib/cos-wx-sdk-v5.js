@@ -6450,7 +6450,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, scripts, repository, author, license, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.4.2\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"mime\":\"^2.4.6\",\"@xmldom/xmldom\":\"^0.8.2\"},\"devDependencies\":{\"babel-core\":\"6.26.3\",\"babel-loader\":\"8.2.5\",\"@babel/preset-env\":\"7.16.11\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.4.3\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"mime\":\"^2.4.6\",\"@xmldom/xmldom\":\"^0.8.2\"},\"devDependencies\":{\"babel-core\":\"6.26.3\",\"babel-loader\":\"8.2.5\",\"@babel/preset-env\":\"7.16.11\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -6461,7 +6461,13 @@ module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.4.2\",\
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
+function _regeneratorRuntime() { "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */ _regeneratorRuntime = function _regeneratorRuntime() { return exports; }; var exports = {}, Op = Object.prototype, hasOwn = Op.hasOwnProperty, $Symbol = "function" == typeof Symbol ? Symbol : {}, iteratorSymbol = $Symbol.iterator || "@@iterator", asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator", toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag"; function define(obj, key, value) { return Object.defineProperty(obj, key, { value: value, enumerable: !0, configurable: !0, writable: !0 }), obj[key]; } try { define({}, ""); } catch (err) { define = function define(obj, key, value) { return obj[key] = value; }; } function wrap(innerFn, outerFn, self, tryLocsList) { var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator, generator = Object.create(protoGenerator.prototype), context = new Context(tryLocsList || []); return generator._invoke = function (innerFn, self, context) { var state = "suspendedStart"; return function (method, arg) { if ("executing" === state) throw new Error("Generator is already running"); if ("completed" === state) { if ("throw" === method) throw arg; return doneResult(); } for (context.method = method, context.arg = arg;;) { var delegate = context.delegate; if (delegate) { var delegateResult = maybeInvokeDelegate(delegate, context); if (delegateResult) { if (delegateResult === ContinueSentinel) continue; return delegateResult; } } if ("next" === context.method) context.sent = context._sent = context.arg;else if ("throw" === context.method) { if ("suspendedStart" === state) throw state = "completed", context.arg; context.dispatchException(context.arg); } else "return" === context.method && context.abrupt("return", context.arg); state = "executing"; var record = tryCatch(innerFn, self, context); if ("normal" === record.type) { if (state = context.done ? "completed" : "suspendedYield", record.arg === ContinueSentinel) continue; return { value: record.arg, done: context.done }; } "throw" === record.type && (state = "completed", context.method = "throw", context.arg = record.arg); } }; }(innerFn, self, context), generator; } function tryCatch(fn, obj, arg) { try { return { type: "normal", arg: fn.call(obj, arg) }; } catch (err) { return { type: "throw", arg: err }; } } exports.wrap = wrap; var ContinueSentinel = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} var IteratorPrototype = {}; define(IteratorPrototype, iteratorSymbol, function () { return this; }); var getProto = Object.getPrototypeOf, NativeIteratorPrototype = getProto && getProto(getProto(values([]))); NativeIteratorPrototype && NativeIteratorPrototype !== Op && hasOwn.call(NativeIteratorPrototype, iteratorSymbol) && (IteratorPrototype = NativeIteratorPrototype); var Gp = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(IteratorPrototype); function defineIteratorMethods(prototype) { ["next", "throw", "return"].forEach(function (method) { define(prototype, method, function (arg) { return this._invoke(method, arg); }); }); } function AsyncIterator(generator, PromiseImpl) { function invoke(method, arg, resolve, reject) { var record = tryCatch(generator[method], generator, arg); if ("throw" !== record.type) { var result = record.arg, value = result.value; return value && "object" == _typeof(value) && hasOwn.call(value, "__await") ? PromiseImpl.resolve(value.__await).then(function (value) { invoke("next", value, resolve, reject); }, function (err) { invoke("throw", err, resolve, reject); }) : PromiseImpl.resolve(value).then(function (unwrapped) { result.value = unwrapped, resolve(result); }, function (error) { return invoke("throw", error, resolve, reject); }); } reject(record.arg); } var previousPromise; this._invoke = function (method, arg) { function callInvokeWithMethodAndArg() { return new PromiseImpl(function (resolve, reject) { invoke(method, arg, resolve, reject); }); } return previousPromise = previousPromise ? previousPromise.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg(); }; } function maybeInvokeDelegate(delegate, context) { var method = delegate.iterator[context.method]; if (undefined === method) { if (context.delegate = null, "throw" === context.method) { if (delegate.iterator["return"] && (context.method = "return", context.arg = undefined, maybeInvokeDelegate(delegate, context), "throw" === context.method)) return ContinueSentinel; context.method = "throw", context.arg = new TypeError("The iterator does not provide a 'throw' method"); } return ContinueSentinel; } var record = tryCatch(method, delegate.iterator, context.arg); if ("throw" === record.type) return context.method = "throw", context.arg = record.arg, context.delegate = null, ContinueSentinel; var info = record.arg; return info ? info.done ? (context[delegate.resultName] = info.value, context.next = delegate.nextLoc, "return" !== context.method && (context.method = "next", context.arg = undefined), context.delegate = null, ContinueSentinel) : info : (context.method = "throw", context.arg = new TypeError("iterator result is not an object"), context.delegate = null, ContinueSentinel); } function pushTryEntry(locs) { var entry = { tryLoc: locs[0] }; 1 in locs && (entry.catchLoc = locs[1]), 2 in locs && (entry.finallyLoc = locs[2], entry.afterLoc = locs[3]), this.tryEntries.push(entry); } function resetTryEntry(entry) { var record = entry.completion || {}; record.type = "normal", delete record.arg, entry.completion = record; } function Context(tryLocsList) { this.tryEntries = [{ tryLoc: "root" }], tryLocsList.forEach(pushTryEntry, this), this.reset(!0); } function values(iterable) { if (iterable) { var iteratorMethod = iterable[iteratorSymbol]; if (iteratorMethod) return iteratorMethod.call(iterable); if ("function" == typeof iterable.next) return iterable; if (!isNaN(iterable.length)) { var i = -1, next = function next() { for (; ++i < iterable.length;) { if (hasOwn.call(iterable, i)) return next.value = iterable[i], next.done = !1, next; } return next.value = undefined, next.done = !0, next; }; return next.next = next; } } return { next: doneResult }; } function doneResult() { return { value: undefined, done: !0 }; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, define(Gp, "constructor", GeneratorFunctionPrototype), define(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, toStringTagSymbol, "GeneratorFunction"), exports.isGeneratorFunction = function (genFun) { var ctor = "function" == typeof genFun && genFun.constructor; return !!ctor && (ctor === GeneratorFunction || "GeneratorFunction" === (ctor.displayName || ctor.name)); }, exports.mark = function (genFun) { return Object.setPrototypeOf ? Object.setPrototypeOf(genFun, GeneratorFunctionPrototype) : (genFun.__proto__ = GeneratorFunctionPrototype, define(genFun, toStringTagSymbol, "GeneratorFunction")), genFun.prototype = Object.create(Gp), genFun; }, exports.awrap = function (arg) { return { __await: arg }; }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, asyncIteratorSymbol, function () { return this; }), exports.AsyncIterator = AsyncIterator, exports.async = function (innerFn, outerFn, self, tryLocsList, PromiseImpl) { void 0 === PromiseImpl && (PromiseImpl = Promise); var iter = new AsyncIterator(wrap(innerFn, outerFn, self, tryLocsList), PromiseImpl); return exports.isGeneratorFunction(outerFn) ? iter : iter.next().then(function (result) { return result.done ? result.value : iter.next(); }); }, defineIteratorMethods(Gp), define(Gp, toStringTagSymbol, "Generator"), define(Gp, iteratorSymbol, function () { return this; }), define(Gp, "toString", function () { return "[object Generator]"; }), exports.keys = function (object) { var keys = []; for (var key in object) { keys.push(key); } return keys.reverse(), function next() { for (; keys.length;) { var key = keys.pop(); if (key in object) return next.value = key, next.done = !1, next; } return next.done = !0, next; }; }, exports.values = values, Context.prototype = { constructor: Context, reset: function reset(skipTempReset) { if (this.prev = 0, this.next = 0, this.sent = this._sent = undefined, this.done = !1, this.delegate = null, this.method = "next", this.arg = undefined, this.tryEntries.forEach(resetTryEntry), !skipTempReset) for (var name in this) { "t" === name.charAt(0) && hasOwn.call(this, name) && !isNaN(+name.slice(1)) && (this[name] = undefined); } }, stop: function stop() { this.done = !0; var rootRecord = this.tryEntries[0].completion; if ("throw" === rootRecord.type) throw rootRecord.arg; return this.rval; }, dispatchException: function dispatchException(exception) { if (this.done) throw exception; var context = this; function handle(loc, caught) { return record.type = "throw", record.arg = exception, context.next = loc, caught && (context.method = "next", context.arg = undefined), !!caught; } for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i], record = entry.completion; if ("root" === entry.tryLoc) return handle("end"); if (entry.tryLoc <= this.prev) { var hasCatch = hasOwn.call(entry, "catchLoc"), hasFinally = hasOwn.call(entry, "finallyLoc"); if (hasCatch && hasFinally) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } else if (hasCatch) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); } else { if (!hasFinally) throw new Error("try statement without catch or finally"); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } } } }, abrupt: function abrupt(type, arg) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc <= this.prev && hasOwn.call(entry, "finallyLoc") && this.prev < entry.finallyLoc) { var finallyEntry = entry; break; } } finallyEntry && ("break" === type || "continue" === type) && finallyEntry.tryLoc <= arg && arg <= finallyEntry.finallyLoc && (finallyEntry = null); var record = finallyEntry ? finallyEntry.completion : {}; return record.type = type, record.arg = arg, finallyEntry ? (this.method = "next", this.next = finallyEntry.finallyLoc, ContinueSentinel) : this.complete(record); }, complete: function complete(record, afterLoc) { if ("throw" === record.type) throw record.arg; return "break" === record.type || "continue" === record.type ? this.next = record.arg : "return" === record.type ? (this.rval = this.arg = record.arg, this.method = "return", this.next = "end") : "normal" === record.type && afterLoc && (this.next = afterLoc), ContinueSentinel; }, finish: function finish(finallyLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.finallyLoc === finallyLoc) return this.complete(entry.completion, entry.afterLoc), resetTryEntry(entry), ContinueSentinel; } }, "catch": function _catch(tryLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc === tryLoc) { var record = entry.completion; if ("throw" === record.type) { var thrown = record.arg; resetTryEntry(entry); } return thrown; } } throw new Error("illegal catch attempt"); }, delegateYield: function delegateYield(iterable, resultName, nextLoc) { return this.delegate = { iterator: values(iterable), resultName: resultName, nextLoc: nextLoc }, "next" === this.method && (this.arg = undefined), ContinueSentinel; } }, exports; }
+
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
+
+function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
 
 var session = __webpack_require__(/*! ./session */ "./src/session.js");
 
@@ -6604,8 +6610,10 @@ function sliceUploadFile(params, callback) {
         SliceSize: ChunkSize,
         onHashProgress: onHashProgress,
         tracker: tracker
-      }, params);
+      }, params); // 这里用户传入的params.FileSize可能单位不统一,必须使用sdk内获取的大小
 
+
+      _params.FileSize = FileSize;
       getUploadIdAndPartList.call(self, _params, function (err, UploadData) {
         if (!self._isRunningTask(TaskId)) return;
         if (err) return ep.emit('error', err);
@@ -7384,67 +7392,104 @@ function abortUploadTaskArray(params, callback) {
 } // 高级上传
 
 
-function uploadFile(params, callback) {
-  var self = this; // 判断多大的文件使用分片上传
-
-  var SliceSize = params.SliceSize === undefined ? self.options.SliceSize : params.SliceSize;
-  var taskList = [];
-  var FileSize = params.FileSize;
-  var fileInfo = {
-    TaskId: ''
-  }; // 上传链路
-
-  if (self.options.EnableTracker) {
-    var accelerate = self.options.UseAccelerate || typeof self.options.Domain === 'string' && self.options.Domain.includes('accelerate.');
-    params.tracker = new Tracker({
-      bucket: params.Bucket,
-      region: params.Region,
-      apiName: 'uploadFile',
-      fileKey: params.Key,
-      fileSize: FileSize,
-      accelerate: accelerate,
-      deepTracker: self.options.DeepTracker,
-      customId: self.options.CustomId,
-      delay: self.options.TrackerDelay
-    });
-  } // 整理 option，用于返回给回调
-
-
-  util.each(params, function (v, k) {
-    if (_typeof(v) !== 'object' && typeof v !== 'function') {
-      fileInfo[k] = v;
-    }
-  }); // 处理文件 TaskReady
-
-  var _onTaskReady = params.onTaskReady;
-
-  params.onTaskReady = function (tid) {
-    fileInfo.TaskId = tid;
-    _onTaskReady && _onTaskReady(tid);
-  }; // 处理文件完成
-
-
-  var _onFileFinish = params.onFileFinish;
-
-  var onFileFinish = function onFileFinish(err, data) {
-    // 格式化上报参数并上报
-    params.tracker && params.tracker.formatResult(err, data);
-    _onFileFinish && _onFileFinish(err, data, fileInfo);
-    callback && callback(err, data);
-  }; // 添加上传任务
-
-
-  var simpleUploadMethod = self.options.SimpleUploadMethod === 'postObject' ? 'postObject' : 'putObject';
-  var api = FileSize > SliceSize ? 'sliceUploadFile' : simpleUploadMethod;
-  taskList.push({
-    api: api,
-    params: params,
-    callback: onFileFinish
-  });
-
-  self._addTasks(taskList);
+function uploadFile(_x, _x2) {
+  return _uploadFile.apply(this, arguments);
 } // 批量上传文件
 
+
+function _uploadFile() {
+  _uploadFile = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee2(params, callback) {
+    var self, SliceSize, taskList, FileSize, fileInfo, accelerate, _onTaskReady, _onFileFinish, onFileFinish, simpleUploadMethod, api;
+
+    return _regeneratorRuntime().wrap(function _callee2$(_context2) {
+      while (1) {
+        switch (_context2.prev = _context2.next) {
+          case 0:
+            self = this; // 判断多大的文件使用分片上传
+
+            SliceSize = params.SliceSize === undefined ? self.options.SliceSize : params.SliceSize;
+            taskList = []; // var FileSize = params.FileSize;
+
+            _context2.prev = 3;
+            _context2.next = 6;
+            return util.getFileSizeByPath(params.FilePath);
+
+          case 6:
+            FileSize = _context2.sent;
+            _context2.next = 12;
+            break;
+
+          case 9:
+            _context2.prev = 9;
+            _context2.t0 = _context2["catch"](3);
+            callback({
+              error: _context2.t0
+            });
+
+          case 12:
+            fileInfo = {
+              TaskId: ''
+            }; // 上传链路
+
+            if (self.options.EnableTracker) {
+              accelerate = self.options.UseAccelerate || typeof self.options.Domain === 'string' && self.options.Domain.includes('accelerate.');
+              params.tracker = new Tracker({
+                bucket: params.Bucket,
+                region: params.Region,
+                apiName: 'uploadFile',
+                fileKey: params.Key,
+                fileSize: FileSize,
+                accelerate: accelerate,
+                deepTracker: self.options.DeepTracker,
+                customId: self.options.CustomId,
+                delay: self.options.TrackerDelay
+              });
+            } // 整理 option，用于返回给回调
+
+
+            util.each(params, function (v, k) {
+              if (_typeof(v) !== 'object' && typeof v !== 'function') {
+                fileInfo[k] = v;
+              }
+            }); // 处理文件 TaskReady
+
+            _onTaskReady = params.onTaskReady;
+
+            params.onTaskReady = function (tid) {
+              fileInfo.TaskId = tid;
+              _onTaskReady && _onTaskReady(tid);
+            }; // 处理文件完成
+
+
+            _onFileFinish = params.onFileFinish;
+
+            onFileFinish = function onFileFinish(err, data) {
+              // 格式化上报参数并上报
+              params.tracker && params.tracker.formatResult(err, data);
+              _onFileFinish && _onFileFinish(err, data, fileInfo);
+              callback && callback(err, data);
+            }; // 添加上传任务
+
+
+            simpleUploadMethod = self.options.SimpleUploadMethod === 'postObject' ? 'postObject' : 'putObject';
+            api = FileSize > SliceSize ? 'sliceUploadFile' : simpleUploadMethod;
+            taskList.push({
+              api: api,
+              params: params,
+              callback: onFileFinish
+            });
+
+            self._addTasks(taskList);
+
+          case 23:
+          case "end":
+            return _context2.stop();
+        }
+      }
+    }, _callee2, this, [[3, 9]]);
+  }));
+  return _uploadFile.apply(this, arguments);
+}
 
 function uploadFiles(params, callback) {
   var self = this; // 判断多大的文件使用分片上传
@@ -7477,77 +7522,111 @@ function uploadFiles(params, callback) {
 
 
   var taskList = [];
-  util.each(params.files, function (fileParams, index) {
-    var FileSize = fileParams.FileSize;
-    var fileInfo = {
-      Index: index,
-      TaskId: ''
-    }; // 更新文件总大小
+  util.each(params.files, /*#__PURE__*/function () {
+    var _ref = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee(fileParams, index) {
+      var FileSize, fileInfo, accelerate, _onTaskReady, PreAddSize, _onProgress, _onFileFinish, onFileFinish, simpleUploadMethod, api;
 
-    TotalSize += FileSize; // 单个文件上传链路
+      return _regeneratorRuntime().wrap(function _callee$(_context) {
+        while (1) {
+          switch (_context.prev = _context.next) {
+            case 0:
+              // var FileSize = fileParams.FileSize;
+              FileSize = 0;
+              _context.prev = 1;
+              _context.next = 4;
+              return util.getFileSizeByPath(fileParams.FilePath);
 
-    if (self.options.EnableTracker) {
-      var accelerate = self.options.UseAccelerate || typeof self.options.Domain === 'string' && self.options.Domain.includes('accelerate.');
-      fileParams.tracker = new Tracker({
-        bucket: fileParams.Bucket,
-        region: fileParams.Region,
-        apiName: 'uploadFiles',
-        fileKey: fileParams.Key,
-        fileSize: FileSize,
-        accelerate: accelerate,
-        deepTracker: self.options.DeepTracker,
-        customId: self.options.CustomId,
-        delay: self.options.TrackerDelay
-      });
-    } // 整理 option，用于返回给回调
+            case 4:
+              FileSize = _context.sent;
+              _context.next = 9;
+              break;
 
+            case 7:
+              _context.prev = 7;
+              _context.t0 = _context["catch"](1);
 
-    util.each(fileParams, function (v, k) {
-      if (_typeof(v) !== 'object' && typeof v !== 'function') {
-        fileInfo[k] = v;
-      }
-    }); // 处理单个文件 TaskReady
+            case 9:
+              fileInfo = {
+                Index: index,
+                TaskId: ''
+              }; // 更新文件总大小
 
-    var _onTaskReady = fileParams.onTaskReady;
+              TotalSize += FileSize; // 单个文件上传链路
 
-    fileParams.onTaskReady = function (tid) {
-      fileInfo.TaskId = tid;
-      _onTaskReady && _onTaskReady(tid);
-    }; // 处理单个文件进度
-
-
-    var PreAddSize = 0;
-    var _onProgress = fileParams.onProgress;
-
-    fileParams.onProgress = function (info) {
-      TotalFinish = TotalFinish - PreAddSize + info.loaded;
-      PreAddSize = info.loaded;
-      _onProgress && _onProgress(info);
-      onTotalProgress({
-        loaded: TotalFinish,
-        total: TotalSize
-      });
-    }; // 处理单个文件完成
+              if (self.options.EnableTracker) {
+                accelerate = self.options.UseAccelerate || typeof self.options.Domain === 'string' && self.options.Domain.includes('accelerate.');
+                fileParams.tracker = new Tracker({
+                  bucket: fileParams.Bucket,
+                  region: fileParams.Region,
+                  apiName: 'uploadFiles',
+                  fileKey: fileParams.Key,
+                  fileSize: FileSize,
+                  accelerate: accelerate,
+                  deepTracker: self.options.DeepTracker,
+                  customId: self.options.CustomId,
+                  delay: self.options.TrackerDelay
+                });
+              } // 整理 option，用于返回给回调
 
 
-    var _onFileFinish = fileParams.onFileFinish;
+              util.each(fileParams, function (v, k) {
+                if (_typeof(v) !== 'object' && typeof v !== 'function') {
+                  fileInfo[k] = v;
+                }
+              }); // 处理单个文件 TaskReady
 
-    var onFileFinish = function onFileFinish(err, data) {
-      // 格式化上报参数并上报
-      fileParams.tracker && fileParams.tracker.formatResult(err, data);
-      _onFileFinish && _onFileFinish(err, data);
-      onTotalFileFinish && onTotalFileFinish(err, data, fileInfo);
-    }; // 添加上传任务
+              _onTaskReady = fileParams.onTaskReady;
+
+              fileParams.onTaskReady = function (tid) {
+                fileInfo.TaskId = tid;
+                _onTaskReady && _onTaskReady(tid);
+              }; // 处理单个文件进度
 
 
-    var simpleUploadMethod = self.options.SimpleUploadMethod === 'postObject' ? 'postObject' : 'putObject';
-    var api = FileSize > SliceSize ? 'sliceUploadFile' : simpleUploadMethod;
-    taskList.push({
-      api: api,
-      params: fileParams,
-      callback: onFileFinish
-    });
-  });
+              PreAddSize = 0;
+              _onProgress = fileParams.onProgress;
+
+              fileParams.onProgress = function (info) {
+                TotalFinish = TotalFinish - PreAddSize + info.loaded;
+                PreAddSize = info.loaded;
+                _onProgress && _onProgress(info);
+                onTotalProgress({
+                  loaded: TotalFinish,
+                  total: TotalSize
+                });
+              }; // 处理单个文件完成
+
+
+              _onFileFinish = fileParams.onFileFinish;
+
+              onFileFinish = function onFileFinish(err, data) {
+                // 格式化上报参数并上报
+                fileParams.tracker && fileParams.tracker.formatResult(err, data);
+                _onFileFinish && _onFileFinish(err, data);
+                onTotalFileFinish && onTotalFileFinish(err, data, fileInfo);
+              }; // 添加上传任务
+
+
+              simpleUploadMethod = self.options.SimpleUploadMethod === 'postObject' ? 'postObject' : 'putObject';
+              api = FileSize > SliceSize ? 'sliceUploadFile' : simpleUploadMethod;
+              taskList.push({
+                api: api,
+                params: fileParams,
+                callback: onFileFinish
+              });
+
+            case 23:
+            case "end":
+              return _context.stop();
+          }
+        }
+      }, _callee, null, [[1, 7]]);
+    }));
+
+    return function (_x3, _x4) {
+      return _ref.apply(this, arguments);
+    };
+  }());
 
   self._addTasks(taskList);
 } // 分片复制文件
@@ -12804,13 +12883,30 @@ var Tracker = /*#__PURE__*/function () {
     key: "formatResult",
     value: function () {
       var _formatResult = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee(err, data) {
-        var _err$error, _err$error2, _err$error3;
+        var _err$error, _err$error$error, _err$error2, _err$error2$error, _err$error3, _err$error4, _err$error5, _err$error5$error, _err$error6;
 
         var now, tookTime, networkType, errorCode, errorMessage, errorStatusCode, errorServiceName, requestId, errorType, exec;
         return _regeneratorRuntime().wrap(function _callee$(_context) {
           while (1) {
             switch (_context.prev = _context.next) {
               case 0:
+                /**
+                 * 解析到err的格式为:
+                 * 1.服务端有返回时
+                 * {
+                 *  err: 同下方error,
+                 *  error: {
+                 *    error: {
+                 *      Code: '', Message: '', Resource: '', RequestId: '', TraceId: '',
+                 *    },
+                 *    statusCode: xxx,
+                 *    headers: {},
+                 *    RequestId: '',
+                 *  },
+                 * }
+                 * 2.本地抛出或小程序直接报错
+                 * {error: 'message'}或{error: {error: 'message' }}
+                 */
                 now = new Date().getTime();
                 tookTime = now - this.params.startTime;
                 _context.next = 4;
@@ -12818,11 +12914,11 @@ var Tracker = /*#__PURE__*/function () {
 
               case 4:
                 networkType = _context.sent;
-                errorCode = err ? err === null || err === void 0 ? void 0 : (_err$error = err.error) === null || _err$error === void 0 ? void 0 : _err$error.Code : '';
-                errorMessage = err ? err === null || err === void 0 ? void 0 : (_err$error2 = err.error) === null || _err$error2 === void 0 ? void 0 : _err$error2.Message : '';
-                errorStatusCode = err ? err === null || err === void 0 ? void 0 : err.statusCode : data.statusCode;
-                errorServiceName = err ? err === null || err === void 0 ? void 0 : (_err$error3 = err.error) === null || _err$error3 === void 0 ? void 0 : _err$error3.Resource : '';
-                requestId = err ? (err === null || err === void 0 ? void 0 : err.headers) && (err === null || err === void 0 ? void 0 : err.headers['x-cos-request-id']) : (data === null || data === void 0 ? void 0 : data.headers) && (data === null || data === void 0 ? void 0 : data.headers['x-cos-request-id']);
+                errorCode = err ? (err === null || err === void 0 ? void 0 : (_err$error = err.error) === null || _err$error === void 0 ? void 0 : (_err$error$error = _err$error.error) === null || _err$error$error === void 0 ? void 0 : _err$error$error.Code) || 'Error' : '';
+                errorMessage = err ? (err === null || err === void 0 ? void 0 : (_err$error2 = err.error) === null || _err$error2 === void 0 ? void 0 : (_err$error2$error = _err$error2.error) === null || _err$error2$error === void 0 ? void 0 : _err$error2$error.Message) || (err === null || err === void 0 ? void 0 : (_err$error3 = err.error) === null || _err$error3 === void 0 ? void 0 : _err$error3.error) || (err === null || err === void 0 ? void 0 : err.error) || '' : '';
+                errorStatusCode = err ? err === null || err === void 0 ? void 0 : (_err$error4 = err.error) === null || _err$error4 === void 0 ? void 0 : _err$error4.statusCode : data.statusCode;
+                errorServiceName = err ? err === null || err === void 0 ? void 0 : (_err$error5 = err.error) === null || _err$error5 === void 0 ? void 0 : (_err$error5$error = _err$error5.error) === null || _err$error5$error === void 0 ? void 0 : _err$error5$error.Resource : '';
+                requestId = err ? (err === null || err === void 0 ? void 0 : (_err$error6 = err.error) === null || _err$error6 === void 0 ? void 0 : _err$error6.RequestId) || '' : (data === null || data === void 0 ? void 0 : data.RequestId) || '';
                 errorType = err ? requestId ? 'Server' : 'Client' : '';
                 Object.assign(this.params, {
                   tookTime: tookTime,
@@ -13433,7 +13529,7 @@ var apiWrapper = function apiWrapper(apiName, apiFn) {
     };
 
     var errMsg = checkParams();
-    var isSync = apiName === 'getAuth' || apiName === 'getObjectUrl';
+    var isSync = apiName === 'getAuth';
     var Promise = global.Promise;
 
     if (!isSync && Promise && !callback) {
@@ -13614,7 +13710,24 @@ var getFileSize = /*#__PURE__*/function () {
   return function getFileSize(_x, _x2, _x3) {
     return _ref.apply(this, arguments);
   };
-}();
+}(); // 通过FilePath获取上传文件的大小
+
+
+var getFileSizeByPath = function getFileSizeByPath(filePath) {
+  return new Promise(function (resolve, reject) {
+    wxfs.stat({
+      path: filePath,
+      success: function success(res) {
+        var stats = res.stats;
+        var size = stats.isDirectory() ? 0 : stats.size;
+        resolve(size);
+      },
+      fail: function fail(res) {
+        reject((res === null || res === void 0 ? void 0 : res.errMsg) || '');
+      }
+    });
+  });
+};
 
 var getSkewTime = function getSkewTime(offset) {
   return Date.now() + (offset || 0);
@@ -13718,6 +13831,7 @@ var util = {
   camSafeUrlEncode: camSafeUrlEncode,
   throttleOnProgress: throttleOnProgress,
   getFileSize: getFileSize,
+  getFileSizeByPath: getFileSizeByPath,
   getSkewTime: getSkewTime,
   obj2str: obj2str,
   getAuth: getAuth,
