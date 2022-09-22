@@ -480,7 +480,7 @@ var apiWrapper = function (apiName, apiFn) {
         };
 
         var errMsg = checkParams();
-        var isSync = apiName === 'getAuth' || apiName === 'getObjectUrl';
+        var isSync = apiName === 'getAuth';
         var Promise = global.Promise;
         if (!isSync && Promise && !callback) {
             return new Promise(function (resolve, reject) {
@@ -597,6 +597,23 @@ var getFileSize = async function (api, params, callback) {
     }
 };
 
+// 通过FilePath获取上传文件的大小
+var getFileSizeByPath = function (filePath) {
+  return new Promise((resolve, reject) => {
+      wxfs.stat({
+          path: filePath,
+          success: function (res) {
+              var stats = res.stats;
+              var size = stats.isDirectory() ? 0 : stats.size;
+              resolve(size);
+          },
+          fail: function (res) {
+              reject(res?.errMsg || '');
+          },
+      });
+  });
+}
+
 var getSkewTime = function (offset) {
     return Date.now() + (offset || 0);
 };
@@ -693,6 +710,7 @@ var util = {
     camSafeUrlEncode: camSafeUrlEncode,
     throttleOnProgress: throttleOnProgress,
     getFileSize: getFileSize,
+    getFileSizeByPath: getFileSizeByPath,
     getSkewTime: getSkewTime,
     obj2str: obj2str,
     getAuth: getAuth,

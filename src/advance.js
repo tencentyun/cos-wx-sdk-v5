@@ -132,6 +132,8 @@ function sliceUploadFile(params, callback) {
                 onHashProgress: onHashProgress,
                 tracker: tracker,
             }, params);
+            // 这里用户传入的params.FileSize可能单位不统一,必须使用sdk内获取的大小
+            _params.FileSize = FileSize;
             getUploadIdAndPartList.call(self, _params, function (err, UploadData) {
                 if (!self._isRunningTask(TaskId)) return;
                 if (err) return ep.emit('error', err);
@@ -842,15 +844,20 @@ function abortUploadTaskArray(params, callback) {
 }
 
 // 高级上传
-function uploadFile(params, callback) {
+async function uploadFile(params, callback) {
   var self = this;
 
   // 判断多大的文件使用分片上传
   var SliceSize = params.SliceSize === undefined ? self.options.SliceSize : params.SliceSize;
 
   var taskList = [];
-
-  var FileSize = params.FileSize;
+  // var FileSize = params.FileSize;
+  var FileSize;
+  try {
+    FileSize = await util.getFileSizeByPath(params.FilePath);
+  } catch (e) {
+    callback({ error: e });
+  }
   var fileInfo = {TaskId: ''};
 
   // 上传链路
@@ -936,8 +943,14 @@ function uploadFiles(params, callback) {
 
     // 开始处理每个文件
     var taskList = [];
-    util.each(params.files, function (fileParams, index) {
-        var FileSize = fileParams.FileSize;
+    util.each(params.files, async function (fileParams, index) {
+        // var FileSize = fileParams.FileSize;
+        var FileSize = 0;
+        try {
+          FileSize = await util.getFileSizeByPath(fileParams.FilePath);
+        } catch (e) {
+          // 获取大小出错不做处理，不会加入队列
+        }
         var fileInfo = {Index: index, TaskId: ''};
 
         // 更新文件总大小
