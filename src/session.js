@@ -16,7 +16,8 @@ var getCache = function () {
 };
 var setCache = function () {
     try {
-        wx.setStorageSync(cacheKey, JSON.stringify(cache))
+        if (cache.length) wx.setStorageSync(cacheKey, JSON.stringify(cache));
+        else wx.removeStorageSync(cacheKey);
     } catch (e) {
     }
 };
@@ -64,6 +65,17 @@ var mod = {
             return null;
         }
     },
+    // 用上传参数生成哈希值
+    getCopyFileId: function (copySource, sourceHeaders, ChunkSize, Bucket, Key) {
+      var size = sourceHeaders['content-length'];
+      var etag = sourceHeaders.etag || '';
+      var lastModified = sourceHeaders['last-modified'];
+      if (copySource && ChunkSize) {
+          return util.md5([copySource, size, etag, lastModified, ChunkSize, Bucket, Key].join('::'));
+      } else {
+          return null;
+      }
+  },
     // 获取文件对应的 UploadId 列表
     getUploadIdList: function (uuid) {
         if (!uuid) return null;
