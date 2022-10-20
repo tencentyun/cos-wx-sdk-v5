@@ -6450,7 +6450,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, scripts, repository, author, license, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.4.3\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"mime\":\"^2.4.6\",\"@xmldom/xmldom\":\"^0.8.2\"},\"devDependencies\":{\"babel-core\":\"6.26.3\",\"babel-loader\":\"8.2.5\",\"@babel/preset-env\":\"7.16.11\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.4.4\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"mime\":\"^2.4.6\",\"@xmldom/xmldom\":\"^0.8.2\"},\"devDependencies\":{\"babel-core\":\"6.26.3\",\"babel-loader\":\"8.2.5\",\"@babel/preset-env\":\"7.16.11\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -7639,7 +7639,7 @@ function sliceCopyFile(params, callback) {
   var Region = params.Region;
   var Key = params.Key;
   var CopySource = params.CopySource;
-  var m = CopySource.match(/^([^.]+-\d+)\.cos(v6)?\.([^.]+)\.[^/]+\/(.+)$/);
+  var m = util.getSourceParams.call(this, CopySource);
 
   if (!m) {
     callback({
@@ -7648,33 +7648,55 @@ function sliceCopyFile(params, callback) {
     return;
   }
 
-  var SourceBucket = m[1];
-  var SourceRegion = m[3];
-  var SourceKey = decodeURIComponent(m[4]);
+  var SourceBucket = m.Bucket;
+  var SourceRegion = m.Region;
+  var SourceKey = decodeURIComponent(m.Key);
   var CopySliceSize = params.CopySliceSize === undefined ? self.options.CopySliceSize : params.CopySliceSize;
   CopySliceSize = Math.max(0, CopySliceSize);
   var ChunkSize = params.CopyChunkSize || this.options.CopyChunkSize;
   var ChunkParallel = this.options.CopyChunkParallelLimit;
+  var ChunkRetryTimes = this.options.ChunkRetryTimes + 1;
+  var ChunkCount = 0;
   var FinishSize = 0;
   var FileSize;
 
-  var _onProgress3; // 分片复制完成，开始 multipartComplete 操作
+  var _onProgress3;
 
+  var SourceResHeaders = {};
+  var SourceHeaders = {};
+  var TargetHeader = {}; // 分片复制完成，开始 multipartComplete 操作
 
   ep.on('copy_slice_complete', function (UploadData) {
-    self.multipartComplete({
-      Bucket: Bucket,
-      Region: Region,
-      Key: Key,
-      UploadId: UploadData.UploadId,
-      Parts: UploadData.PartList,
-      calledBySdk: 'sliceCopyFile'
+    var metaHeaders = {};
+    util.each(params.Headers, function (val, k) {
+      if (k.toLowerCase().indexOf('x-cos-meta-') === 0) metaHeaders[k] = val;
+    });
+    var Parts = util.map(UploadData.PartList, function (item) {
+      return {
+        PartNumber: item.PartNumber,
+        ETag: item.ETag
+      };
+    }); // 完成上传的请求也做重试
+
+    Async.retry(ChunkRetryTimes, function (tryCallback) {
+      self.multipartComplete({
+        Bucket: Bucket,
+        Region: Region,
+        Key: Key,
+        UploadId: UploadData.UploadId,
+        Parts: Parts,
+        calledBySdk: 'sliceCopyFile'
+      }, tryCallback);
     }, function (err, data) {
+      session.removeUsing(UploadData.UploadId); // 标记 UploadId 没被使用了，因为复制没提供重试，所以只要出错，就是 UploadId 停用了。
+
       if (err) {
         _onProgress3(null, true);
 
         return callback(err);
       }
+
+      session.removeUploadId(UploadData.UploadId);
 
       _onProgress3({
         loaded: FileSize,
@@ -7685,28 +7707,43 @@ function sliceCopyFile(params, callback) {
     });
   });
   ep.on('get_copy_data_finish', function (UploadData) {
-    Async.eachLimit(UploadData.PartList, ChunkParallel, function (SliceItem, asyncCallback) {
+    // 处理 UploadId 缓存
+    var uuid = session.getCopyFileId(CopySource, SourceResHeaders, ChunkSize, Bucket, Key);
+    uuid && session.saveUploadId(uuid, UploadData.UploadId, self.options.UploadIdCacheLimit); // 缓存 UploadId
+
+    session.setUsing(UploadData.UploadId); // 标记 UploadId 为正在使用
+
+    var needCopySlices = util.filter(UploadData.PartList, function (SliceItem) {
+      if (SliceItem['Uploaded']) {
+        FinishSize += SliceItem['PartNumber'] >= ChunkCount ? FileSize % ChunkSize || ChunkSize : ChunkSize;
+      }
+
+      return !SliceItem['Uploaded'];
+    });
+    Async.eachLimit(needCopySlices, ChunkParallel, function (SliceItem, asyncCallback) {
       var PartNumber = SliceItem.PartNumber;
       var CopySourceRange = SliceItem.CopySourceRange;
       var currentSize = SliceItem.end - SliceItem.start;
       var preAddSize = 0;
-      copySliceItem.call(self, {
-        Bucket: Bucket,
-        Region: Region,
-        Key: Key,
-        CopySource: CopySource,
-        UploadId: UploadData.UploadId,
-        PartNumber: PartNumber,
-        CopySourceRange: CopySourceRange,
-        onProgress: function onProgress(data) {
-          FinishSize += data.loaded - preAddSize;
-          preAddSize = data.loaded;
+      Async.retry(ChunkRetryTimes, function (tryCallback) {
+        copySliceItem.call(self, {
+          Bucket: Bucket,
+          Region: Region,
+          Key: Key,
+          CopySource: CopySource,
+          UploadId: UploadData.UploadId,
+          PartNumber: PartNumber,
+          CopySourceRange: CopySourceRange,
+          onProgress: function onProgress(data) {
+            FinishSize += data.loaded - preAddSize;
+            preAddSize = data.loaded;
 
-          _onProgress3({
-            loaded: FinishSize,
-            total: FileSize
-          });
-        }
+            _onProgress3({
+              loaded: FinishSize,
+              total: FileSize
+            });
+          }
+        }, tryCallback);
       }, function (err, data) {
         if (err) {
           return asyncCallback(err);
@@ -7723,6 +7760,8 @@ function sliceCopyFile(params, callback) {
       });
     }, function (err) {
       if (err) {
+        session.removeUsing(UploadData.UploadId); // 标记 UploadId 没被使用了，因为复制没提供重试，所以只要出错，就是 UploadId 停用了。
+
         _onProgress3(null, true);
 
         return callback(err);
@@ -7731,7 +7770,76 @@ function sliceCopyFile(params, callback) {
       ep.emit('copy_slice_complete', UploadData);
     });
   });
-  ep.on('get_file_size_finish', function (SourceHeaders) {
+  ep.on('get_chunk_size_finish', function () {
+    var createNewUploadId = function createNewUploadId() {
+      self.multipartInit({
+        Bucket: Bucket,
+        Region: Region,
+        Key: Key,
+        Headers: TargetHeader
+      }, function (err, data) {
+        if (err) return callback(err);
+        params.UploadId = data.UploadId;
+        ep.emit('get_copy_data_finish', {
+          UploadId: params.UploadId,
+          PartList: params.PartList
+        });
+      });
+    }; // 在本地找可用的 UploadId
+
+
+    var uuid = session.getCopyFileId(CopySource, SourceResHeaders, ChunkSize, Bucket, Key);
+    var LocalUploadIdList = session.getUploadIdList(uuid);
+    if (!uuid || !LocalUploadIdList) return createNewUploadId();
+
+    var next = function next(index) {
+      // 如果本地找不到可用 UploadId，再一个个遍历校验远端
+      if (index >= LocalUploadIdList.length) return createNewUploadId();
+      var UploadId = LocalUploadIdList[index]; // 如果正在被使用，跳过
+
+      if (session.using[UploadId]) return next(index + 1); // 判断 UploadId 是否存在线上
+
+      wholeMultipartListPart.call(self, {
+        Bucket: Bucket,
+        Region: Region,
+        Key: Key,
+        UploadId: UploadId
+      }, function (err, PartListData) {
+        if (err) {
+          // 如果 UploadId 获取会出错，跳过并删除
+          session.removeUploadId(UploadId);
+          next(index + 1);
+        } else {
+          // 如果异步回来 UploadId 已经被用了，也跳过
+          if (session.using[UploadId]) return next(index + 1); // 找到可用 UploadId
+
+          var finishETagMap = {};
+          var offset = 0;
+          util.each(PartListData.PartList, function (PartItem) {
+            var size = parseInt(PartItem.Size);
+            var end = offset + size - 1;
+            finishETagMap[PartItem.PartNumber + '|' + offset + '|' + end] = PartItem.ETag;
+            offset += size;
+          });
+          util.each(params.PartList, function (PartItem) {
+            var ETag = finishETagMap[PartItem.PartNumber + '|' + PartItem.start + '|' + PartItem.end];
+
+            if (ETag) {
+              PartItem.ETag = ETag;
+              PartItem.Uploaded = true;
+            }
+          });
+          ep.emit('get_copy_data_finish', {
+            UploadId: UploadId,
+            PartList: params.PartList
+          });
+        }
+      });
+    };
+
+    next(0);
+  });
+  ep.on('get_file_size_finish', function () {
     // 控制分片大小
     (function () {
       var SIZE = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1024 * 2, 1024 * 4, 1024 * 5];
@@ -7743,7 +7851,7 @@ function sliceCopyFile(params, callback) {
       }
 
       params.ChunkSize = ChunkSize = Math.max(ChunkSize, AutoChunkSize);
-      var ChunkCount = Math.ceil(FileSize / ChunkSize);
+      ChunkCount = Math.ceil(FileSize / ChunkSize);
       var list = [];
 
       for (var partNumber = 1; partNumber <= ChunkCount; partNumber++) {
@@ -7797,20 +7905,7 @@ function sliceCopyFile(params, callback) {
     delete TargetHeader['x-cos-copy-source-If-Unmodified-Since'];
     delete TargetHeader['x-cos-copy-source-If-Match'];
     delete TargetHeader['x-cos-copy-source-If-None-Match'];
-    self.multipartInit({
-      Bucket: Bucket,
-      Region: Region,
-      Key: Key,
-      Headers: TargetHeader,
-      calledBySdk: 'sliceCopyFile'
-    }, function (err, data) {
-      if (err) {
-        return callback(err);
-      }
-
-      params.UploadId = data.UploadId;
-      ep.emit('get_copy_data_finish', params);
-    });
+    ep.emit('get_chunk_size_finish');
   }); // 获取远端复制源文件的大小
 
   self.headObject({
@@ -7862,7 +7957,8 @@ function sliceCopyFile(params, callback) {
       });
     } else {
       var resHeaders = data.headers;
-      var SourceHeaders = {
+      SourceResHeaders = resHeaders;
+      SourceHeaders = {
         'Cache-Control': resHeaders['cache-control'],
         'Content-Disposition': resHeaders['content-disposition'],
         'Content-Encoding': resHeaders['content-encoding'],
@@ -7877,7 +7973,7 @@ function sliceCopyFile(params, callback) {
           SourceHeaders[k] = v;
         }
       });
-      ep.emit('get_file_size_finish', SourceHeaders);
+      ep.emit('get_file_size_finish');
     }
   });
 } // 复制指定分片
@@ -10403,7 +10499,7 @@ function putObjectCopy(params, callback) {
   var headers = params.Headers;
   if (!headers['Cache-Control'] && !!headers['cache-control']) headers['Cache-Control'] = '';
   var CopySource = params.CopySource || '';
-  var m = CopySource.match(/^([^.]+-\d+)\.cos(v6)?\.([^.]+)\.[^/]+\/(.+)$/);
+  var m = util.getSourceParams.call(this, CopySource);
 
   if (!m) {
     callback({
@@ -10412,9 +10508,9 @@ function putObjectCopy(params, callback) {
     return;
   }
 
-  var SourceBucket = m[1];
-  var SourceRegion = m[3];
-  var SourceKey = decodeURIComponent(m[4]);
+  var SourceBucket = m.Bucket;
+  var SourceRegion = m.Region;
+  var SourceKey = decodeURIComponent(m.Key);
   submitRequest.call(this, {
     Scope: [{
       action: 'name/cos:GetObject',
@@ -10446,7 +10542,7 @@ function putObjectCopy(params, callback) {
 
 function uploadPartCopy(params, callback) {
   var CopySource = params.CopySource || '';
-  var m = CopySource.match(/^([^.]+-\d+)\.cos(v6)?\.([^.]+)\.[^/]+\/(.+)$/);
+  var m = util.getSourceParams.call(this, CopySource);
 
   if (!m) {
     callback({
@@ -10455,9 +10551,9 @@ function uploadPartCopy(params, callback) {
     return;
   }
 
-  var SourceBucket = m[1];
-  var SourceRegion = m[3];
-  var SourceKey = decodeURIComponent(m[4]);
+  var SourceBucket = m.Bucket;
+  var SourceRegion = m.Region;
+  var SourceKey = decodeURIComponent(m.Key);
   submitRequest.call(this, {
     Scope: [{
       action: 'name/cos:GetObject',
@@ -12223,7 +12319,7 @@ var getCache = function getCache() {
 
 var setCache = function setCache() {
   try {
-    wx.setStorageSync(cacheKey, JSON.stringify(cache));
+    if (cache.length) wx.setStorageSync(cacheKey, JSON.stringify(cache));else wx.removeStorageSync(cacheKey);
   } catch (e) {}
 };
 
@@ -12269,6 +12365,18 @@ var mod = {
   getFileId: function getFileId(FileStat, ChunkSize, Bucket, Key) {
     if (FileStat.FilePath && FileStat.size && FileStat.lastModifiedTime && ChunkSize) {
       return util.md5([FileStat.FilePath].join('::')) + '-' + util.md5([FileStat.size, FileStat.mode, FileStat.lastAccessedTime, FileStat.lastModifiedTime, ChunkSize, Bucket, Key].join('::'));
+    } else {
+      return null;
+    }
+  },
+  // 用上传参数生成哈希值
+  getCopyFileId: function getCopyFileId(copySource, sourceHeaders, ChunkSize, Bucket, Key) {
+    var size = sourceHeaders['content-length'];
+    var etag = sourceHeaders.etag || '';
+    var lastModified = sourceHeaders['last-modified'];
+
+    if (copySource && ChunkSize) {
+      return util.md5([copySource, size, etag, lastModified, ChunkSize, Bucket, Key].join('::'));
     } else {
       return null;
     }
@@ -13175,6 +13283,18 @@ var getAuth = function getAuth(opt) {
   return authorization;
 };
 
+var getSourceParams = function getSourceParams(source) {
+  var parser = this.options.CopySourceParser;
+  if (parser) return parser(source);
+  var m = source.match(/^([^.]+-\d+)\.cos(v6|-cdc|-internal)?\.([^.]+)\.((myqcloud\.com)|(tencentcos\.cn))\/(.+)$/);
+  if (!m) return null;
+  return {
+    Bucket: m[1],
+    Region: m[3],
+    Key: m[7]
+  };
+};
+
 var noop = function noop() {}; // 清除对象里值为的 undefined 或 null 的属性
 
 
@@ -13838,7 +13958,8 @@ var util = {
   compareVersion: compareVersion,
   canFileSlice: canFileSlice,
   isCIHost: isCIHost,
-  error: error
+  error: error,
+  getSourceParams: getSourceParams
 };
 module.exports = util;
 xml2json;

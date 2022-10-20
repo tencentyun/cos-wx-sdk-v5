@@ -146,6 +146,14 @@ var getAuth = function (opt) {
 
 };
 
+var getSourceParams = function (source) {
+  var parser = this.options.CopySourceParser;
+  if (parser) return parser(source);
+  var m = source.match(/^([^.]+-\d+)\.cos(v6|-cdc|-internal)?\.([^.]+)\.((myqcloud\.com)|(tencentcos\.cn))\/(.+)$/);
+  if (!m) return null;
+  return { Bucket: m[1], Region: m[3], Key: m[7] };
+};
+
 var noop = function () {
 
 };
@@ -718,6 +726,7 @@ var util = {
     canFileSlice: canFileSlice,
     isCIHost: isCIHost,
     error: error,
+    getSourceParams: getSourceParams,
 };
 
 module.exports = util;

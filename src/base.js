@@ -2232,15 +2232,15 @@ function putObjectCopy(params, callback) {
     if (!headers['Cache-Control'] && !!headers['cache-control']) headers['Cache-Control'] = '';
 
     var CopySource = params.CopySource || '';
-    var m = CopySource.match(/^([^.]+-\d+)\.cos(v6)?\.([^.]+)\.[^/]+\/(.+)$/);
+    var m = util.getSourceParams.call(this, CopySource);
     if (!m) {
         callback({error: 'CopySource format error'});
         return;
     }
 
-    var SourceBucket = m[1];
-    var SourceRegion = m[3];
-    var SourceKey = decodeURIComponent(m[4]);
+    var SourceBucket = m.Bucket;
+    var SourceRegion = m.Region;
+    var SourceKey = decodeURIComponent(m.Key);
 
     submitRequest.call(this, {
         Scope: [{
@@ -2274,15 +2274,15 @@ function putObjectCopy(params, callback) {
 function uploadPartCopy(params, callback) {
 
     var CopySource = params.CopySource || '';
-    var m = CopySource.match(/^([^.]+-\d+)\.cos(v6)?\.([^.]+)\.[^/]+\/(.+)$/);
+    var m = util.getSourceParams.call(this, CopySource);
     if (!m) {
         callback({error: 'CopySource format error'});
         return;
     }
 
-    var SourceBucket = m[1];
-    var SourceRegion = m[3];
-    var SourceKey = decodeURIComponent(m[4]);
+    var SourceBucket = m.Bucket;
+    var SourceRegion = m.Region;
+    var SourceKey = decodeURIComponent(m.Key);
 
     submitRequest.call(this, {
         Scope: [{
