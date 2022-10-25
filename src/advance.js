@@ -911,7 +911,7 @@ async function uploadFile(params, callback) {
 }
 
 // 批量上传文件
-function uploadFiles(params, callback) {
+async function uploadFiles(params, callback) {
     var self = this;
 
     // 判断多大的文件使用分片上传
@@ -943,77 +943,83 @@ function uploadFiles(params, callback) {
 
     // 开始处理每个文件
     var taskList = [];
-    util.each(params.files, async function (fileParams, index) {
-        // var FileSize = fileParams.FileSize;
-        var FileSize = 0;
-        try {
-          FileSize = await util.getFileSizeByPath(fileParams.FilePath);
-        } catch (e) {
-          // 获取大小出错不做处理，不会加入队列
-        }
-        var fileInfo = {Index: index, TaskId: ''};
+    var getTaskList = function() {
+        return params.files.map(function(fileParams, index) {
+          return new Promise(async function(resolve) {
+              var FileSize = 0;
+              try {
+                FileSize = await util.getFileSizeByPath(fileParams.FilePath);
+              } catch (e) {
+                // 获取大小出错不做处理，不会加入队列
+              }
+              var fileInfo = {Index: index, TaskId: ''};
 
-        // 更新文件总大小
-        TotalSize += FileSize;
+              // 更新文件总大小
+              TotalSize += FileSize;
 
-        // 单个文件上传链路
-        if (self.options.EnableTracker) {
-          const accelerate = self.options.UseAccelerate || (typeof self.options.Domain === 'string' && self.options.Domain.includes('accelerate.'));
-          fileParams.tracker = new Tracker({
-              bucket: fileParams.Bucket,
-              region: fileParams.Region,
-              apiName: 'uploadFiles',
-              fileKey: fileParams.Key,
-              fileSize: FileSize,
-              accelerate,
-              deepTracker: self.options.DeepTracker,
-              customId: self.options.CustomId,
-              delay: self.options.TrackerDelay,
+              // 单个文件上传链路
+              if (self.options.EnableTracker) {
+                const accelerate = self.options.UseAccelerate || (typeof self.options.Domain === 'string' && self.options.Domain.includes('accelerate.'));
+                fileParams.tracker = new Tracker({
+                    bucket: fileParams.Bucket,
+                    region: fileParams.Region,
+                    apiName: 'uploadFiles',
+                    fileKey: fileParams.Key,
+                    fileSize: FileSize,
+                    accelerate,
+                    deepTracker: self.options.DeepTracker,
+                    customId: self.options.CustomId,
+                    delay: self.options.TrackerDelay,
+                });
+              }
+
+              // 整理 option，用于返回给回调
+              util.each(fileParams, function (v, k) {
+                  if (typeof v !== 'object' && typeof v !== 'function') {
+                      fileInfo[k] = v;
+                  }
+              });
+
+              // 处理单个文件 TaskReady
+              var _onTaskReady = fileParams.onTaskReady;
+              fileParams.onTaskReady = function (tid) {
+                  fileInfo.TaskId = tid;
+                  _onTaskReady && _onTaskReady(tid);
+              };
+
+              // 处理单个文件进度
+              var PreAddSize = 0;
+              var _onProgress = fileParams.onProgress;
+              fileParams.onProgress = function (info) {
+                  TotalFinish = TotalFinish - PreAddSize + info.loaded;
+                  PreAddSize = info.loaded;
+                  _onProgress && _onProgress(info);
+                  onTotalProgress({loaded: TotalFinish, total: TotalSize});
+              };
+
+              // 处理单个文件完成
+              var _onFileFinish = fileParams.onFileFinish;
+              var onFileFinish = function (err, data) {
+                  // 格式化上报参数并上报
+                  fileParams.tracker && fileParams.tracker.formatResult(err, data);
+                  _onFileFinish && _onFileFinish(err, data);
+                  onTotalFileFinish && onTotalFileFinish(err, data, fileInfo);
+              };
+
+              // 添加上传任务
+              var simpleUploadMethod = self.options.SimpleUploadMethod === 'postObject' ? 'postObject' : 'putObject';
+              var api = FileSize > SliceSize ? 'sliceUploadFile' : simpleUploadMethod;
+              taskList.push({
+                  api: api,
+                  params: fileParams,
+                  callback: onFileFinish,
+              });
+              resolve(true);
           });
-        }
-
-        // 整理 option，用于返回给回调
-        util.each(fileParams, function (v, k) {
-            if (typeof v !== 'object' && typeof v !== 'function') {
-                fileInfo[k] = v;
-            }
-        });
-
-        // 处理单个文件 TaskReady
-        var _onTaskReady = fileParams.onTaskReady;
-        fileParams.onTaskReady = function (tid) {
-            fileInfo.TaskId = tid;
-            _onTaskReady && _onTaskReady(tid);
-        };
-
-        // 处理单个文件进度
-        var PreAddSize = 0;
-        var _onProgress = fileParams.onProgress;
-        fileParams.onProgress = function (info) {
-            TotalFinish = TotalFinish - PreAddSize + info.loaded;
-            PreAddSize = info.loaded;
-            _onProgress && _onProgress(info);
-            onTotalProgress({loaded: TotalFinish, total: TotalSize});
-        };
-
-        // 处理单个文件完成
-        var _onFileFinish = fileParams.onFileFinish;
-        var onFileFinish = function (err, data) {
-            // 格式化上报参数并上报
-            fileParams.tracker && fileParams.tracker.formatResult(err, data);
-            _onFileFinish && _onFileFinish(err, data);
-            onTotalFileFinish && onTotalFileFinish(err, data, fileInfo);
-        };
-
-        // 添加上传任务
-        var simpleUploadMethod = self.options.SimpleUploadMethod === 'postObject' ? 'postObject' : 'putObject';
-        var api = FileSize > SliceSize ? 'sliceUploadFile' : simpleUploadMethod;
-        taskList.push({
-            api: api,
-            params: fileParams,
-            callback: onFileFinish,
-        });
-    });
+          
+      })
+    };
+    await Promise.all(getTaskList());
     self._addTasks(taskList);
 }
 
