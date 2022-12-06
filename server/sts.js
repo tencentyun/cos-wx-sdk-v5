@@ -28,6 +28,13 @@ var config = {
         'name/cos:UploadPart',
         'name/cos:CompleteMultipartUpload'
     ],
+    // condition条件限定，关于 condition 的详细设置规则和COS支持的condition类型可以参考https://cloud.tencent.com/document/product/436/71306
+    // condition:{
+    //   // 比如限制该ip才能访问cos
+    //   'ip_equal': {
+    //       'qcs:ip': '192.168.1.1'
+    //   }
+    // }
 };
 
 
