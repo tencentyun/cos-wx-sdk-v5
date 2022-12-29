@@ -4,3 +4,4 @@ node_modules
 package-lock.json
 .DS_Store
 */.wechatide
+project.private.config.json

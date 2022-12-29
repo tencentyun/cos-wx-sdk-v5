@@ -37,6 +37,17 @@ var config = {
     // }
 };
 
+// 生成带日期的随机文件名
+var createFileName = function (ext) {
+    var N = (x, n) => ('000000' + x).slice(-(n || 2));
+    var d = new Date();
+    var ymd = d.getFullYear() + N(d.getMonth() + 1) + N(d.getDate());
+    var hms = N(d.getHours()) + N(d.getMinutes()) + N(d.getSeconds());
+    var r = N(Math.round((Math.random() * 1000000)), 6);
+    var fileName = ymd + '_' + hms + '_' + r;
+    if (ext) fileName += '.' + ext;
+    return fileName;
+};
 
 // 创建临时密钥服务
 var app = express();
@@ -117,49 +128,54 @@ app.all('/sts', function (req, res, next) {
 //     });
 // });
 //
-// 用于 PostObject 签名保护
-app.all('/post-policy', function (req, res, next) {
-    var query = req.query;
-    var now = Math.round(Date.now() / 1000);
-    var exp = now + 900;
-    var qKeyTime = now + ';' + exp;
-    var qSignAlgorithm = 'sha1';
-    var policy = JSON.stringify({
-        'expiration': new Date(exp * 1000).toISOString(),
-        'conditions': [
-            // {'acl': query.ACL},
-            // ['starts-with', '$Content-Type', 'image/'],
-            // ['starts-with', '$success_action_redirect', redirectUrl],
-            // ['eq', '$x-cos-server-side-encryption', 'AES256'],
-            {'q-sign-algorithm': qSignAlgorithm},
-            {'q-ak': config.secretId},
-            {'q-sign-time': qKeyTime},
-            {'bucket': config.bucket},
-            {'key': query.key},
-        ]
-    });
-
-    // 签名算法说明文档：https://www.qcloud.com/document/product/436/7778
-    // 步骤一：生成 SignKey
-    var signKey = crypto.createHmac('sha1', config.secretKey).update(qKeyTime).digest('hex');
-
-    // 步骤二：生成 StringToSign
-    var stringToSign = crypto.createHash('sha1').update(policy).digest('hex');
-
-    // 步骤三：生成 Signature
-    var qSignature = crypto.createHmac('sha1', signKey).update(stringToSign).digest('hex');
-
-    console.log(policy);
-    res.send({
-        policyObj: JSON.parse(policy),
-        policy: Buffer.from(policy).toString('base64'),
-        qSignAlgorithm: qSignAlgorithm,
-        qAk: config.secretId,
-        qKeyTime: qKeyTime,
-        qSignature: qSignature,
-        // securityToken: securityToken, // 如果使用临时密钥，要返回在这个资源 sessionToken 的值
-    });
-});
+// // 用于 PostObject 签名保护
+// app.all('/post-policy', function (req, res, next) {
+//     var query = req.query;
+//     var ext = query.ext;
+//     var key = 'images/' + createFileName(ext);
+//     var now = Math.round(Date.now() / 1000);
+//     var exp = now + 900;
+//     var qKeyTime = now + ';' + exp;
+//     var qSignAlgorithm = 'sha1';
+//     var policy = JSON.stringify({
+//         'expiration': new Date(exp * 1000).toISOString(),
+//         'conditions': [
+//             // {'acl': query.ACL},
+//             // ['starts-with', '$Content-Type', 'image/'],
+//             // ['starts-with', '$success_action_redirect', redirectUrl],
+//             // ['eq', '$x-cos-server-side-encryption', 'AES256'],
+//             {'q-sign-algorithm': qSignAlgorithm},
+//             {'q-ak': config.secretId},
+//             {'q-sign-time': qKeyTime},
+//             {'bucket': config.bucket},
+//             {'key': key},
+//         ]
+//     });
+//
+//     // 签名算法说明文档：https://www.qcloud.com/document/product/436/7778
+//     // 步骤一：生成 SignKey
+//     var signKey = crypto.createHmac('sha1', config.secretKey).update(qKeyTime).digest('hex');
+//
+//     // 步骤二：生成 StringToSign
+//     var stringToSign = crypto.createHash('sha1').update(policy).digest('hex');
+//
+//     // 步骤三：生成 Signature
+//     var qSignature = crypto.createHmac('sha1', signKey).update(stringToSign).digest('hex');
+//
+//     console.log(policy);
+//     res.send({
+//         bucket: config.bucket,
+//         region: config.region,
+//         key: key,
+//         policyObj: JSON.parse(policy),
+//         policy: Buffer.from(policy).toString('base64'),
+//         qSignAlgorithm: qSignAlgorithm,
+//         qAk: config.secretId,
+//         qKeyTime: qKeyTime,
+//         qSignature: qSignature,
+//         // securityToken: securityToken, // 如果使用临时密钥，要返回在这个资源 sessionToken 的值
+//     });
+// });
 
 app.all('*', function (req, res, next) {
     res.send({code: -1, message: '404 Not Found'});

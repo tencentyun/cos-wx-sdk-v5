@@ -1,13 +1,14 @@
 {
-    "pages": [
-        "pages/index/index",
-        "pages/preview/preview",
-        "pages/album/album"
-    ],
-    "window": {
-        "navigationBarTitleText": "COS 上传示例",
-        "windowBackground": "white",
-        "navigationBarTextStyle": "white",
-        "navigationBarBackgroundColor": "#373b3e"
-    }
+  "pages": [
+    "pages/index/index",
+    "pages/preview/preview",
+    "pages/album/album"
+  ],
+  "window": {
+    "navigationBarTitleText": "COS 上传示例",
+    "windowBackground": "white",
+    "navigationBarTextStyle": "white",
+    "navigationBarBackgroundColor": "#373b3e"
+  },
+  "sitemapLocation": "sitemap.json"
 }

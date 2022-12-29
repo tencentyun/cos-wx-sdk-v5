@@ -1,9 +1,6 @@
 var config = require('./config');
 
 var uploadFile = function () {
-    // 请求用到的参数
-    // var prefix = 'https://cos.' + config.Region + '.myqcloud.com/' + config.Bucket + '/'; // 这个是后缀式，签名也要指定 Pathname: '/' + config.Bucket + '/'
-    var prefix = 'https://' + config.Bucket + '.cos.' + config.Region + '.myqcloud.com/';
 
     // 对更多字符编码的 url encode 格式
     var camSafeUrlEncode = function (str) {
@@ -19,7 +16,7 @@ var uploadFile = function () {
     var getCredentials = function (options, callback) {
         wx.request({
             method: 'GET',
-            url: 'http://127.0.0.1:3000/post-policy?key=' + encodeURIComponent(options.Key), // 服务端签名，参考 server 目录下的两个签名例子
+            url: 'http://127.0.0.1:3000/post-policy?ext=' + options.ext, // 服务端签名，参考 server 目录下的两个签名例子
             dataType: 'json',
             success: function (result) {
                 var data = result.data;
@@ -37,10 +34,15 @@ var uploadFile = function () {
 
     // 上传文件
     var uploadFile = function (filePath) {
-        var Key = filePath.substr(filePath.lastIndexOf('/') + 1); // 这里指定上传的文件名
-        getCredentials({Key: Key}, function (credentials) {
+        var extIndex = filePath.lastIndexOf('.');
+        var fileExt = extIndex >= -1 ? filePath.substr(extIndex + 1) : '';
+        getCredentials({ext: fileExt}, function (credentials) {
+            // 请求用到的参数
+            // var prefix = 'https://cos.' + config.Region + '.myqcloud.com/' + config.Bucket + '/'; // 这个是后缀式，签名也要指定 Pathname: '/' + config.Bucket + '/'
+            var prefix = 'https://' + credentials.bucket + '.cos.' + credentials.region + '.myqcloud.com/';
+            var key = credentials.key;
             var formData = {
-                'key': Key,
+                'key': key,
                 'success_action_status': 200,
                 'Content-Type': '',
                 'q-sign-algorithm': credentials.qSignAlgorithm,
@@ -56,12 +58,13 @@ var uploadFile = function () {
                 filePath: filePath,
                 formData: formData,
                 success: function (res) {
-                    var url = prefix + camSafeUrlEncode(Key).replace(/%2F/g, '/');
+                    var url = prefix + camSafeUrlEncode(key).replace(/%2F/g, '/');
                     if (res.statusCode === 200) {
                         wx.showModal({title: '上传成功', content: url, showCancel: false});
                     } else {
                         wx.showModal({title: '上传失败', content: JSON.stringify(res), showCancel: false});
                     }
+                    console.log(res.header['x-cos-request-id']);
                     console.log(res.statusCode);
                     console.log(url);
                 },
