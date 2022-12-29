@@ -40,7 +40,7 @@ var uploadFile = function () {
             // 请求用到的参数
             // var prefix = 'https://cos.' + config.Region + '.myqcloud.com/' + config.Bucket + '/'; // 这个是后缀式，签名也要指定 Pathname: '/' + config.Bucket + '/'
             var prefix = 'https://' + credentials.bucket + '.cos.' + credentials.region + '.myqcloud.com/';
-            var key = credentials.key;
+            var key = credentials.key; // 让服务端来决定文件名更安全
             var formData = {
                 'key': key,
                 'success_action_status': 200,
