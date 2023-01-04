@@ -360,6 +360,7 @@ var formatParams = function (apiName, params) {
                 'x-cos-storage-class': 'StorageClass',
                 'x-cos-traffic-limit': 'TrafficLimit',
                 'x-cos-mime-limit': 'MimeLimit',
+                'x-cos-forbid-overwrite': 'ForbidOverwrite',
                 // SSE-C
                 'x-cos-server-side-encryption-customer-algorithm': 'SSECustomerAlgorithm',
                 'x-cos-server-side-encryption-customer-key': 'SSECustomerKey',
