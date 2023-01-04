@@ -6793,7 +6793,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, scripts, repository, author, license, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.4.9\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"mime\":\"^2.4.6\",\"@xmldom/xmldom\":\"^0.8.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"babel-loader\":\"8.2.5\",\"@babel/preset-env\":\"7.16.11\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.4.10\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"mime\":\"^2.4.6\",\"@xmldom/xmldom\":\"^0.8.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"babel-loader\":\"8.2.5\",\"@babel/preset-env\":\"7.16.11\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -10587,7 +10587,8 @@ function postObject(params, callback) {
   headers['x-cos-grant-full-control'] = params['GrantFullControl'];
   headers['x-cos-storage-class'] = params['StorageClass'];
   headers['x-cos-mime-limit'] = params['MimeLimit'];
-  headers['x-cos-traffic-limit'] = params['TrafficLimit']; // SSE-C
+  headers['x-cos-traffic-limit'] = params['TrafficLimit'];
+  headers['x-cos-forbid-overwrite'] = params['ForbidOverwrite']; // SSE-C
 
   headers['x-cos-server-side-encryption-customer-algorithm'] = params['SSECustomerAlgorithm'];
   headers['x-cos-server-side-encryption-customer-key'] = params['SSECustomerKey'];
@@ -13896,6 +13897,7 @@ var formatParams = function formatParams(apiName, params) {
         'x-cos-storage-class': 'StorageClass',
         'x-cos-traffic-limit': 'TrafficLimit',
         'x-cos-mime-limit': 'MimeLimit',
+        'x-cos-forbid-overwrite': 'ForbidOverwrite',
         // SSE-C
         'x-cos-server-side-encryption-customer-algorithm': 'SSECustomerAlgorithm',
         'x-cos-server-side-encryption-customer-key': 'SSECustomerKey',

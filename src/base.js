@@ -1960,6 +1960,7 @@ function postObject(params, callback) {
     headers['x-cos-storage-class'] = params['StorageClass'];
     headers['x-cos-mime-limit'] = params['MimeLimit'];
     headers['x-cos-traffic-limit'] = params['TrafficLimit'];
+    headers['x-cos-forbid-overwrite'] = params['ForbidOverwrite'];
     // SSE-C
     headers['x-cos-server-side-encryption-customer-algorithm'] = params['SSECustomerAlgorithm'];
     headers['x-cos-server-side-encryption-customer-key'] = params['SSECustomerKey'];
