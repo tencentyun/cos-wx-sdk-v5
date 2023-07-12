@@ -132,257 +132,246 @@ var mylog = function (msg) {
   });
 };
 
-var toolsDao = {
-  request: function () {
-    // 对云上数据进行图片处理
-    cos.request(
-      {
+// 对云上数据进行图片处理
+function request() {
+  cos.request({
+    Bucket: config.Bucket,
+    Region: config.Region,
+    Key: 'photo.png',
+    Method: 'POST',
+    Action: 'image_process',
+    Headers: {
+        // 通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
+        'Pic-Operations': '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/thumbnail/200x/"}]}'
+    },
+  }, (err, data) => {
+      console.log(err || data)
+  });
+}
+
+function uploadFile() {
+  var uploadFile = function(file) {
+    cos.uploadFile({
         Bucket: config.Bucket,
         Region: config.Region,
-        Key: 'photo.png',
-        Method: 'POST',
-        Action: 'image_process',
-        Headers: {
-          // 通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
-          'Pic-Operations':
-            '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/thumbnail/200x/"}]}',
+        Key: file.name,
+        FilePath: file.path,
+        FileSize: file.size,
+        SliceSize: 1024 * 1024 * 5, // 文件大于5mb自动使用分块上传
+        onTaskReady: function(taskId) {
+          TaskId = taskId
         },
-      },
-      (err, data) => {
+        onProgress: function (info) {
+            var percent = parseInt(info.percent * 10000) / 100;
+            var speed = parseInt(info.speed / 1024 / 1024 * 100) / 100;
+            console.log('进度：' + percent + '%; 速度：' + speed + 'Mb/s;');
+        },
+        onFileFinish: function (err, data, options) {
+            console.log(options.Key + '上传' + (err ? '失败' : '完成'));
+        },
+    }, function (err, data) {
         console.log(err || data);
+    });
+  }
+  wx.chooseMessageFile({
+      count: 10,
+      type: 'all',
+      success: function(res) {
+          uploadFile(res.tempFiles[0]);
       }
-    );
-  },
-  'uploadFile 高级上传': function () {
-    var uploadFile = function (file) {
-      cos.uploadFile(
-        {
-          Bucket: config.Bucket,
-          Region: config.Region,
-          Key: file.name,
-          FilePath: file.path,
-          FileSize: file.size,
-          SliceSize: 1024 * 1024 * 5, // 文件大于5mb自动使用分块上传
-          onTaskReady: function (taskId) {
-            TaskId = taskId;
-          },
-          onProgress: function (info) {
-            var percent = parseInt(info.percent * 10000) / 100;
-            var speed = parseInt((info.speed / 1024 / 1024) * 100) / 100;
-            console.log('进度：' + percent + '%; 速度：' + speed + 'Mb/s;');
-          },
-          onFileFinish: function (err, data, options) {
-            console.log(options.Key + '上传' + (err ? '失败' : '完成'));
-          },
-        },
-        function (err, data) {
-          console.log(err || data);
-        }
-      );
-    };
-    wx.chooseMessageFile({
-      count: 10,
-      type: 'all',
-      success: function (res) {
-        uploadFile(res.tempFiles[0]);
-      },
-    });
-  },
-  'uploadFiles 批量上传': function () {
-    var uploadFiles = function (files) {
-      const fileList = files.map(function (file) {
+  });
+}
+
+function uploadFiles() {
+  var uploadFiles = function(files) {
+    const fileList = files.map(function(file) {
         return Object.assign(file, {
-          Bucket: config.Bucket,
-          Region: config.Region,
-          Key: file.name,
-          FilePath: file.path,
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: file.name,
+            FilePath: file.path,
         });
-      });
-      cos.uploadFiles(
-        {
-          files: fileList,
-          SliceSize: 1024 * 1024 * 5, // 文件大于5mb自动使用分块上传
-          onProgress: function (info) {
+    });
+    cos.uploadFiles({
+        files: fileList,
+        SliceSize: 1024 * 1024 * 5, // 文件大于5mb自动使用分块上传
+        onProgress: function (info) {
             var percent = parseInt(info.percent * 10000) / 100;
-            var speed = parseInt((info.speed / 1024 / 1024) * 100) / 100;
+            var speed = parseInt(info.speed / 1024 / 1024 * 100) / 100;
             console.log('进度：' + percent + '%; 速度：' + speed + 'Mb/s;');
-          },
-          onFileFinish: function (err, data, options) {
+        },
+        onFileFinish: function (err, data, options) {
             console.log(options.Key + '上传' + (err ? '失败' : '完成'));
-          },
         },
-        function (err, data) {
-          console.log(err || data);
-        }
-      );
-    };
-    wx.chooseMessageFile({
+    }, function (err, data) {
+        console.log(err || data);
+    });
+  }
+  wx.chooseMessageFile({
       count: 10,
       type: 'all',
-      success: function (res) {
-        uploadFiles(res.tempFiles);
-      },
-    });
-  },
-  'sliceUploadFile 分片上传': function () {
-    var sliceUploadFile = function (file) {
-      var key = file.name;
-      cos.sliceUploadFile(
-        {
-          Bucket: config.Bucket,
-          Region: config.Region,
-          Key: key,
-          FilePath: file.path,
-          FileSize: file.size,
-          CacheControl: 'max-age=7200',
-          Headers: {
+      success: function(res) {
+          uploadFiles(res.tempFiles);
+      }
+  });
+}
+
+function sliceUploadFile() {
+  var sliceUploadFile = function (file) {
+    var key = file.name;
+    cos.sliceUploadFile({
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: key,
+        FilePath: file.path,
+        FileSize: file.size,
+        CacheControl: 'max-age=7200',
+        Headers: {
             aa: 123,
-          },
-          Query: {
-            bb: 123,
-          },
-          onTaskReady: function (taskId) {
-            TaskId = taskId;
-          },
-          onHashProgress: function (info) {
-            console.log('check hash', JSON.stringify(info));
-          },
-          onProgress: function (info) {
-            console.log(JSON.stringify(info));
-          },
         },
-        requestCallback
-      );
-    };
-    wx.chooseMessageFile({
+        Query: {
+            bb: 123,
+        },
+        onTaskReady: function(taskId) {
+            TaskId = taskId
+        },
+        onHashProgress: function(info) {
+            console.log('check hash', JSON.stringify(info));
+        },
+        onProgress: function(info) {
+            console.log(JSON.stringify(info));
+        }
+    }, requestCallback);
+  };
+  wx.chooseMessageFile({
       count: 10,
       type: 'all',
-      success: function (res) {
-        sliceUploadFile(res.tempFiles[0]);
-      },
-    });
-    // wx.chooseVideo({
-    //     sourceType: ['album','camera'],
-    //     maxDuration: 60,
-    //     camera: 'back',
-    //     success(res) {
-    //         var name = res.tempFilePath.replace(/^.*?([^/]{32}\.\w+)$/, '$1');
-    //         sliceUploadFile({
-    //             name: name,
-    //             path: res.tempFilePath,
-    //             size: res.size,
-    //         });
-    //     },
-    //     fail(err) {
-    //         console.log(err);
-    //     }
-    // })
-  },
-  // 上传文件适用于单请求上传大文件
-  'postObject 简单上传': function () {
-    wx.chooseImage({
-      count: 1, // 默认9
-      sizeType: ['original'], // 可以指定是原图还是压缩图，默认二者都有
-      sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有
-      success: function (res) {
+      success: function(res) {
+          sliceUploadFile(res.tempFiles[0]);
+      }
+  });
+  // wx.chooseVideo({
+  //     sourceType: ['album','camera'],
+  //     maxDuration: 60,
+  //     camera: 'back',
+  //     success(res) {
+  //         var name = res.tempFilePath.replace(/^.*?([^/]{32}\.\w+)$/, '$1');
+  //         sliceUploadFile({
+  //             name: name,
+  //             path: res.tempFilePath,
+  //             size: res.size,
+  //         });
+  //     },
+  //     fail(err) {
+  //         console.log(err);
+  //     }
+  // })
+}
+
+function postObject() {
+  wx.chooseImage({
+    count: 1, // 默认9
+    sizeType: ['original'], // 可以指定是原图还是压缩图，默认二者都有
+    sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有
+    success: function(res) {
         var file = res.tempFiles[0];
-        cos.postObject(
-          {
+        cos.postObject({
             Bucket: config.Bucket,
             Region: config.Region,
             Key: '1.png',
             FilePath: file.path,
-            onTaskReady: function (taskId) {
-              TaskId = taskId;
+            onTaskReady: function(taskId) {
+                TaskId = taskId
             },
-            onProgress: function (info) {
-              console.log(JSON.stringify(info));
-            },
-          },
-          requestCallback
-        );
-      },
-    });
-  },
-  'putObject 简单上传文件': function (type) {
-    wx.chooseMessageFile({
-      count: 10,
-      type: 'all',
-      success: function (res) {
+            onProgress: function(info) {
+                console.log(JSON.stringify(info));
+            }
+        }, requestCallback);
+    }
+  })
+}
+
+function putObject() {
+  wx.chooseMessageFile({
+    count: 10,
+    type: 'all',
+    success: function(res) {
         var file = res.tempFiles[0];
         wxfs.readFile({
-          filePath: file.path,
-          success: function (res) {
-            cos.putObject(
-              {
-                Bucket: config.Bucket,
-                Region: config.Region,
-                Key: file.name,
-                Body: res.data, // 在小程序里，putObject 接口只允许传字符串的内容，不支持 TaskReady 和 onProgress，上传请使用 cos.postObject 接口
-                Headers: {
-                  // 万象持久化接口，上传时持久化。例子：通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
-                  // 'Pic-Operations': '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/thumbnail/200x/"}]}'
-                },
-              },
-              requestCallback
-            );
-          },
-          fail: (err) => console.error(err),
+            filePath: file.path,
+            success: function (res) {
+                cos.putObject({
+                    Bucket: config.Bucket,
+                    Region: config.Region,
+                    Key: file.name,
+                    Body: res.data, // 在小程序里，putObject 接口只允许传字符串的内容，不支持 TaskReady 和 onProgress，上传请使用 cos.postObject 接口
+                    Headers: {
+                        // 万象持久化接口，上传时持久化。例子：通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
+                        // 'Pic-Operations': '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/thumbnail/200x/"}]}'
+                    },
+                }, requestCallback);
+            },
+            fail: err => console.error(err),
         });
-      },
-      fail: (err) => console.error(err),
-    });
-  },
-  'putObject 上传字符串': function (type) {
-    cos.putObject(
-      {
-        Bucket: config.Bucket,
-        Region: config.Region,
-        Key: '1.txt',
-        Body: 'hello world', // 在小程序里，putObject 接口只允许传字符串的内容，不支持 TaskReady 和 onProgress，上传请使用 cos.postObject 接口
-        Headers: {
-          aa: 123,
-        },
-        Query: {
-          bb: 123,
-        },
-      },
-      requestCallback
-    );
-  },
-  // 上传文件
-  'putObject base64 转 ArrayBuffer 上传': function () {
-    var base64Url =
-      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAABRFBMVEUAAAAAo/8Ao/8Ao/8Ao/8ApP8Aov8Ao/8Abv8Abv8AyNwAyNwAo/8Ao/8Ao/8Abv8Ao/8AivgAo/8AyNwAbv8Abv8AydwApf8Abf8Ao/8AbP8Ao/8AyNwAydwAbv8AydwApP8Ao/8AyNwAo/8AyNwAydsAyNwAxd8Aov8AyNwAytsAo/8Abv8AyNwAbv8Av+MAo/8AytsAo/8Abv8AyNwAo/8Abv8AqfkAbv8Aov8Abv8AyNwAov8Abv8Ao/8Abv8Ao/8AydwAo/8Ao/8Ate8Ay9oAvOcAof8AveAAyNwAyNwAo/8AyNwAy9kAo/8AyNwAyNwAo/8AqP8Aaf8AyNwAbv0Abv8Abv8AaP8Ao/8Ao/8Ao/8Ao/8Abv8AyNwAgvcAaP8A0dkAo/8AyNwAav8Abv8Ao/8Abv8AyNwAy9sAvOUAtePdkYxjAAAAZnRSTlMAw/co8uAuJAn8+/Tt29R8DAX77+nZz87Jv6CTh3lxTklAPjouJRsL5tjAuLiyr62roaCakYp0XVtOQTMyLiohICAcGRP49vTv5+PJurawq6mnnJuYl4+OiIB7eXVvX15QSDgqHxNcw3l6AAABe0lEQVQ4y82P11oCQQxGIy5FUJpKk6aAhV6k92LvvXedDfj+92ZkYQHxnnMxu3/OfJMEJo6y++baXf5XVw22GVGcsRmq431mQZRYyIzRGgdXi+HwIv86NDBKisrRAtU1hSj9pkZ9jpo/9YKbRsmNNKCHDXI00BxfMMirKNpMcjQ5Lm4/YZArUXyBYUwg40nsdr5jb3LBe25VWpNeKa1GENsEnq52C80z1uW48estiKjb19G54QdCrScnKAU69U3KJ4jzrsBawDWPuOcBqMyRvlcb1Y+zjMUBVsivAKe4gXgEKiVjSh9wlunGMmwiOqFL3RI0cj+nkgp3jC1BELVFkGiZSuvkp3tZZWZ2sKCuDj185PXqfmwI7AAOUctHkJoOeXg3sxA4ES+l7CVvrYHMEmNp8GtR+wycPG0+1RrwWQUzl4CvgQmPP5Ddofl8tWkJVT7J+BIAaxEktrYZoRAUfXgOGYHfcOqw3WF/EdLccz5cMfvUCPb4QwUmhB8+v12HZPCkbgAAAABJRU5ErkJggg==';
-    var m = /data:image\/(\w+);base64,(.*)/.exec(base64Url) || [];
-    var format = m[1];
-    var bodyData = m[2];
-    var fileBuf = wx.base64ToArrayBuffer(bodyData);
-    cos.putObject(
-      {
-        Bucket: config.Bucket,
-        Region: config.Region,
-        Key: '1.' + format,
-        Body: fileBuf,
-      },
-      requestCallback
-    );
-  },
-  'getObjectUrl 获取对象访问url': function () {
-    var url = cos.getObjectUrl(
-      {
-        Bucket: config.Bucket, // Bucket 格式：test-1250000000
-        Region: config.Region,
-        Key: '1mb.zip',
-        Expires: 60,
-        Sign: true,
-      },
-      function (err, data) {
-        console.log(err || data);
-      }
-    );
-    console.log(url);
-  },
+    },
+    fail: err => console.error(err),
+  });
+}
+
+function putObjectStr() {
+  cos.putObject({
+    Bucket: config.Bucket,
+    Region: config.Region,
+    Key: '1.txt',
+    Body: 'hello world', // 在小程序里，putObject 接口只允许传字符串的内容，不支持 TaskReady 和 onProgress，上传请使用 cos.postObject 接口
+    Headers: {
+        aa: 123,
+    },
+    Query: {
+        bb: 123,
+    },
+  }, requestCallback);
+}
+
+function putObjectBase64() {
+  var base64Url = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAABRFBMVEUAAAAAo/8Ao/8Ao/8Ao/8ApP8Aov8Ao/8Abv8Abv8AyNwAyNwAo/8Ao/8Ao/8Abv8Ao/8AivgAo/8AyNwAbv8Abv8AydwApf8Abf8Ao/8AbP8Ao/8AyNwAydwAbv8AydwApP8Ao/8AyNwAo/8AyNwAydsAyNwAxd8Aov8AyNwAytsAo/8Abv8AyNwAbv8Av+MAo/8AytsAo/8Abv8AyNwAo/8Abv8AqfkAbv8Aov8Abv8AyNwAov8Abv8Ao/8Abv8Ao/8AydwAo/8Ao/8Ate8Ay9oAvOcAof8AveAAyNwAyNwAo/8AyNwAy9kAo/8AyNwAyNwAo/8AqP8Aaf8AyNwAbv0Abv8Abv8AaP8Ao/8Ao/8Ao/8Ao/8Abv8AyNwAgvcAaP8A0dkAo/8AyNwAav8Abv8Ao/8Abv8AyNwAy9sAvOUAtePdkYxjAAAAZnRSTlMAw/co8uAuJAn8+/Tt29R8DAX77+nZz87Jv6CTh3lxTklAPjouJRsL5tjAuLiyr62roaCakYp0XVtOQTMyLiohICAcGRP49vTv5+PJurawq6mnnJuYl4+OiIB7eXVvX15QSDgqHxNcw3l6AAABe0lEQVQ4y82P11oCQQxGIy5FUJpKk6aAhV6k92LvvXedDfj+92ZkYQHxnnMxu3/OfJMEJo6y++baXf5XVw22GVGcsRmq431mQZRYyIzRGgdXi+HwIv86NDBKisrRAtU1hSj9pkZ9jpo/9YKbRsmNNKCHDXI00BxfMMirKNpMcjQ5Lm4/YZArUXyBYUwg40nsdr5jb3LBe25VWpNeKa1GENsEnq52C80z1uW48estiKjb19G54QdCrScnKAU69U3KJ4jzrsBawDWPuOcBqMyRvlcb1Y+zjMUBVsivAKe4gXgEKiVjSh9wlunGMmwiOqFL3RI0cj+nkgp3jC1BELVFkGiZSuvkp3tZZWZ2sKCuDj185PXqfmwI7AAOUctHkJoOeXg3sxA4ES+l7CVvrYHMEmNp8GtR+wycPG0+1RrwWQUzl4CvgQmPP5Ddofl8tWkJVT7J+BIAaxEktrYZoRAUfXgOGYHfcOqw3WF/EdLccz5cMfvUCPb4QwUmhB8+v12HZPCkbgAAAABJRU5ErkJggg==';
+  var m = (/data:image\/(\w+);base64,(.*)/.exec(base64Url) || []);
+  var format = m[1];
+  var bodyData = m[2];
+  var fileBuf = wx.base64ToArrayBuffer(bodyData);
+  cos.putObject({
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Key: '1.' + format,
+      Body: fileBuf,
+  }, requestCallback);
+}
+
+function getObjectUrl() {
+  var url = cos.getObjectUrl({
+    Bucket: config.Bucket, // Bucket 格式：test-1250000000
+    Region: config.Region,
+    Key: '1mb.zip',
+    Expires: 60,
+    Sign: true,
+  }, function(err, data) {
+      console.log(err || data);
+  });
+  console.log(url);
+}
+
+var toolsDao = {
+    'request': request,
+    'uploadFile 高级上传': uploadFile,
+    'uploadFiles 批量上传': uploadFiles,
+    'sliceUploadFile 分片上传': sliceUploadFile,
+    // 上传文件适用于单请求上传大文件
+    'postObject 简单上传': postObject,
+    'putObject 简单上传文件': putObject,
+    'putObject 上传字符串': putObjectStr,
+    // 上传文件
+    'putObject base64 转 ArrayBuffer 上传': putObjectBase64,
+    'getObjectUrl 获取对象访问url': getObjectUrl,
 };
 
 var bucketDao = {
@@ -586,25 +575,20 @@ var bucketDao = {
 };
 
 var objectDao = {
-  'getBucket 获取对象列表': function () {
-    cos.getBucket(
-      {
-        Bucket: config.Bucket,
-        Region: config.Region,
-      },
-      requestCallback
-    );
-  },
-  // 上传文件适用于单请求上传大文件
-  'postObject 表单上传对象': function () {
-    wx.chooseImage({
-      count: 1, // 默认9
-      sizeType: ['original'], // 可以指定是原图还是压缩图，默认二者都有
-      sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有
-      success: function (res) {
-        var file = res.tempFiles[0];
-        cos.postObject(
-          {
+    'getBucket 获取对象列表': function() {
+        cos.getBucket({
+            Bucket: config.Bucket,
+            Region: config.Region
+        }, requestCallback);
+    },
+    // 上传文件适用于单请求上传大文件
+    'postObject 表单上传对象': postObject,
+    'putObject 简单上传文件': putObject,
+    'putObject 上传字符串': putObjectStr,
+    // 上传文件
+    'putObject base64 转 ArrayBuffer 上传': putObjectBase64,
+    'getObject 下载对象': function() {
+        cos.getObject({
             Bucket: config.Bucket,
             Region: config.Region,
             Key: '1.png',
@@ -612,223 +596,42 @@ var objectDao = {
             onTaskReady: function (taskId) {
               TaskId = taskId;
             },
-            onProgress: function (info) {
-              console.log(JSON.stringify(info));
-            },
-          },
-          requestCallback
-        );
-      },
-    });
-  },
-  'putObject 简单上传文件': function (type) {
-    wx.chooseMessageFile({
-      count: 10,
-      type: 'all',
-      success: function (res) {
-        var file = res.tempFiles[0];
-        wxfs.readFile({
-          filePath: file.path,
-          success: function (res) {
-            cos.putObject(
-              {
-                Bucket: config.Bucket,
-                Region: config.Region,
-                Key: file.name,
-                Body: res.data, // 在小程序里，putObject 接口只允许传字符串的内容，不支持 TaskReady 和 onProgress，上传请使用 cos.postObject 接口
-                Headers: {
-                  // 万象持久化接口，上传时持久化。例子：通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
-                  // 'Pic-Operations': '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/thumbnail/200x/"}]}'
-                },
-              },
-              requestCallback
-            );
-          },
-          fail: (err) => console.error(err),
+            function(err, data) {
+                // 也可以取到下一次上传的position继续追加上传
+                // var nextPosition = data.headers['x-cos-next-append-position'];
+                console.log('putObject:', err || data);
+            })
         });
-      },
-      fail: (err) => console.error(err),
-    });
-  },
-  'putObject 上传字符串': function (type) {
-    cos.putObject(
-      {
-        Bucket: config.Bucket,
-        Region: config.Region,
-        Key: '1.txt',
-        Body: 'hello world', // 在小程序里，putObject 接口只允许传字符串的内容，不支持 TaskReady 和 onProgress，上传请使用 cos.postObject 接口
-        Headers: {
-          aa: 123,
-        },
-        Query: {
-          bb: 123,
-        },
-      },
-      requestCallback
-    );
-  },
-  // 上传文件
-  'putObject base64 转 ArrayBuffer 上传': function () {
-    var base64Url =
-      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAABRFBMVEUAAAAAo/8Ao/8Ao/8Ao/8ApP8Aov8Ao/8Abv8Abv8AyNwAyNwAo/8Ao/8Ao/8Abv8Ao/8AivgAo/8AyNwAbv8Abv8AydwApf8Abf8Ao/8AbP8Ao/8AyNwAydwAbv8AydwApP8Ao/8AyNwAo/8AyNwAydsAyNwAxd8Aov8AyNwAytsAo/8Abv8AyNwAbv8Av+MAo/8AytsAo/8Abv8AyNwAo/8Abv8AqfkAbv8Aov8Abv8AyNwAov8Abv8Ao/8Abv8Ao/8AydwAo/8Ao/8Ate8Ay9oAvOcAof8AveAAyNwAyNwAo/8AyNwAy9kAo/8AyNwAyNwAo/8AqP8Aaf8AyNwAbv0Abv8Abv8AaP8Ao/8Ao/8Ao/8Ao/8Abv8AyNwAgvcAaP8A0dkAo/8AyNwAav8Abv8Ao/8Abv8AyNwAy9sAvOUAtePdkYxjAAAAZnRSTlMAw/co8uAuJAn8+/Tt29R8DAX77+nZz87Jv6CTh3lxTklAPjouJRsL5tjAuLiyr62roaCakYp0XVtOQTMyLiohICAcGRP49vTv5+PJurawq6mnnJuYl4+OiIB7eXVvX15QSDgqHxNcw3l6AAABe0lEQVQ4y82P11oCQQxGIy5FUJpKk6aAhV6k92LvvXedDfj+92ZkYQHxnnMxu3/OfJMEJo6y++baXf5XVw22GVGcsRmq431mQZRYyIzRGgdXi+HwIv86NDBKisrRAtU1hSj9pkZ9jpo/9YKbRsmNNKCHDXI00BxfMMirKNpMcjQ5Lm4/YZArUXyBYUwg40nsdr5jb3LBe25VWpNeKa1GENsEnq52C80z1uW48estiKjb19G54QdCrScnKAU69U3KJ4jzrsBawDWPuOcBqMyRvlcb1Y+zjMUBVsivAKe4gXgEKiVjSh9wlunGMmwiOqFL3RI0cj+nkgp3jC1BELVFkGiZSuvkp3tZZWZ2sKCuDj185PXqfmwI7AAOUctHkJoOeXg3sxA4ES+l7CVvrYHMEmNp8GtR+wycPG0+1RrwWQUzl4CvgQmPP5Ddofl8tWkJVT7J+BIAaxEktrYZoRAUfXgOGYHfcOqw3WF/EdLccz5cMfvUCPb4QwUmhB8+v12HZPCkbgAAAABJRU5ErkJggg==';
-    var m = /data:image\/(\w+);base64,(.*)/.exec(base64Url) || [];
-    var format = m[1];
-    var bodyData = m[2];
-    var fileBuf = wx.base64ToArrayBuffer(bodyData);
-    cos.putObject(
-      {
-        Bucket: config.Bucket,
-        Region: config.Region,
-        Key: '1.' + format,
-        Body: fileBuf,
-      },
-      requestCallback
-    );
-  },
-  'getObject 下载对象': function () {
-    cos.getObject(
-      {
-        Bucket: config.Bucket,
-        Region: config.Region,
-        Key: '1.png',
-        // 下载时使用图片处理
-        // QueryString: `imageMogr2/thumbnail/200x/`,
-      },
-      requestCallback
-    );
-  },
-  'headObject 检索对象': function () {
-    cos.headObject(
-      {
-        Bucket: config.Bucket,
-        Region: config.Region,
-        Key: '1.txt',
-      },
-      requestCallback
-    );
-  },
-  'deleteObject 删除对象': function () {
-    cos.deleteObject(
-      {
-        Bucket: config.Bucket,
-        Region: config.Region,
-        Key: '1.txt',
-      },
-      requestCallback
-    );
-  },
-  'getObjectACL 获取对象ACL': function () {
-    cos.getObjectAcl(
-      {
-        Bucket: config.Bucket,
-        Region: config.Region,
-        Key: '1.txt',
-      },
-      requestCallback
-    );
-  },
-  'putObjectACL 设置对象ACL': function () {
-    cos.putObjectAcl(
-      {
-        Bucket: config.Bucket, // Bucket 格式：test-1250000000
-        Region: config.Region,
-        Key: '1.txt',
-        // GrantFullControl: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"',
-        // GrantWrite: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"',
-        // GrantRead: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"',
-        // ACL: 'public-read-write',
-        // ACL: 'public-read',
-        // ACL: 'private',
-        ACL: 'default', // 继承上一级目录权限
-        // AccessControlPolicy: {
-        //     "Owner": { // AccessControlPolicy 里必须有 owner
-        //         "ID": 'qcs::cam::uin/459000000:uin/459000000' // 459000000 是 Bucket 所属用户的 QQ 号
-        //     },
-        //     "Grants": [{
-        //         "Grantee": {
-        //             "ID": "qcs::cam::uin/10002:uin/10002", // 10002 是 QQ 号
-        //         },
-        //         "Permission": "READ"
-        //     }]
-        // }
-      },
-      requestCallback
-    );
-  },
-  'deleteMultipleObject 批量删除对象': function () {
-    cos.deleteMultipleObject(
-      {
-        Bucket: config.Bucket, // Bucket 格式：test-1250000000
-        Region: config.Region,
-        Objects: [
-          {
-            Key: '1.txt',
-          },
-          {
-            Key: '1.copy.txt',
-          },
-        ],
-      },
-      requestCallback
-    );
-  },
-  'putObjectCopy 复制对象': function () {
-    cos.putObjectCopy(
-      {
-        Bucket: config.Bucket, // Bucket 格式：test-1250000000
-        Region: config.Region,
-        Key: '1.copy.txt',
-        CopySource:
-          config.Bucket + '.cos.' + config.Region + '.myqcloud.com/1.txt',
-      },
-      requestCallback
-    );
-  },
-  'restoreObject 恢复归档对象': function () {
-    cos.restoreObject(
-      {
-        Bucket: config.Bucket,
-        Region: config.Region,
-        Key: '1.txt',
-        RestoreRequest: {
-          Days: 1,
-          CASJobParameters: {
-            Tier: 'Expedited',
-          },
-        },
-      },
-      requestCallback
-    );
-  },
-  'appendObject 追加上传': function () {
-    // 初始化一个可追加上传的对象append.txt
-    cos.appendObject(
-      {
-        Bucket: config.Bucket, // Bucket 格式：test-1250000000
-        Region: config.Region,
-        Key: 'append.txt' /* 必须 */,
-        Body: '12345',
-        Position: 0,
-      },
-      function (err, data) {
-        console.log('putObject:', err || data);
-      }
-    );
-  },
-  'appendObject_continue 继续追加上传': function () {
-    // append.txt必须是一个可追加上传的对象，参考文档：https://cloud.tencent.com/document/product/436/7741
-    cos.headObject(
-      {
-        Bucket: config.Bucket, // Bucket 格式：test-1250000000
-        Region: config.Region,
-        Key: 'append.txt' /* 必须 */,
-      },
-      function (err, data) {
-        if (err) return console.log(err);
-        // 首先取到要追加的文件当前长度，即需要上送的Position
-        var position = data.headers['content-length'];
-        cos.appendObject(
-          {
+    },
+    'abortUploadTask 抛弃分块上传任务': function() {
+        cos.abortUploadTask({
+            Bucket: config.Bucket,
+            /* 必须 */ // Bucket 格式：test-1250000000
+            Region: config.Region,
+            /* 必须 */
+            // 格式1，删除单个上传任务
+            // Level: 'task',
+            // Key: '10mb.zip',
+            // UploadId: '14985543913e4e2642e31db217b9a1a3d9b3cd6cf62abfda23372c8d36ffa38585492681e3',
+            // 格式2，删除单个文件所有未完成上传任务
+            Level: 'file',
+            Key: '10mb.zip',
+            // 格式3，删除 Bucket 下所有未完成上传任务
+            // Level: 'bucket',
+        }, requestCallback);
+    },
+}
+
+var advanceObjectDao = {
+    'sliceUploadFile 分块上传': sliceUploadFile,
+    'sliceCopyFile 分块复制对象': function() {
+        // 创建测试文件
+        var sourceName = '1.txt';
+        var Key = '1.slicecopy.exe';
+
+        var sourcePath = config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + sourceName;
+
+        cos.sliceCopyFile({
             Bucket: config.Bucket, // Bucket 格式：test-1250000000
             Region: config.Region,
             Key: 'append.txt' /* 必须 */,
@@ -1289,131 +1092,315 @@ var ciObjectDao = {
         Conf: {
           BizType: '',
         },
+        function(err, data){
+            console.log(err || data);
+        });
+    },
+    '提交直播审核任务 postLiveAuditing'() {
+      var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+      var url = 'https://' + host + '/video/auditing';
+      var body = COS.util.json2xml({
+        Request: {
+          Type: 'live_video',
+          Input: {
+            Url: 'rtmp://example.com/live/123', // 需要审核的直播流播放地址
+            // DataId: '',
+            // UserInfo: {},
+          },
+          Conf: {
+            BizType: '766d07a7af937c26216c51db29793ea6',
+            // Callback: 'https://callback.com', // 回调地址，非必须
+            // CallbackType: 1, // 回调片段类型，非必须
+          }
+        }
+      });
+      cos.request({
+          Bucket: config.Bucket,
+          Region: config.Region,
+          Method: 'POST',
+          Url: url,
+          Key: '/video/auditing',
+          ContentType: 'application/xml',
+          Body: body
       },
-    });
-    cos.request(
-      {
-        Bucket: config.Bucket,
-        Region: config.Region,
-        Method: 'POST',
-        Url: url,
-        Key: '/text/auditing',
-        ContentType: 'application/xml',
-        Body: body,
+      function(err, data){
+          console.log(err || data);
+      });
+    },
+    '查询直播审核任务结果 getLiveAuditingResult'() {
+      var jobId = 'av2b14a74dbd9011edb05a52540084c0xx'; // jobId可以通过提交直播审核任务返回
+      var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+      var url = 'https://' + host + '/video/auditing/' + jobId;
+      cos.request({
+          Bucket: config.Bucket,
+          Region: config.Region,
+          Method: 'GET',
+          Key: '/video/auditing/' + jobId,
+          Url: url,
       },
-      function (err, data) {
-        console.log(err || data);
-      }
-    );
-  },
-  '查询文本审核任务结果 getTextAuditingResult': function () {
-    var jobId = 'st8d88c664aff511ecb23352540078cxxx'; // jobId可以通过提交文本审核任务返回（Input传入Object）
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
-    var url = 'https://' + host + '/text/auditing/' + jobId;
-    cos.request(
-      {
-        Bucket: config.Bucket,
-        Region: config.Region,
+      function(err, data){
+          console.log(err || data);
+      });
+    },
+    '提交病毒检测任务 postVirusDetect'() {
+      var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/virus/detect';
+      var url = 'https://' + host;
+      var body = COS.util.json2xml({
+        Request: {
+          Input: {
+            Object: 'test/1.png', // 文件名，取值为文件在当前存储桶中的完整名称，与Url参数二选一
+            // Url: 'http://examplebucket-1250000000.cos.ap-shanghai.myqcloud.com/virus.doc', // 病毒文件的链接地址，与Object参数二选一
+          },
+          Conf: {
+            DetectType: 'Virus', // 检测的病毒类型，当前固定为：Virus
+            // CallBack: 'http://callback.demo.com', // 任务回调的地址
+          },
+        }
+      });
+      cos.request({
+          Method: 'POST',
+          Key: 'virus/detect',
+          Url: url,
+          Body: body,
+          ContentType: 'application/xml',
+      },
+      function(err, data){
+          console.log(err || data);
+      });
+    },
+    '查询病毒检测任务结果 getVirusDetectResult'() {
+      var jobId = 'ss5a8d3065bd9011eda1445254009dadxx'; // 提交病毒检测任务后会返回当前任务的jobId
+      var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/virus/detect/' + jobId;
+      var url = 'https://' + host;
+      cos.request({
         Method: 'GET',
-        Key: '/text/auditing/' + jobId,
+        Key: 'virus/detect/' + jobId,
         Url: url,
       },
-      function (err, data) {
-        console.log(err || data);
-      }
-    );
-  },
-  '提交文档审核任务 postDocumentAuditing': function () {
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
-    var url = 'https://' + host + '/document/auditing';
-    var body = COS.util.json2xml({
-      Request: {
-        Input: {
-          Object: 'test.xlsx', // 存在cos里的资源，审核结果异步返回，可以调用查询文本审核结果api查询
-        },
-        Conf: {
-          BizType: '',
-        },
+      function(err, data){
+          console.log(err || data);
+      });
+    },
+    '提交音频降噪任务 postNoiseReduction'() {
+      var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/jobs';
+      var url = 'https://' + host;
+      var body = COS.util.json2xml({
+        Request: {
+          Tag: 'NoiseReduction',
+          Input: {
+            Object: 'ci/music.mp3', // 文件名，取值为文件在当前存储桶中的完整名称
+          },
+          Operation: {
+            Output: {
+              Bucket: config.Bucket, // 输出的存储桶
+              Region: config.Region, // 输出的存储桶的地域
+              Object: 'ci/out.mp3', // 输出的文件Key
+            },
+          },
+          // QueueId: '', // 任务所在的队列 ID，非必须
+          // CallBackFormat: '', // 任务回调格式，JSON 或 XML，默认 XML，优先级高于队列的回调格式，非必须
+          // CallBackType: '', // 任务回调类型，Url 或 TDMQ，默认 Url，优先级高于队列的回调类型，非必须
+          // CallBack: '', // 任务回调地址，优先级高于队列的回调地址。设置为 no 时，表示队列的回调地址不产生回调，非必须	
+          // CallBackMqConfig: '', // 任务回调 TDMQ 配置，当 CallBackType 为 TDMQ 时必填，非必须	
+        }
+      });
+      cos.request({
+          Method: 'POST',
+          Key: 'jobs',
+          Url: url,
+          Body: body,
+          ContentType: 'application/xml',
       },
-    });
-    cos.request(
-      {
-        Bucket: config.Bucket,
-        Region: config.Region,
-        Method: 'POST',
-        Url: url,
-        Key: '/document/auditing',
-        ContentType: 'application/xml',
-        Body: body,
+      function(err, data){
+          console.log(err || data);
+      });
+    },
+    '提交人声分离任务 postVoiceSeparate'() {
+      var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/jobs';
+      var url = 'https://' + host;
+      var body = COS.util.json2xml({
+        Request: {
+          Tag: 'VoiceSeparate',
+          Input: {
+            Object: 'ci/music.mp3', // 文件名，取值为文件在当前存储桶中的完整名称
+          },
+          Operation: {
+            // VoiceSeparate: {}, // 指定转码模板参数，非必须
+            TemplateId: 't13fca82ad97e84878a22cd81bd2e5652c', // 指定的模板 ID，必须
+            // JobLevel: 0, // 任务优先级，级别限制：0 、1 、2。级别越大任务优先级越高，默认为0，非必须
+            Output: {
+              Bucket: config.Bucket, // 输出的存储桶
+              Region: config.Region, // 输出的存储桶的地域
+              Object: 'ci/out/background.mp3', // 输出的文件Key,背景音结果文件名，不能与 AuObject 同时为空
+              AuObject: 'ci/out/audio.mp3',
+            },
+          },
+          // QueueId: '', // 任务所在的队列 ID，非必须
+          // CallBackFormat: '', // 任务回调格式，JSON 或 XML，默认 XML，优先级高于队列的回调格式，非必须
+          // CallBackType: '', // 任务回调类型，Url 或 TDMQ，默认 Url，优先级高于队列的回调类型，非必须
+          // CallBack: '', // 任务回调地址，优先级高于队列的回调地址。设置为 no 时，表示队列的回调地址不产生回调，非必须	
+          // CallBackMqConfig: '', // 任务回调 TDMQ 配置，当 CallBackType 为 TDMQ 时必填，非必须	
+        }
+      });
+      cos.request({
+          Method: 'POST',
+          Key: 'jobs',
+          Url: url,
+          Body: body,
+          ContentType: 'application/xml',
       },
-      function (err, data) {
-        console.log(err || data);
-      }
-    );
-  },
-  '查询文档审核任务结果 getDocumentAuditingResult': function () {
-    var jobId = 'sd7815c21caff611eca12f525400d88560'; // jobId可以通过提交文档审核任务返回
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
-    var url = 'https://' + host + '/document/auditing/' + jobId;
-    cos.request(
-      {
-        Bucket: config.Bucket,
-        Region: config.Region,
+      function(err, data){
+          console.log(err || data);
+      });
+    },
+    '提交语音合成任务 postTts'() {
+      var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/jobs';
+      var url = 'https://' + host;
+      var body = COS.util.json2xml({
+        Request: {
+          Tag: 'Tts',
+          Operation: {
+            // VoiceSeparate: {}, // 指定转码模板参数，非必须
+            TemplateId: 't192931b3564084168a3f50ebfea59acb3', // 指定的模板 ID，必须
+            // JobLevel: 0, // 任务优先级，级别限制：0 、1 、2。级别越大任务优先级越高，默认为0，非必须
+            TtsConfig: {
+              InputType: 'Text',
+              Input: '床前明月光，疑是地上霜',
+            },
+            Output: {
+              Bucket: config.Bucket, // 输出的存储桶
+              Region: config.Region, // 输出的存储桶的地域
+              Object: 'ci/out/tts.mp3', // 输出的文件Key
+            },
+          },
+          // QueueId: '', // 任务所在的队列 ID，非必须
+          // CallBackFormat: '', // 任务回调格式，JSON 或 XML，默认 XML，优先级高于队列的回调格式，非必须
+          // CallBackType: '', // 任务回调类型，Url 或 TDMQ，默认 Url，优先级高于队列的回调类型，非必须
+          // CallBack: '', // 任务回调地址，优先级高于队列的回调地址。设置为 no 时，表示队列的回调地址不产生回调，非必须	
+          // CallBackMqConfig: '', // 任务回调 TDMQ 配置，当 CallBackType 为 TDMQ 时必填，非必须	
+        }
+      });
+      cos.request({
+          Method: 'POST',
+          Key: 'jobs',
+          Url: url,
+          Body: body,
+          ContentType: 'application/xml',
+      },
+      function(err, data){
+          console.log(err || data);
+      });
+    },
+    '提交语音识别任务 postSpeechRecognition'() {
+      var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/asr_jobs';
+      var url = 'https://' + host;
+      var body = COS.util.json2xml({
+        Request: {
+          Tag: 'SpeechRecognition',
+          Input: {
+            Object: 'ci/music.mp3', // 文件名，取值为文件在当前存储桶中的完整名称，与Url参数二选一
+            // Url: 'http://examplebucket-1250000000.cos.ap-shanghai.myqcloud.com/music.mp3', // 病毒文件的链接地址，与Object参数二选一
+          },
+          Operation: {
+            SpeechRecognition: {
+              EngineModelType: '16k_zh_video', // 引擎模型类型
+              ChannelNum: 1, // 语音声道数
+              ResTextFormat: 0, // 识别结果返回形式
+              FilterDirty: 1, // 是否过滤脏词（目前支持中文普通话引擎）
+              FilterModal: 1, // 是否过语气词（目前支持中文普通话引擎）
+              ConvertNumMode: 0, // 是否进行阿拉伯数字智能转换（目前支持中文普通话引擎）
+            },
+            Output: {
+              Bucket: config.Bucket, // 输出的存储桶
+              Region: config.Region, // 输出的存储桶的地域
+              Object: 'ci/out/SpeechRecognition.mp3', // 输出的文件Key
+            },
+          },
+          // QueueId: '', // 任务所在的队列 ID，非必须
+          // CallBackFormat: '', // 任务回调格式，JSON 或 XML，默认 XML，优先级高于队列的回调格式，非必须
+          // CallBackType: '', // 任务回调类型，Url 或 TDMQ，默认 Url，优先级高于队列的回调类型，非必须
+          // CallBack: '', // 任务回调地址，优先级高于队列的回调地址。设置为 no 时，表示队列的回调地址不产生回调，非必须	
+          // CallBackMqConfig: '', // 任务回调 TDMQ 配置，当 CallBackType 为 TDMQ 时必填，非必须	
+        }
+      });
+      cos.request({
+          Method: 'POST',
+          Key: 'asr_jobs',
+          Url: url,
+          Body: body,
+          ContentType: 'application/xml',
+      },
+      function(err, data){
+          console.log(err || data);
+      });
+    },
+    '查询语音识别队列 getAsrQueue'() {
+      var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/asrqueue';
+      var url = 'https://' + host;
+      cos.request({
         Method: 'GET',
-        Key: '/document/auditing/' + jobId,
+        Key: 'asrqueue',
         Url: url,
-      },
-      function (err, data) {
-        console.log(err || data);
-      }
-    );
-  },
-  '提交网页审核任务 postWebpageAuditing': function () {
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
-    var url = 'https://' + host + '/webpage/auditing';
-    var body = COS.util.json2xml({
-      Request: {
-        Input: {
-          Url: 'https://cloud.tencent.com/', // 存在cos里的资源，审核结果异步返回，可以调用查询文本审核结果api查询
-        },
-        Conf: {
-          BizType: '',
+        Query: {
+          // queueIds: '', /* 	非必须，队列 ID，以“,”符号分割字符串 */
+          // state: '', /* 非必须，1=Active,2=Paused 	 */
+          // pageNumber: 1, /* 非必须，第几页	 */
+          // pageSize: 2, /* 非必须，每页个数	 */
         },
       },
-    });
-    cos.request(
-      {
-        Bucket: config.Bucket,
-        Region: config.Region,
-        Method: 'POST',
+      function(err, data){
+          console.log(err || data);
+      });
+    },
+    '更新语音识别队列 putAsrQueue'() {
+      // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/46946)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询
+      var queueId = 'pcc77499e85c311edb9865254008618d9';
+      var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/asrqueue/' + queueId;
+      var url = 'https://' + host;
+      var body = COS.util.json2xml({
+        Request: {
+          Name: 'queue-doc-process-1',
+          QueueID: queueId,
+          State: 'Paused',
+          NotifyConfig: {
+            // Url: '',
+            // Type: 'Url',
+            // Event: '',
+            State: 'Off',
+          },
+        }
+      });
+      cos.request({
+        Method: 'PUT',
+        Key: 'asrqueue/' + queueId,
         Url: url,
-        Key: '/webpage/auditing',
-        ContentType: 'application/xml',
         Body: body,
+        ContentType: 'application/xml',
       },
-      function (err, data) {
-        console.log(err || data);
-      }
-    );
-  },
-  '查询网页审核任务结果 getWebpageAuditingResult': function () {
-    var jobId = 'shce868019aff611ecb1155254009a4xxx'; // jobId可以通过提交网页审核任务返回
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
-    var url = 'https://' + host + '/webpage/auditing/' + jobId;
-    cos.request(
-      {
-        Bucket: config.Bucket,
-        Region: config.Region,
-        Method: 'GET',
-        Key: '/webpage/auditing/' + jobId,
-        Url: url,
+      function(err, data){
+          console.log(err || data);
+      });
+    },
+    '查询语音识别开通状态 getAsrBucket'() {
+      var host = 'ci.' + config.Region + '.myqcloud.com/asrbucket';
+      var url = 'https://' + host;
+      cos.request({
+          Method: 'GET',
+          Key: 'asrbucket',
+          Url: url,
+          Query: {
+            // regions: '', /* 	非必须，地域信息，以“,”分隔字符串，支持 All、ap-shanghai、ap-beijing */
+            // bucketNames: '', /* 非必须，存储桶名称，以“,”分隔，支持多个存储桶，精确搜索	 */
+            // bucketName: '', /* 非必须，存储桶名称前缀，前缀搜索	 */
+            // pageNumber: 1, /* 非必须，第几页	 */
+            // pageSize: 10, /* 非必须，每页个数	 */
+          },
       },
-      function (err, data) {
-        console.log(err || data);
-      }
-    );
-  },
-};
+      function(err, data){
+          console.log(err || data);
+      });
+    }
+}
 
 // require('./test');
 
