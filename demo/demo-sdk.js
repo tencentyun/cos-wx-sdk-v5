@@ -102,11 +102,7 @@ var requestCallback = function (err, data) {
   if (err && err.error) {
     wx.showModal({
       title: '返回错误',
-      content:
-        '请求失败：' +
-        (err.error.Message || err.error) +
-        '；状态码：' +
-        err.statusCode,
+      content: '请求失败：' + (err.error.Message || err.error) + '；状态码：' + err.statusCode,
       showCancel: false,
     });
   } else if (err) {
@@ -149,7 +145,7 @@ function request() {
     },
     (err, data) => {
       console.log(err || data);
-    }
+    },
   );
 }
 
@@ -177,7 +173,7 @@ function uploadFile() {
       },
       function (err, data) {
         console.log(err || data);
-      }
+      },
     );
   };
   wx.chooseMessageFile({
@@ -214,7 +210,7 @@ function uploadFiles() {
       },
       function (err, data) {
         console.log(err || data);
-      }
+      },
     );
   };
   wx.chooseMessageFile({
@@ -253,7 +249,7 @@ function sliceUploadFile() {
           console.log(JSON.stringify(info));
         },
       },
-      requestCallback
+      requestCallback,
     );
   };
   wx.chooseMessageFile({
@@ -301,7 +297,7 @@ function postObject() {
             console.log(JSON.stringify(info));
           },
         },
-        requestCallback
+        requestCallback,
       );
     },
   });
@@ -327,7 +323,7 @@ function putObject() {
                 // 'Pic-Operations': '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/thumbnail/200x/"}]}'
               },
             },
-            requestCallback
+            requestCallback,
           );
         },
         fail: (err) => console.error(err),
@@ -351,7 +347,7 @@ function putObjectStr() {
         bb: 123,
       },
     },
-    requestCallback
+    requestCallback,
   );
 }
 
@@ -369,7 +365,7 @@ function putObjectBase64() {
       Key: '1.' + format,
       Body: fileBuf,
     },
-    requestCallback
+    requestCallback,
   );
 }
 
@@ -384,7 +380,7 @@ function getObjectUrl() {
     },
     function (err, data) {
       console.log(err || data);
-    }
+    },
   );
   console.log(url);
 }
@@ -415,7 +411,7 @@ var bucketDao = {
         Bucket: config.Bucket,
         Region: config.Region,
       },
-      requestCallback
+      requestCallback,
     );
   },
   'headBucket 检索存储桶及其权限': function () {
@@ -424,7 +420,7 @@ var bucketDao = {
         Bucket: config.Bucket,
         Region: config.Region,
       },
-      requestCallback
+      requestCallback,
     );
   },
   'deleteBucket 删除存储桶': function () {
@@ -433,7 +429,7 @@ var bucketDao = {
         Bucket: config.Bucket,
         Region: config.Region,
       },
-      requestCallback
+      requestCallback,
     );
   },
   'getBucketACL 查询存储桶 ACL': function () {
@@ -442,7 +438,7 @@ var bucketDao = {
         Bucket: config.Bucket,
         Region: config.Region,
       },
-      requestCallback
+      requestCallback,
     );
   },
   'putBucketACL 设置存储桶 ACL': function () {
@@ -452,7 +448,7 @@ var bucketDao = {
         Region: config.Region,
         ACL: 'public-read',
       },
-      requestCallback
+      requestCallback,
     );
   },
   'getBucketCors 查询跨域配置': function () {
@@ -461,7 +457,7 @@ var bucketDao = {
         Bucket: config.Bucket,
         Region: config.Region,
       },
-      requestCallback
+      requestCallback,
     );
   },
   'putBucketCors 设置跨域配置': function () {
@@ -480,7 +476,7 @@ var bucketDao = {
           },
         ],
       },
-      requestCallback
+      requestCallback,
     );
   },
   'deleteBucketCors 删除跨域配置': function () {
@@ -489,7 +485,7 @@ var bucketDao = {
         Bucket: config.Bucket,
         Region: config.Region,
       },
-      requestCallback
+      requestCallback,
     );
   },
   'putBucketPolicy 设置存储桶策略': function () {
@@ -519,20 +515,12 @@ var bucketDao = {
                 'name/cos:AppendObject',
               ],
               // "resource": ["qcs::cos:ap-guangzhou:uid/1250000000:test-1250000000/*"] // 1250000000 是 appid
-              resource: [
-                'qcs::cos:' +
-                  config.Region +
-                  ':uid/' +
-                  AppId +
-                  ':' +
-                  config.Bucket +
-                  '/*',
-              ], // 1250000000 是 appid
+              resource: ['qcs::cos:' + config.Region + ':uid/' + AppId + ':' + config.Bucket + '/*'], // 1250000000 是 appid
             },
           ],
         },
       },
-      requestCallback
+      requestCallback,
     );
   },
   'getBucketPolicy 查询存储桶策略': function () {
@@ -541,7 +529,7 @@ var bucketDao = {
         Bucket: config.Bucket,
         Region: config.Region,
       },
-      requestCallback
+      requestCallback,
     );
   },
   'deleteBucketPolicy 删除存储桶策略': function () {
@@ -550,7 +538,7 @@ var bucketDao = {
         Bucket: config.Bucket,
         Region: config.Region,
       },
-      requestCallback
+      requestCallback,
     );
   },
   'getBucketLocation 获取Bucket的地域信息': function () {
@@ -559,7 +547,7 @@ var bucketDao = {
         Bucket: config.Bucket,
         Region: config.Region,
       },
-      requestCallback
+      requestCallback,
     );
   },
   'getBucketTagging 获取Bucket标签': function () {
@@ -568,7 +556,7 @@ var bucketDao = {
         Bucket: config.Bucket,
         Region: config.Region,
       },
-      requestCallback
+      requestCallback,
     );
   },
   'putBucketTagging 设置Bucket标签': function () {
@@ -589,7 +577,7 @@ var bucketDao = {
           ],
         },
       },
-      requestCallback
+      requestCallback,
     );
   },
   'deleteBucketTagging 删除存储桶标签': function () {
@@ -598,7 +586,7 @@ var bucketDao = {
         Bucket: config.Bucket,
         Region: config.Region,
       },
-      requestCallback
+      requestCallback,
     );
   },
 };
@@ -610,7 +598,7 @@ var objectDao = {
         Bucket: config.Bucket,
         Region: config.Region,
       },
-      requestCallback
+      requestCallback,
     );
   },
   // 上传文件适用于单请求上传大文件
@@ -646,7 +634,7 @@ var objectDao = {
         // 格式3，删除 Bucket 下所有未完成上传任务
         // Level: 'bucket',
       },
-      requestCallback
+      requestCallback,
     );
   },
 };
@@ -679,7 +667,7 @@ var advanceObjectDao = {
             console.log(JSON.stringify(info));
           },
         },
-        requestCallback
+        requestCallback,
       );
     };
     wx.chooseMessageFile({
@@ -711,8 +699,7 @@ var advanceObjectDao = {
     var sourceName = '1.txt';
     var Key = '1.slicecopy.exe';
 
-    var sourcePath =
-      config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + sourceName;
+    var sourcePath = config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + sourceName;
 
     cos.sliceCopyFile(
       {
@@ -727,7 +714,7 @@ var advanceObjectDao = {
           console.log('进度：' + percent + '%; 速度：' + speed + 'Mb/s;');
         },
       },
-      requestCallback
+      requestCallback,
     );
   },
   cancelTask: function () {
@@ -766,7 +753,7 @@ var ciObjectDao = {
                     '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/thumbnail/200x/"}]}',
                 },
               },
-              requestCallback
+              requestCallback,
             );
           },
           fail: (err) => console.error(err),
@@ -790,7 +777,7 @@ var ciObjectDao = {
             '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/thumbnail/200x/"}]}',
         },
       },
-      requestCallback
+      requestCallback,
     );
   },
   'getImg 下载时使用图片处理': function () {
@@ -801,7 +788,7 @@ var ciObjectDao = {
         Key: '1.png',
         QueryString: `imageMogr2/thumbnail/200x/`,
       },
-      requestCallback
+      requestCallback,
     );
   },
   '生成带图片处理参数的签名 URL': function () {
@@ -817,7 +804,7 @@ var ciObjectDao = {
       },
       (err, data) => {
         console.log('带签名', err || data);
-      }
+      },
     );
 
     // 生成带图片处理参数的文件URL，不带签名。
@@ -831,7 +818,7 @@ var ciObjectDao = {
       },
       (err, data) => {
         console.log('不带签名', err || data);
-      }
+      },
     );
   },
   'describeMediaBuckets 查询已经开通数据万象功能的存储桶': function () {
@@ -854,7 +841,7 @@ var ciObjectDao = {
       },
       function (err, data) {
         console.log(err || data);
-      }
+      },
     );
   },
   'getMediaInfo 获取媒体文件信息': function () {
@@ -870,7 +857,7 @@ var ciObjectDao = {
       },
       function (err, data) {
         console.log(err || data);
-      }
+      },
     );
   },
   'getSnapshot 获取媒体文件某个时间的截图': function () {
@@ -893,7 +880,7 @@ var ciObjectDao = {
       },
       function (err, data) {
         console.log(err || data);
-      }
+      },
     );
   },
   '图片同步审核 getImageAuditing': function () {
@@ -906,8 +893,7 @@ var ciObjectDao = {
         Query: {
           'ci-process': 'sensitive-content-recognition' /** 固定值，必须 */,
           'biz-type': '' /** 审核类型，非必须 */,
-          'detect-url':
-            '' /** 审核任意公网可访问的图片链接，非必须，与Key二选一传递 */,
+          'detect-url': '' /** 审核任意公网可访问的图片链接，非必须，与Key二选一传递 */,
           interval: 5 /** 审核 GIF 动图时，每隔interval帧截取一帧，非必须 */,
           'max-frames': 5 /** 审核 GIF 动图时，最大截帧数，非必须 */,
           'large-image-detect': '0' /** 是否需要压缩图片后再审核，非必须 */,
@@ -915,7 +901,7 @@ var ciObjectDao = {
       },
       function (err, data) {
         console.log(err || data);
-      }
+      },
     );
   },
   '图片批量审核 postImagesAuditing': function () {
@@ -948,7 +934,7 @@ var ciObjectDao = {
       },
       function (err, data) {
         console.log(err || data);
-      }
+      },
     );
   },
   '查询图片审核任务结果 getImageAuditingResult': function () {
@@ -965,7 +951,7 @@ var ciObjectDao = {
       },
       function (err, data) {
         console.log(err || data);
-      }
+      },
     );
   },
   '提交视频审核任务 postVideoAuditing': function () {
@@ -997,7 +983,7 @@ var ciObjectDao = {
       },
       function (err, data) {
         console.log(err || data);
-      }
+      },
     );
   },
   '查询视频审核任务结果 getVideoAuditingResult': function () {
@@ -1014,7 +1000,7 @@ var ciObjectDao = {
       },
       function (err, data) {
         console.log(err || data);
-      }
+      },
     );
   },
   '提交音频审核任务 postAudioAuditing': function () {
@@ -1042,7 +1028,7 @@ var ciObjectDao = {
       },
       function (err, data) {
         console.log(err || data);
-      }
+      },
     );
   },
   '查询音频审核任务结果 getAudioAuditingResult': function () {
@@ -1059,7 +1045,7 @@ var ciObjectDao = {
       },
       function (err, data) {
         console.log(err || data);
-      }
+      },
     );
   },
   '提交文本审核任务 postTextAuditing': function () {
@@ -1068,7 +1054,7 @@ var ciObjectDao = {
     var body = COS.util.json2xml({
       Request: {
         Input: {
-          Object: 'hello.txt' /* 需要审核的文本文件，存储桶里的路径 */,
+          Content: COS.util.encodeBase64('hello') /* 需要审核的文本内容 */,
         },
         Conf: {
           BizType: '',
@@ -1087,7 +1073,7 @@ var ciObjectDao = {
       },
       function (err, data) {
         console.log(err || data);
-      }
+      },
     );
   },
   '提交直播审核任务 postLiveAuditing'() {
@@ -1120,7 +1106,7 @@ var ciObjectDao = {
       },
       function (err, data) {
         console.log(err || data);
-      }
+      },
     );
   },
   '查询直播审核任务结果 getLiveAuditingResult'() {
@@ -1137,12 +1123,11 @@ var ciObjectDao = {
       },
       function (err, data) {
         console.log(err || data);
-      }
+      },
     );
   },
   '提交病毒检测任务 postVirusDetect'() {
-    var host =
-      config.Bucket + '.ci.' + config.Region + '.myqcloud.com/virus/detect';
+    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/virus/detect';
     var url = 'https://' + host;
     var body = COS.util.json2xml({
       Request: {
@@ -1166,17 +1151,12 @@ var ciObjectDao = {
       },
       function (err, data) {
         console.log(err || data);
-      }
+      },
     );
   },
   '查询病毒检测任务结果 getVirusDetectResult'() {
     var jobId = 'ss5a8d3065bd9011eda1445254009dadxx'; // 提交病毒检测任务后会返回当前任务的jobId
-    var host =
-      config.Bucket +
-      '.ci.' +
-      config.Region +
-      '.myqcloud.com/virus/detect/' +
-      jobId;
+    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/virus/detect/' + jobId;
     var url = 'https://' + host;
     cos.request(
       {
@@ -1186,7 +1166,7 @@ var ciObjectDao = {
       },
       function (err, data) {
         console.log(err || data);
-      }
+      },
     );
   },
   '提交音频降噪任务 postNoiseReduction'() {
@@ -1222,7 +1202,7 @@ var ciObjectDao = {
       },
       function (err, data) {
         console.log(err || data);
-      }
+      },
     );
   },
   '提交人声分离任务 postVoiceSeparate'() {
@@ -1262,7 +1242,7 @@ var ciObjectDao = {
       },
       function (err, data) {
         console.log(err || data);
-      }
+      },
     );
   },
   '提交语音合成任务 postTts'() {
@@ -1302,12 +1282,11 @@ var ciObjectDao = {
       },
       function (err, data) {
         console.log(err || data);
-      }
+      },
     );
   },
   '提交语音识别任务 postSpeechRecognition'() {
-    var host =
-      config.Bucket + '.ci.' + config.Region + '.myqcloud.com/asr_jobs';
+    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/asr_jobs';
     var url = 'https://' + host;
     var body = COS.util.json2xml({
       Request: {
@@ -1348,12 +1327,11 @@ var ciObjectDao = {
       },
       function (err, data) {
         console.log(err || data);
-      }
+      },
     );
   },
   '查询语音识别队列 getAsrQueue'() {
-    var host =
-      config.Bucket + '.ci.' + config.Region + '.myqcloud.com/asrqueue';
+    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/asrqueue';
     var url = 'https://' + host;
     cos.request(
       {
@@ -1369,18 +1347,13 @@ var ciObjectDao = {
       },
       function (err, data) {
         console.log(err || data);
-      }
+      },
     );
   },
   '更新语音识别队列 putAsrQueue'() {
     // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/46946)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询
     var queueId = 'pcc77499e85c311edb9865254008618d9';
-    var host =
-      config.Bucket +
-      '.ci.' +
-      config.Region +
-      '.myqcloud.com/asrqueue/' +
-      queueId;
+    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/asrqueue/' + queueId;
     var url = 'https://' + host;
     var body = COS.util.json2xml({
       Request: {
@@ -1405,7 +1378,7 @@ var ciObjectDao = {
       },
       function (err, data) {
         console.log(err || data);
-      }
+      },
     );
   },
   '查询语音识别开通状态 getAsrBucket'() {
@@ -1426,7 +1399,7 @@ var ciObjectDao = {
       },
       function (err, data) {
         console.log(err || data);
-      }
+      },
     );
   },
 };

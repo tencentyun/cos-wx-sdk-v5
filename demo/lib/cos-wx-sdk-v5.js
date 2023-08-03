@@ -6795,7 +6795,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, scripts, repository, author, license, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.4.11\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"mime\":\"^2.4.6\",\"@xmldom/xmldom\":\"^0.8.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"babel-loader\":\"8.2.5\",\"@babel/preset-env\":\"7.16.11\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.4.12\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo-sdk.js demo/test.js\",\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\",\"mime\":\"^2.4.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -8235,7 +8235,7 @@ function sliceCopyFile(params, callback) {
           PartNumber: partNumber,
           start: start,
           end: end,
-          CopySourceRange: "bytes=" + start + "-" + end
+          CopySourceRange: 'bytes=' + start + '-' + end
         };
         list.push(item);
       }
@@ -8337,7 +8337,7 @@ function sliceCopyFile(params, callback) {
         'Content-Disposition': resHeaders['content-disposition'],
         'Content-Encoding': resHeaders['content-encoding'],
         'Content-Type': resHeaders['content-type'],
-        'Expires': resHeaders['expires'],
+        Expires: resHeaders['expires'],
         'x-cos-storage-class': resHeaders['x-cos-storage-class']
       };
       util.each(resHeaders, function (v, k) {
@@ -8509,7 +8509,7 @@ function getService(params, callback) {
   var region = params.Region;
 
   if (domain) {
-    domain = domain.replace(/\{\{Region\}\}/ig, region || '').replace(/\{\{.*?\}\}/ig, '');
+    domain = domain.replace(/\{\{Region\}\}/gi, region || '').replace(/\{\{.*?\}\}/gi, '');
 
     if (!/^[a-zA-Z]+:\/\//.test(domain)) {
       domain = protocol + '//' + domain;
@@ -9172,7 +9172,7 @@ function getBucketTagging(params, callback) {
     action: 'tagging'
   }, function (err, data) {
     if (err) {
-      if (err.statusCode === 404 && err.error && (err.error === "Not Found" || err.error.Code === 'NoSuchTagSet')) {
+      if (err.statusCode === 404 && err.error && (err.error === 'Not Found' || err.error.Code === 'NoSuchTagSet')) {
         var result = {
           Tags: [],
           statusCode: err.statusCode
@@ -9395,8 +9395,8 @@ function putBucketReplication(params, callback) {
   var xml = util.json2xml({
     ReplicationConfiguration: ReplicationConfiguration
   });
-  xml = xml.replace(/<(\/?)Rules>/ig, '<$1Rule>');
-  xml = xml.replace(/<(\/?)Tags>/ig, '<$1Tag>');
+  xml = xml.replace(/<(\/?)Rules>/gi, '<$1Rule>');
+  xml = xml.replace(/<(\/?)Tags>/gi, '<$1Tag>');
   var headers = params.Headers;
   headers['Content-Type'] = 'application/xml';
   headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
@@ -11122,7 +11122,7 @@ function getObjectTagging(params, callback) {
     VersionId: params.VersionId
   }, function (err, data) {
     if (err) {
-      if (err.statusCode === 404 && err.error && (err.error === "Not Found" || err.error.Code === 'NoSuchTagSet')) {
+      if (err.statusCode === 404 && err.error && (err.error === 'Not Found' || err.error.Code === 'NoSuchTagSet')) {
         var result = {
           Tags: [],
           statusCode: err.statusCode
@@ -11772,11 +11772,11 @@ function decodeAcl(AccessControlPolicy) {
     ACL: ''
   };
   var GrantMap = {
-    'FULL_CONTROL': 'GrantFullControl',
-    'WRITE': 'GrantWrite',
-    'READ': 'GrantRead',
-    'READ_ACP': 'GrantReadAcp',
-    'WRITE_ACP': 'GrantWriteAcp'
+    FULL_CONTROL: 'GrantFullControl',
+    WRITE: 'GrantWrite',
+    READ: 'GrantRead',
+    READ_ACP: 'GrantReadAcp',
+    WRITE_ACP: 'GrantWriteAcp'
   };
   var AccessControlList = AccessControlPolicy && AccessControlPolicy.AccessControlList || {};
   var Grant = AccessControlList.Grant;
@@ -11855,8 +11855,8 @@ function getUrl(params) {
     }
   }
 
-  domain = domain.replace(/\{\{AppId\}\}/ig, appId).replace(/\{\{Bucket\}\}/ig, shortBucket).replace(/\{\{Region\}\}/ig, region).replace(/\{\{.*?\}\}/ig, '');
-  domain = domain.replace(/\{AppId\}/ig, appId).replace(/\{BucketName\}/ig, shortBucket).replace(/\{Bucket\}/ig, longBucket).replace(/\{Region\}/ig, region).replace(/\{.*?\}/ig, '');
+  domain = domain.replace(/\{\{AppId\}\}/gi, appId).replace(/\{\{Bucket\}\}/gi, shortBucket).replace(/\{\{Region\}\}/gi, region).replace(/\{\{.*?\}\}/gi, '');
+  domain = domain.replace(/\{AppId\}/gi, appId).replace(/\{BucketName\}/gi, shortBucket).replace(/\{Bucket\}/gi, longBucket).replace(/\{Region\}/gi, region).replace(/\{.*?\}/gi, '');
 
   if (!/^[a-zA-Z]+:\/\//.test(domain)) {
     domain = protocol + '//' + domain;
@@ -12576,7 +12576,7 @@ var defaultOptions = {
   SimpleUploadMethod: 'postObject',
   // 高级上传内部判断需要走简单上传时，指定的上传方法，可选postObject或putObject
   EnableTracker: false,
-  // 默认关闭上报 
+  // 默认关闭上报
   DeepTracker: false,
   // 上报时是否对每个分块上传做单独上报
   TrackerDelay: 5000,
@@ -12620,7 +12620,8 @@ advance.init(COS, task);
 COS.util = {
   md5: util.md5,
   xml2json: util.xml2json,
-  json2xml: util.json2xml
+  json2xml: util.json2xml,
+  encodeBase64: util.encodeBase64
 };
 COS.getAuthorization = util.getAuth;
 COS.version = pkg.version;
@@ -12886,8 +12887,7 @@ var initTask = function initTask(cos) {
 
     for (var i = 0; i < nextUploadIndex && // 小于当前操作的 index 才清理
     i < queue.length && // 大于队列才清理
-    queue.length > cos.options.UploadQueueSize // 如果还太多，才继续清理
-    ;) {
+    queue.length > cos.options.UploadQueueSize;) {
       var isActive = queue[i].state === 'waiting' || queue[i].state === 'checking' || queue[i].state === 'uploading';
 
       if (!queue[i] || !isActive) {
@@ -13140,7 +13140,7 @@ var beacon = null;
 var getBeacon = function getBeacon(delay) {
   if (!beacon) {
     beacon = new BeaconAction({
-      appkey: "0AND0VEVB24UBGDU",
+      appkey: '0AND0VEVB24UBGDU',
       versionCode: pkg.version,
       channelID: 'mp_sdk',
       //渠道,选填
@@ -13167,7 +13167,7 @@ var utils = {
       return ((1 + Math.random()) * 0x10000 | 0).toString(16).substring(1);
     };
 
-    return S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4();
+    return S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4();
   },
   // 获取网络类型
   getNetType: function getNetType() {
@@ -13263,7 +13263,7 @@ function getEventCode(apiName) {
 
 
 function camel2underline(key) {
-  return key.replace(/([A-Z])/g, "_$1").toLowerCase();
+  return key.replace(/([A-Z])/g, '_$1').toLowerCase();
 }
 
 function formatParams(params) {
@@ -13566,14 +13566,13 @@ function getObjectKeys(obj, forKey) {
     return a === b ? 0 : a > b ? 1 : -1;
   });
 }
-
-;
 /**
  * obj转为string
  * @param  {Object}  obj                需要转的对象，必须
  * @param  {Boolean} lowerCaseKey       key是否转为小写，默认false，非必须
  * @return {String}  data               返回字符串
  */
+
 
 var obj2str = function obj2str(obj, lowerCaseKey) {
   var i, key, val;
@@ -13831,7 +13830,7 @@ var uuid = function uuid() {
     return ((1 + Math.random()) * 0x10000 | 0).toString(16).substring(1);
   };
 
-  return S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4();
+  return S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4();
 };
 
 var hasMissingParams = function hasMissingParams(apiName, params) {
@@ -13873,12 +13872,12 @@ var formatParams = function formatParams(apiName, params) {
         'Content-MD5': 'ContentMD5',
         'Content-Length': 'ContentLength',
         'Content-Type': 'ContentType',
-        'Expect': 'Expect',
-        'Expires': 'Expires',
+        Expect: 'Expect',
+        Expires: 'Expires',
         'Cache-Control': 'CacheControl',
         'Content-Disposition': 'ContentDisposition',
         'Content-Encoding': 'ContentEncoding',
-        'Range': 'Range',
+        Range: 'Range',
         'If-Modified-Since': 'IfModifiedSince',
         'If-Unmodified-Since': 'IfUnmodifiedSince',
         'If-Match': 'IfMatch',
@@ -14265,7 +14264,7 @@ var compareVersion = function compareVersion(v1, v2) {
 var canFileSlice = function () {
   var systemInfo = wx.getSystemInfoSync();
   var support = compareVersion(systemInfo.SDKVersion, '2.10.0') >= 0;
-  var needWarning = !support && systemInfo.platform === "devtools";
+  var needWarning = !support && systemInfo.platform === 'devtools';
   return function () {
     if (needWarning) console.warn('当前小程序版本小于 2.10.0，不支持分片上传，请更新软件。');
     needWarning = false;
@@ -14308,6 +14307,16 @@ var error = function error(err, opt) {
   return err;
 };
 
+var encodeBase64 = function encodeBase64(str, safe) {
+  var base64Str = base64.encode(str); // 万象使用的安全base64格式需要特殊处理
+
+  if (safe) {
+    base64Str = base64Str.replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
+  }
+
+  return base64Str;
+};
+
 var util = {
   noop: noop,
   formatParams: formatParams,
@@ -14341,10 +14350,10 @@ var util = {
   canFileSlice: canFileSlice,
   isCIHost: isCIHost,
   error: error,
-  getSourceParams: getSourceParams
+  getSourceParams: getSourceParams,
+  encodeBase64: encodeBase64
 };
 module.exports = util;
-xml2json;
 
 /***/ })
 

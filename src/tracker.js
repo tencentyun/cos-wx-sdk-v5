@@ -1,4 +1,3 @@
-
 const pkg = require('../package.json');
 const BeaconAction = require('../lib/beacon_mp.min');
 let beacon = null;
@@ -6,77 +5,69 @@ let beacon = null;
 const getBeacon = (delay) => {
   if (!beacon) {
     beacon = new BeaconAction({
-      appkey: "0AND0VEVB24UBGDU",
+      appkey: '0AND0VEVB24UBGDU',
       versionCode: pkg.version,
       channelID: 'mp_sdk', //渠道,选填
       openid: 'openid', // 用户id, 选填
-      unionid: 'unid',//用户unionid , 类似idfv,选填
-      strictMode: false,//严苛模式开关, 打开严苛模式会主动抛出异常, 上线请务必关闭!!!
+      unionid: 'unid', //用户unionid , 类似idfv,选填
+      strictMode: false, //严苛模式开关, 打开严苛模式会主动抛出异常, 上线请务必关闭!!!
       delay, // 普通事件延迟上报时间(单位毫秒), 默认1000(1秒),选填
-      sessionDuration: 60 * 1000,// session变更的时间间隔, 一个用户持续30分钟(默认值)没有任何上报则算另一次 session,每变更一次session上报一次启动事件(rqd_applaunched),使用毫秒(ms),最小值30秒,选填
+      sessionDuration: 60 * 1000, // session变更的时间间隔, 一个用户持续30分钟(默认值)没有任何上报则算另一次 session,每变更一次session上报一次启动事件(rqd_applaunched),使用毫秒(ms),最小值30秒,选填
     });
   }
   return beacon;
 };
 
 const utils = {
-    // 生成uid 每个链路对应唯一一条uid
-    getUid() {
-      var S4 = function () {
-          return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
-      };
-      return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
-    },
-    // 获取网络类型
-    getNetType() {
-      return new Promise(resolve => {
-        if (wx.canIUse('getNetworkType')) {
-          try {
-            wx.getNetworkType({
-              success (res) {
-                resolve(res.networkType);
-              }
-            });
-          } catch (e) {
-            resolve('can_not_get_network_type');
-          }
-        } else {
+  // 生成uid 每个链路对应唯一一条uid
+  getUid() {
+    var S4 = function () {
+      return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+    };
+    return S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4();
+  },
+  // 获取网络类型
+  getNetType() {
+    return new Promise((resolve) => {
+      if (wx.canIUse('getNetworkType')) {
+        try {
+          wx.getNetworkType({
+            success(res) {
+              resolve(res.networkType);
+            },
+          });
+        } catch (e) {
           resolve('can_not_get_network_type');
         }
-      });
-    },
-    // 获取系统信息
-    getSystemInfo() {
-      const defaultInfo = {
-        devicePlatform: '',
-        wxVersion: '',
-        wxSystem: '',
-        wxSdkVersion: '',
-      };
-      return new Promise(resolve => {
-        if (wx.canIUse('getSystemInfo')) {
-          try {
-            wx.getSystemInfo({
-              success(res) {
-                const { platform, version, system, SDKVersion } = res;
-                Object.assign(defaultInfo, {
-                  devicePlatform: platform,
-                  wxVersion: version,
-                  wxSystem: system,
-                  wxSdkVersion: SDKVersion,
-                });
-                resolve(defaultInfo);
-              }
-            })
-          } catch (e) {
-            resolve({
-              devicePlatform: 'can_not_get_system_info',
-              wxVersion: 'can_not_get_system_info',
-              wxSystem: 'can_not_get_system_info',
-              wxSdkVersion: 'can_not_get_system_info',
-            });
-          }
-        } else {
+      } else {
+        resolve('can_not_get_network_type');
+      }
+    });
+  },
+  // 获取系统信息
+  getSystemInfo() {
+    const defaultInfo = {
+      devicePlatform: '',
+      wxVersion: '',
+      wxSystem: '',
+      wxSdkVersion: '',
+    };
+    return new Promise((resolve) => {
+      if (wx.canIUse('getSystemInfo')) {
+        try {
+          wx.getSystemInfo({
+            success(res) {
+              const { platform, version, system, SDKVersion } = res;
+              Object.assign(defaultInfo, {
+                devicePlatform: platform,
+                wxVersion: version,
+                wxSystem: system,
+                wxSdkVersion: SDKVersion,
+              });
+              resolve(defaultInfo);
+            },
+          });
+        } catch (e) {
           resolve({
             devicePlatform: 'can_not_get_system_info',
             wxVersion: 'can_not_get_system_info',
@@ -84,27 +75,43 @@ const utils = {
             wxSdkVersion: 'can_not_get_system_info',
           });
         }
-      });
-    },
+      } else {
+        resolve({
+          devicePlatform: 'can_not_get_system_info',
+          wxVersion: 'can_not_get_system_info',
+          wxSystem: 'can_not_get_system_info',
+          wxSdkVersion: 'can_not_get_system_info',
+        });
+      }
+    });
+  },
 };
 
 // 设备信息，只取一次值
 const deviceInfo = {
   // ↓上报项
-  devicePlatform: '',  // ios/anroid/windows/mac/devtools
+  devicePlatform: '', // ios/anroid/windows/mac/devtools
   wxVersion: '',
   wxSystem: '',
   wxSdkVersion: '',
 };
-utils.getSystemInfo().then(res => {
+utils.getSystemInfo().then((res) => {
   Object.assign(deviceInfo, res);
 });
 
-
 // 分块上传原子方法
-const sliceUploadMethods = ['multipartInit', 'multipartUpload', 'multipartComplete', 'multipartList', 'multipartListPart', 'multipartAbort'];
+const sliceUploadMethods = [
+  'multipartInit',
+  'multipartUpload',
+  'multipartComplete',
+  'multipartList',
+  'multipartListPart',
+  'multipartAbort',
+];
 
-const uploadApi = ['putObject', 'postObject', 'appendObject', 'sliceUploadFile', 'uploadFile', 'uploadFiles'].concat(sliceUploadMethods);
+const uploadApi = ['putObject', 'postObject', 'appendObject', 'sliceUploadFile', 'uploadFile', 'uploadFiles'].concat(
+  sliceUploadMethods,
+);
 const downloadApi = ['getObject'];
 
 function getEventCode(apiName) {
@@ -119,17 +126,69 @@ function getEventCode(apiName) {
 
 // 上报参数驼峰改下划线
 function camel2underline(key) {
-  return key.replace(/([A-Z])/g,"_$1").toLowerCase();
+  return key.replace(/([A-Z])/g, '_$1').toLowerCase();
 }
 function formatParams(params) {
   const formattedParams = {};
-  const allReporterKeys = ['tracePlatform', 'cossdkVersion', 'region', 'networkType', 'host', 'accelerate', 'requestPath', 'size', 'httpMd5',
-  'httpSign', 'httpFull', 'name', 'result', 'tookTime', 'errorNode', 'errorCode', 'errorMessage', 'errorRequestId', 'errorStatusCode', 'errorServiceName',
-  'errorType', 'traceId', 'bucket', 'appid', 'partNumber', 'retryTimes', 'reqUrl', 'customId', 'fullError',
-  'devicePlatform', 'wxVersion', 'wxSystem', 'wxSdkVersion'];
-  const successKeys = ['tracePlatform', 'cossdkVersion', 'region', 'bucket', 'appid', 'networkType', 'host', 'accelerate', 'requestPath',
-    'partNumber', 'size', 'name', 'result', 'tookTime', 'errorRequestId', 'retryTimes', 'reqUrl', 'customId',
-    'devicePlatform', 'wxVersion', 'wxSystem', 'wxSdkVersion'];
+  const allReporterKeys = [
+    'tracePlatform',
+    'cossdkVersion',
+    'region',
+    'networkType',
+    'host',
+    'accelerate',
+    'requestPath',
+    'size',
+    'httpMd5',
+    'httpSign',
+    'httpFull',
+    'name',
+    'result',
+    'tookTime',
+    'errorNode',
+    'errorCode',
+    'errorMessage',
+    'errorRequestId',
+    'errorStatusCode',
+    'errorServiceName',
+    'errorType',
+    'traceId',
+    'bucket',
+    'appid',
+    'partNumber',
+    'retryTimes',
+    'reqUrl',
+    'customId',
+    'fullError',
+    'devicePlatform',
+    'wxVersion',
+    'wxSystem',
+    'wxSdkVersion',
+  ];
+  const successKeys = [
+    'tracePlatform',
+    'cossdkVersion',
+    'region',
+    'bucket',
+    'appid',
+    'networkType',
+    'host',
+    'accelerate',
+    'requestPath',
+    'partNumber',
+    'size',
+    'name',
+    'result',
+    'tookTime',
+    'errorRequestId',
+    'retryTimes',
+    'reqUrl',
+    'customId',
+    'devicePlatform',
+    'wxVersion',
+    'wxSystem',
+    'wxSdkVersion',
+  ];
   // 需要上报的参数字段
   const reporterKeys = params.result === 'Success' ? successKeys : allReporterKeys;
   for (let key in params) {
@@ -143,8 +202,9 @@ function formatParams(params) {
 // 链路追踪器
 class Tracker {
   constructor(opt) {
-    const { parent, traceId, bucket, region, apiName, fileKey, fileSize, accelerate, customId, delay, deepTracker } = opt;
-    const appid = bucket && bucket.substr(bucket.lastIndexOf('-') + 1) || '';
+    const { parent, traceId, bucket, region, apiName, fileKey, fileSize, accelerate, customId, delay, deepTracker } =
+      opt;
+    const appid = (bucket && bucket.substr(bucket.lastIndexOf('-') + 1)) || '';
     this.parent = parent;
     this.deepTracker = deepTracker;
     this.delay = delay;
@@ -219,12 +279,12 @@ class Tracker {
     const now = new Date().getTime();
     const tookTime = now - this.params.startTime;
     const networkType = await utils.getNetType();
-    const errorCode = err ? (err?.error?.error?.Code || 'Error') : '';
-    const errorMessage = err ? (err?.error?.error?.Message || err?.error?.error || err?.error || '') : '';
+    const errorCode = err ? err?.error?.error?.Code || 'Error' : '';
+    const errorMessage = err ? err?.error?.error?.Message || err?.error?.error || err?.error || '' : '';
     const errorStatusCode = err ? err?.error?.statusCode : data.statusCode;
     const errorServiceName = err ? err?.error?.error?.Resource : '';
-    const requestId = err ? (err?.error?.RequestId || '') : (data?.RequestId || '');
-    const errorType = err ? (requestId ? 'Server' : 'Client'): '';
+    const requestId = err ? err?.error?.RequestId || '' : data?.RequestId || '';
+    const errorType = err ? (requestId ? 'Server' : 'Client') : '';
     Object.assign(this.params, {
       tookTime,
       networkType,
@@ -244,7 +304,7 @@ class Tracker {
       this.params.fullError = err ? JSON.stringify(err) : '';
     }
     if (this.params.name === 'getObject') {
-      this.params.size = data ? (data.headers && data.headers['content-length']) : -1;
+      this.params.size = data ? data.headers && data.headers['content-length'] : -1;
     }
     if (this.params.reqUrl) {
       try {
@@ -270,7 +330,7 @@ class Tracker {
     }
     const eventCode = getEventCode(this.params.name);
     const formattedParams = formatParams(this.params);
-    
+
     // 兜底处理
     if (!this.beacon) {
       this.beacon = getBeacon(this.delay || 5000);
