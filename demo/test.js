@@ -1043,7 +1043,7 @@ group('putObjectCopy()', function () {
     );
   });
   test('捕获 object 异常', function (done, assert) {
-    var errFileName = '12345.txt';
+    var errFileName = Date.now() + '12345.txt';
     cos.putObjectCopy(
       {
         Bucket: config.Bucket,
