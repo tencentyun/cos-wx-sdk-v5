@@ -24,7 +24,8 @@ feat
 ## [v1.4.11](https://github.com/tencentyun/cos-wx-sdk-v5/compare/v1.4.10...v1.4.11) - 2023-07-26
 
 fix
--  修复使用await异常bug
+
+- 修复使用await异常bug
 
 ### Merged
 
@@ -40,7 +41,8 @@ fix
 ## [v1.4.10](https://github.com/tencentyun/cos-wx-sdk-v5/compare/v1.4.9...v1.4.10) - 2023-01-04
 
 feat
--  postObject支持x-cos-forbid-overwrite头部
+
+- postObject支持x-cos-forbid-overwrite头部
 
 ### Merged
 
@@ -53,7 +55,8 @@ feat
 ## [v1.4.9](https://github.com/tencentyun/cos-wx-sdk-v5/compare/v1.4.8...v1.4.9) - 2022-12-29
 
 fix
--  更新可以签入签名的headers
+
+- 更新可以签入签名的headers
 
 ### Merged
 
@@ -69,7 +72,8 @@ fix
 ## [v1.4.8](https://github.com/tencentyun/cos-wx-sdk-v5/compare/v1.4.7...v1.4.8) - 2022-11-21
 
 feat
--  getObjectAcl支持传VersionId
+
+- getObjectAcl支持传VersionId
 
 ### Merged
 
@@ -82,7 +86,8 @@ feat
 ## [v1.4.7](https://github.com/tencentyun/cos-wx-sdk-v5/compare/v1.4.6...v1.4.7) - 2022-11-09
 
 fix
--  升级依赖包@xmldom/xmldom版本
+
+- 升级依赖包@xmldom/xmldom版本
 
 ### Merged
 
@@ -95,7 +100,8 @@ fix
 ## [v1.4.6](https://github.com/tencentyun/cos-wx-sdk-v5/compare/v1.4.5...v1.4.6) - 2022-10-25
 
 fix
--  修复批量上传uploadFiles偶现问题
+
+- 修复批量上传uploadFiles偶现问题
 
 ### Merged
 
@@ -108,7 +114,8 @@ fix
 ## [v1.4.5](https://github.com/tencentyun/cos-wx-sdk-v5/compare/v1.4.4...v1.4.5) - 2022-10-22
 
 fix
--  getObjectUrl暂时只支持回调写法
+
+- getObjectUrl暂时只支持回调写法
 
 ### Merged
 
@@ -120,8 +127,8 @@ fix
 
 ## [v1.4.4](https://github.com/tencentyun/cos-wx-sdk-v5/compare/v1.4.3...v1.4.4) - 2022-10-20
 
--  分块复制支持续传
--  合法域名校验支持内网域名和.cn域名
+- 分块复制支持续传
+- 合法域名校验支持内网域名和.cn域名
 
 ### Merged
 
@@ -134,7 +141,8 @@ fix
 ## [v1.4.3](https://github.com/tencentyun/cos-wx-sdk-v5/compare/v1.4.2...v1.4.3) - 2022-09-22
 
 feat
--  支持sdk内部获取上传文件大小，不再依赖用户传入的FileSize
+
+- 支持sdk内部获取上传文件大小，不再依赖用户传入的FileSize
 
 ### Merged
 
@@ -147,7 +155,8 @@ feat
 ## [v1.4.2](https://github.com/tencentyun/cos-wx-sdk-v5/compare/v1.4.1...v1.4.2) - 2022-09-09
 
 fix
--  修复已知问题
+
+- 修复已知问题
 
 ### Merged
 
@@ -161,7 +170,8 @@ fix
 ## [v1.4.1](https://github.com/tencentyun/cos-wx-sdk-v5/compare/v1.4.0...v1.4.1) - 2022-09-01
 
 fix
--  修复已知问题
+
+- 修复已知问题
 
 ### Commits
 
@@ -170,7 +180,8 @@ fix
 ## [v1.4.0](https://github.com/tencentyun/cos-wx-sdk-v5/compare/v1.3.0...v1.4.0) - 2022-08-17
 
 feat
--  新增beacon上报
+
+- 新增beacon上报
 
 ### Merged
 
@@ -183,9 +194,10 @@ feat
 ## [v1.3.0](https://github.com/tencentyun/cos-wx-sdk-v5/compare/v1.2.1...v1.3.0) - 2022-08-09
 
 feat
--  webpack升级到4.x
--  putObject支持FilePath参数。同时传参FilePath和Body时，优先级Body>FilePath
--  初始化支持指定SimpleUploadMethod，当调用高级上传uploadFile或批量上传uploadFiles时，对小文件执行简单上传方法postObject或putObject
+
+- webpack升级到4.x
+- putObject支持FilePath参数。同时传参FilePath和Body时，优先级Body>FilePath
+- 初始化支持指定SimpleUploadMethod，当调用高级上传uploadFile或批量上传uploadFiles时，对小文件执行简单上传方法postObject或putObject
 
 ### Merged
 
@@ -198,6 +210,7 @@ feat
 ## [v1.2.1](https://github.com/tencentyun/cos-wx-sdk-v5/compare/v1.2.0...v1.2.1) - 2022-07-21
 
 feat
+
 - 初始化支持HttpDNSServiceId参数，填写后代表开启 HttpDNS 服务。HttpDNS 用法详见https://developers.weixin.qq.com/miniprogram/dev/framework/ability/HTTPDNS.html
 
 ### Merged
@@ -214,6 +227,7 @@ feat
 ## [v1.2.0](https://github.com/tencentyun/cos-wx-sdk-v5/compare/v1.1.8...v1.2.0) - 2022-06-30
 
 fix
+
 - 修复使用postObject不能正确的pauseTask，cancelTask问题
 - 签名回调里使用SecurityToken代替并兼容XCosSecurityToken
 
@@ -234,6 +248,7 @@ fix
 ## [v1.1.8](https://github.com/tencentyun/cos-wx-sdk-v5/compare/v1.1.7...v1.1.8) - 2022-06-23
 
 feat
+
 - putBucketCors支持ResponseVary
 - 提高签名时Expires参数的优先级
 
