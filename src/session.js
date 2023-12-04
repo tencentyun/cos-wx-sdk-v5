@@ -70,7 +70,7 @@ var mod = {
             ChunkSize,
             Bucket,
             Key,
-          ].join('::'),
+          ].join('::')
         )
       );
     } else {
