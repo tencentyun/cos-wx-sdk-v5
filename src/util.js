@@ -69,6 +69,7 @@ var signHeaders = [
   'origin',
   'range',
   'transfer-encoding',
+  'pic-operations',
 ];
 
 var getSignHeaderObj = function (headers) {
@@ -166,7 +167,7 @@ var getSourceParams = function (source) {
   return { Bucket: m[1], Region: m[3], Key: m[7] };
 };
 
-var noop = function () {};
+var noop = function () { };
 
 // 清除对象里值为的 undefined 或 null 的属性
 var clearKey = function (obj) {
@@ -487,7 +488,7 @@ var apiWrapper = function (apiName, apiFn) {
             params.Region !== 'accelerate'
           ) {
             console.warn(
-              'warning: param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224',
+              'warning: param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224'
             );
           }
         }
@@ -504,7 +505,7 @@ var apiWrapper = function (apiName, apiFn) {
           }
           if (params.AppId) {
             console.warn(
-              'warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g Bucket:"test-1250000000" ).',
+              'warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g Bucket:"test-1250000000" ).'
             );
             delete params.AppId;
           }
@@ -562,7 +563,7 @@ var throttleOnProgress = function (total, onProgress) {
           speed: speed,
           percent: percent,
         });
-      } catch (e) {}
+      } catch (e) { }
     }
   }
 

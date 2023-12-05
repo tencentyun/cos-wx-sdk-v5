@@ -57,7 +57,7 @@ var COS = function (options) {
   this.options.Timeout = Math.max(0, this.options.Timeout);
   if (this.options.AppId) {
     console.warn(
-      'warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g: "test-1250000000").',
+      'warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g: "test-1250000000").'
     );
   }
   if (this.options.SecretId && this.options.SecretId.indexOf(' ') > -1) {

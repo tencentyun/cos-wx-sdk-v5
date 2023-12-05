@@ -24,7 +24,7 @@ var util = {
       } catch (e) {
         try {
           wxfs.writeFileSync(filePath, buffer);
-        } catch (e) {}
+        } catch (e) { }
       }
     }
     return buffer;
@@ -143,7 +143,7 @@ var group = (function (name, fn) {
               };
               testItem[1](nextTest, assert);
             },
-            nextGroup,
+            nextGroup
           );
         });
       },
@@ -154,7 +154,7 @@ var group = (function (name, fn) {
             console.error(item);
           });
         }
-      },
+      }
     );
   };
   wx.chooseMessageFile({
@@ -321,11 +321,11 @@ group('getAuth()', function () {
                 assert.ok(response.statusCode === 200);
                 assert.ok(body === content);
                 done();
-              },
+              }
             );
-          },
+          }
         );
-      },
+      }
     );
   });
 });
@@ -358,11 +358,11 @@ group('getObjectUrl()', function () {
                 assert.ok(response.statusCode === 200, '获取文件 200');
                 assert.ok(body.toString() === content, '通过获取签名能正常获取文件');
                 done();
-              },
+              }
             );
-          },
+          }
         );
-      },
+      }
     );
   });
 });
@@ -381,7 +381,7 @@ group('auth check', function () {
       function (err, data) {
         assert.ok(!err);
         done();
-      },
+      }
     );
   });
 });
@@ -399,7 +399,7 @@ group('getBucket()', function () {
             assert.equal(true, data.Name === BucketLongName);
             assert.equal(data.Contents.constructor, Array);
             done();
-          },
+          }
         );
       })
       .catch(function () {
@@ -440,7 +440,7 @@ group('putObject(),cancelTask()', function () {
       },
       function (err, data) {
         alive = true;
-      },
+      }
     );
   });
 });
@@ -483,14 +483,14 @@ group('sliceUploadFile() 完整上传文件', function () {
                 assert.ok(data && data.headers && data.headers.etag && data.headers.etag.length > 0, '文件已上传成功');
                 assert.ok(
                   data && data.headers && parseInt(data.headers['content-length'] || 0) === fileSize,
-                  '文件大小一致',
+                  '文件大小一致'
                 );
                 done();
-              },
+              }
             );
-          },
+          }
         );
-      },
+      }
     );
   });
 });
@@ -539,9 +539,9 @@ group('sliceUploadFile(),pauseTask(),restartTask()', function () {
           },
           function (err, data) {
             paused = true;
-          },
+          }
         );
-      },
+      }
     );
   });
 });
@@ -576,7 +576,7 @@ group('sliceUploadFile(),cancelTask()', function () {
       },
       function (err, data) {
         alive = true;
-      },
+      }
     );
   });
 });
@@ -609,9 +609,9 @@ group('abortUploadTask()', function () {
             assert.ok(data.successList.length >= 1, '成功取消单个分片任务');
             assert.ok(nameExist, '成功取消单个分片任务');
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
   test('abortUploadTask(),Level=file', function (done, assert) {
@@ -634,9 +634,9 @@ group('abortUploadTask()', function () {
             assert.ok(data.successList.length >= 1, '成功舍弃单个文件下的所有分片任务');
             assert.ok(data.successList[0] && data.successList[0].Key === filename, '成功舍弃单个文件的所有分片任务');
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
 
@@ -665,9 +665,9 @@ group('abortUploadTask()', function () {
             assert.ok(data.successList.length >= 1, '成功舍弃Bucket下所有分片任务');
             assert.ok(nameExist, '成功舍弃Bucket下所有分片任务');
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
 });
@@ -682,7 +682,7 @@ group('headBucket()', function () {
       function (err, data) {
         assert.ok(data, '正常获取 head bucket');
         done();
-      },
+      }
     );
   });
 
@@ -695,7 +695,7 @@ group('headBucket()', function () {
       function (err, data) {
         assert.ok(err, 'bucket 不存在');
         done();
-      },
+      }
     );
   });
 
@@ -708,7 +708,7 @@ group('headBucket()', function () {
       function (err, data) {
         assert.ok(err, '正常获取 head bucket');
         done();
-      },
+      }
     );
   });
 
@@ -722,7 +722,7 @@ group('headBucket()', function () {
         assert.equal(true, data.Name === BucketLongName, '能列出 bucket');
         assert.equal(data.Contents.constructor, Array, '正常获取 bucket 里的文件列表');
         done();
-      },
+      }
     );
   });
 });
@@ -740,7 +740,7 @@ group('putObject()', function () {
           },
           function (err, data) {
             callback(data && data.headers && data.headers.etag);
-          },
+          }
         );
       }, 2000);
     };
@@ -763,7 +763,7 @@ group('putObject()', function () {
           assert.ok(data.ETag === ETag, 'ArrayBuffer 创建 object');
           done();
         });
-      },
+      }
     );
   });
 
@@ -795,9 +795,9 @@ group('putObject()', function () {
           function (err, data) {
             assert.ok(data.Body && data.Body === content && (data.headers && data.headers.etag) === ETag);
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
   test('putObject(),string,empty', function (done, assert) {
@@ -827,9 +827,9 @@ group('putObject()', function () {
           function (err, data) {
             assert.ok(data.Body === content && (data.headers && data.headers.etag) === ETag);
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
   test('putObject(),特殊二进制字符 ArrayBuffer md5', function (done, assert) {
@@ -864,9 +864,9 @@ group('putObject()', function () {
               .every((v, i) => v.charCodeAt(0) === arr[i]);
             assert.ok(isSame && (data.headers && data.headers.etag) === ETag);
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
   test('putObject(),特殊二进制字符 中文 string md5', function (done, assert) {
@@ -893,9 +893,9 @@ group('putObject()', function () {
             var isSame = content === data.Body;
             assert.ok(isSame && (data.headers && data.headers.etag) === ETag);
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
   test('putObject(),特殊二进制字符 unescape string md5', function (done, assert) {
@@ -922,9 +922,9 @@ group('putObject()', function () {
             var isSame = content === data.Body;
             assert.ok(isSame && (data.headers && data.headers.etag) === ETag);
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
 });
@@ -953,9 +953,9 @@ group('getObject()', function () {
             assert.ok(data.headers['content-length'] === '' + content.length);
             assert.ok(objectContent === content);
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
 });
@@ -973,7 +973,7 @@ group('Key 特殊字符', function () {
         if (err) throw err;
         assert.ok(data, 'putObject 特殊字符的 Key 能通过');
         done();
-      },
+      }
     );
   });
 });
@@ -1014,13 +1014,13 @@ group('putObjectCopy() 1', function () {
                   function (err, data) {
                     assert.ok(data.headers && data.headers.etag === ETag, '成功复制文件');
                     done();
-                  },
+                  }
                 );
-              },
+              }
             );
-          },
+          }
         );
-      },
+      }
     );
   });
 });
@@ -1039,7 +1039,7 @@ group('putObjectCopy()', function () {
         assert.ok(!err);
         assert.ok(data.ETag.length > 0);
         done();
-      },
+      }
     );
   });
   test('捕获 object 异常', function (done, assert) {
@@ -1055,7 +1055,7 @@ group('putObjectCopy()', function () {
         assert.equal(true, err.statusCode === 404);
         assert.equal(true, err.error.Code === 'NoSuchKey');
         done();
-      },
+      }
     );
   });
 });
@@ -1108,11 +1108,11 @@ group('sliceCopyFile()', function () {
                   delete data2.ETag;
                   assert.ok(comparePlainObject(data1, data2));
                   done();
-                },
+                }
               );
-            },
+            }
           );
-        },
+        }
       );
     });
   });
@@ -1159,12 +1159,12 @@ group('sliceCopyFile()', function () {
                       delete data2.headers['date'];
                       assert.ok(comparePlainObject(data1, data2));
                       done();
-                    },
+                    }
                   );
                 }, 2000);
-              },
+              }
             );
-          },
+          }
         );
       });
     }, 2000);
@@ -1215,15 +1215,15 @@ group('deleteMultipleObject', function () {
                       function (err, data) {
                         assert.ok(err.statusCode === 404, '2.txt 删除成功');
                         done();
-                      },
+                      }
                     );
-                  },
+                  }
                 );
-              },
+              }
             );
-          },
+          }
         );
-      },
+      }
     );
   });
 });
@@ -1272,9 +1272,9 @@ group('BucketAcl', function () {
             AccessControlPolicy2.Owner.ID = data.Owner.ID;
             assert.ok(data.ACL === 'private' || data.ACL === 'default');
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
   test('putBucketAcl() header ACL:public-read', function (done, assert) {
@@ -1290,7 +1290,7 @@ group('BucketAcl', function () {
           assert.ok(data.ACL === 'public-read');
           done();
         });
-      },
+      }
     );
   });
   test('putBucketAcl() header ACL:public-read-write', function (done, assert) {
@@ -1306,7 +1306,7 @@ group('BucketAcl', function () {
           assert.ok(data.ACL === 'public-read-write');
           done();
         });
-      },
+      }
     );
   });
   test('putBucketAcl() header GrantRead:1001,1002', function (done, assert) {
@@ -1323,7 +1323,7 @@ group('BucketAcl', function () {
           assert.ok((data.GrantRead = GrantRead));
           done();
         });
-      },
+      }
     );
   });
   test('putBucketAcl() header GrantWrite:1001,1002', function (done, assert) {
@@ -1340,7 +1340,7 @@ group('BucketAcl', function () {
           assert.ok((data.GrantWrite = GrantWrite));
           done();
         });
-      },
+      }
     );
   });
   test('putBucketAcl() header GrantFullControl:1001,1002', function (done, assert) {
@@ -1357,7 +1357,7 @@ group('BucketAcl', function () {
           assert.ok((data.GrantFullControl = GrantFullControl));
           done();
         });
-      },
+      }
     );
   });
   test('putBucketAcl() header ACL:public-read, GrantFullControl:1001,1002', function (done, assert) {
@@ -1376,7 +1376,7 @@ group('BucketAcl', function () {
           assert.ok(data.ACL === 'public-read');
           done();
         });
-      },
+      }
     );
   });
   test('putBucketAcl() xml', function (done, assert) {
@@ -1392,12 +1392,12 @@ group('BucketAcl', function () {
           assert.ok(data.Grants.length === 1);
           assert.ok(
             data.Grants[0] && data.Grants[0].Grantee.ID === 'qcs::cam::uin/10002:uin/10002',
-            '设置 AccessControlPolicy ID 正确',
+            '设置 AccessControlPolicy ID 正确'
           );
           assert.ok(data.Grants[0] && data.Grants[0].Permission === 'READ', '设置 AccessControlPolicy Permission 正确');
           done();
         });
-      },
+      }
     );
   });
   test('putBucketAcl() xml2', function (done, assert) {
@@ -1415,7 +1415,7 @@ group('BucketAcl', function () {
           assert.ok(data.Grants[0] && data.Grants[0].Permission === 'READ');
           done();
         });
-      },
+      }
     );
   });
   test('putBucketAcl() decodeAcl', function (done, assert) {
@@ -1437,9 +1437,9 @@ group('BucketAcl', function () {
           function (err, data) {
             assert.ok(data);
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
 });
@@ -1500,11 +1500,11 @@ group('ObjectAcl', function () {
                 AccessControlPolicy2.Owner.ID = data.Owner.ID;
                 assert.ok(data.Grants.length === 1);
                 done();
-              },
+              }
             );
-          },
+          }
         );
-      },
+      }
     );
   });
   test('putObjectAcl() header ACL:default', function (done, assert) {
@@ -1526,9 +1526,9 @@ group('ObjectAcl', function () {
           function (err, data) {
             assert.ok((data.ACL = 'default'));
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
   test('putObjectAcl() header ACL:public-read', function (done, assert) {
@@ -1545,7 +1545,7 @@ group('ObjectAcl', function () {
           assert.ok((data.ACL = 'public-read'));
           done();
         });
-      },
+      }
     );
   });
   // Object 不再支持修改写权限
@@ -1578,7 +1578,7 @@ group('ObjectAcl', function () {
           assert.ok((data.GrantRead = GrantRead));
           done();
         });
-      },
+      }
     );
   });
   // Object 不再支持修改写权限
@@ -1612,7 +1612,7 @@ group('ObjectAcl', function () {
           assert.ok((data.GrantFullControl = GrantFullControl));
           done();
         });
-      },
+      }
     );
   });
   test('putObjectAcl() header ACL:public-read, GrantRead:1001,1002', function (done, assert) {
@@ -1632,7 +1632,7 @@ group('ObjectAcl', function () {
           assert.ok((data.ACL = 'public-read'));
           done();
         });
-      },
+      }
     );
   });
   test('putObjectAcl() xml', function (done, assert) {
@@ -1649,12 +1649,12 @@ group('ObjectAcl', function () {
           assert.ok(data.Grants.length === 1);
           assert.ok(
             data.Grants[0] && data.Grants[0].Grantee.ID === 'qcs::cam::uin/10002:uin/10002',
-            '设置 AccessControlPolicy ID 正确',
+            '设置 AccessControlPolicy ID 正确'
           );
           assert.ok(data.Grants[0] && data.Grants[0].Permission === 'READ', '设置 AccessControlPolicy Permission 正确');
           done();
         });
-      },
+      }
     );
   });
   test('putObjectAcl() xml2', function (done, assert) {
@@ -1678,9 +1678,9 @@ group('ObjectAcl', function () {
             assert.ok(data.Grants[0] && data.Grants[0].Grantee.ID === 'qcs::cam::uin/10002:uin/10002', 'ID 正确');
             assert.ok(data.Grants[0] && data.Grants[0].Permission === 'READ', 'Permission 正确');
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
   test('putObjectAcl() decodeAcl', function (done, assert) {
@@ -1704,9 +1704,9 @@ group('ObjectAcl', function () {
           function (err, data) {
             assert.ok(data);
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
 });
@@ -1793,10 +1793,10 @@ group('BucketCors', function () {
             function (err, data) {
               assert.ok(comparePlainObject(CORSRules, data.CORSRules));
               done();
-            },
+            }
           );
         }, 2000);
-      },
+      }
     );
   });
   test('putBucketCors() multi', function (done, assert) {
@@ -1819,10 +1819,10 @@ group('BucketCors', function () {
             function (err, data) {
               assert.ok(comparePlainObject(CORSRulesMulti, data.CORSRules));
               done();
-            },
+            }
           );
         }, 2000);
-      },
+      }
     );
   });
   test('putBucketCors() old CORSRules', function (done, assert) {
@@ -1844,10 +1844,10 @@ group('BucketCors', function () {
             function (err, data) {
               assert.ok(comparePlainObject(CORSRules, data.CORSRules));
               done();
-            },
+            }
           );
         }, 2000);
-      },
+      }
     );
   });
   test('putBucketCors(),getBucketCors()', function (done, assert) {
@@ -1871,10 +1871,10 @@ group('BucketCors', function () {
             function (err, data) {
               assert.ok(comparePlainObject(CORSRules, data.CORSRules));
               done();
-            },
+            }
           );
         }, 2000);
-      },
+      }
     );
   });
 });
@@ -1906,10 +1906,10 @@ group('BucketTagging', function () {
             function (err, data) {
               assert.ok(comparePlainObject(Tags, data.Tags));
               done();
-            },
+            }
           );
         }, 1000);
-      },
+      }
     );
   });
   test('deleteBucketTagging()', function (done, assert) {
@@ -1929,10 +1929,10 @@ group('BucketTagging', function () {
             function (err, data) {
               assert.ok(comparePlainObject([], data.Tags));
               done();
-            },
+            }
           );
         }, 1000);
-      },
+      }
     );
   });
   test('putBucketTagging() multi', function (done, assert) {
@@ -1956,10 +1956,10 @@ group('BucketTagging', function () {
             function (err, data) {
               assert.ok(comparePlainObject(TagsMulti, data.Tags));
               done();
-            },
+            }
           );
         }, 1000);
-      },
+      }
     );
   });
 });
@@ -1986,20 +1986,20 @@ group('BucketPolicy', function () {
         ],
         resource: [
           'qcs::cos:' +
-            config.Region +
-            ':uid/' +
-            AppId +
-            ':' +
-            BucketLongName +
-            '.cos.' +
-            config.Region +
-            '.myqcloud.com//' +
-            AppId +
-            '/' +
-            BucketShortName +
-            '/' +
-            Prefix +
-            '/*',
+          config.Region +
+          ':uid/' +
+          AppId +
+          ':' +
+          BucketLongName +
+          '.cos.' +
+          config.Region +
+          '.myqcloud.com//' +
+          AppId +
+          '/' +
+          BucketShortName +
+          '/' +
+          Prefix +
+          '/*',
         ], // 1250000000 是 appid
       },
     ],
@@ -2021,9 +2021,9 @@ group('BucketPolicy', function () {
           function (err, data) {
             assert.ok(Policy, data.Policy);
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
   test('putBucketPolicy() s3', function (done, assert) {
@@ -2043,9 +2043,9 @@ group('BucketPolicy', function () {
           function (err, data) {
             assert.ok(Policy, data.Policy);
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
 });
@@ -2074,11 +2074,11 @@ group('BucketLocation', function () {
         };
         assert.ok(
           data.LocationConstraint === config.Region ||
-            data.LocationConstraint === map1[config.Region] ||
-            data.LocationConstraint === map2[config.Region],
+          data.LocationConstraint === map1[config.Region] ||
+          data.LocationConstraint === map2[config.Region]
         );
         done();
-      },
+      }
     );
   });
 });
@@ -2138,10 +2138,10 @@ group('BucketLifecycle', function () {
             function (err, data) {
               assert.ok(comparePlainObject([], data.Rules));
               done();
-            },
+            }
           );
         }, 2000);
-      },
+      }
     );
   });
   test('putBucketLifecycle(),getBucketLifecycle()', function (done, assert) {
@@ -2165,10 +2165,10 @@ group('BucketLifecycle', function () {
             function (err, data) {
               assert.ok(comparePlainObject(Rules, data && data.Rules));
               done();
-            },
+            }
           );
         }, 2000);
-      },
+      }
     );
   });
   test('putBucketLifecycle() multi', function (done, assert) {
@@ -2192,10 +2192,10 @@ group('BucketLifecycle', function () {
             function (err, data) {
               assert.ok(comparePlainObject(RulesMulti, data.Rules));
               done();
-            },
+            }
           );
         }, 2000);
-      },
+      }
     );
   });
 });
@@ -2259,10 +2259,10 @@ group('BucketWebsite', function () {
             function (err, data) {
               assert.ok(comparePlainObject(WebsiteConfiguration, data.WebsiteConfiguration));
               done();
-            },
+            }
           );
         }, 2000);
-      },
+      }
     );
   });
   test('putBucketWebsite() multi RoutingRules', function (done, assert) {
@@ -2284,10 +2284,10 @@ group('BucketWebsite', function () {
             function (err, data) {
               assert.ok(comparePlainObject(WebsiteConfiguration, data.WebsiteConfiguration));
               done();
-            },
+            }
           );
         }, 2000);
-      },
+      }
     );
   });
   test('deleteBucketWebsite()', function (done, assert) {
@@ -2307,10 +2307,10 @@ group('BucketWebsite', function () {
             function (err, data) {
               assert.ok(comparePlainObject({}, data.WebsiteConfiguration));
               done();
-            },
+            }
           );
         }, 2000);
-      },
+      }
     );
   });
 });
@@ -2346,10 +2346,10 @@ group('BucketDomain', function () {
             function (err, data) {
               assert.ok(comparePlainObject(DomainRule, data.DomainRule));
               done();
-            },
+            }
           );
         }, 2000);
-      },
+      }
     );
   });
   // test('putBucketDomain() multi', function (done, assert) {
@@ -2387,10 +2387,10 @@ group('BucketDomain', function () {
             function (err, data) {
               assert.ok(comparePlainObject([], data.DomainRule));
               done();
-            },
+            }
           );
         }, 2000);
-      },
+      }
     );
   });
 });
@@ -2405,7 +2405,7 @@ group('params check Region', function () {
       function (err, data) {
         assert.ok(err.error === 'param Region should not be start with "cos."');
         done();
-      },
+      }
     );
   });
   test('params check Region', function (done, assert) {
@@ -2417,7 +2417,7 @@ group('params check Region', function () {
       function (err, data) {
         assert.ok(err);
         done();
-      },
+      }
     );
   });
 });
@@ -2455,11 +2455,11 @@ group('Key 特殊字符处理', function () {
               function (err, data) {
                 assert.ok(!err);
                 done();
-              },
+              }
             );
-          },
+          }
         );
-      },
+      }
     );
   });
 });
@@ -2474,7 +2474,7 @@ group('Bucket 格式有误', function () {
       function (err, data) {
         assert.ok(err && err.error === 'Bucket should format as "test-1250000000".');
         done();
-      },
+      }
     );
   });
   test('Bucket 带有 /', function (done, assert) {
@@ -2486,7 +2486,7 @@ group('Bucket 格式有误', function () {
       function (err, data) {
         assert.ok(err && err.error === 'Bucket should format as "test-1250000000".');
         done();
-      },
+      }
     );
   });
   test('Bucket 带有 .', function (done, assert) {
@@ -2498,7 +2498,7 @@ group('Bucket 格式有误', function () {
       function (err, data) {
         assert.ok(err && err.error === 'Bucket should format as "test-1250000000".');
         done();
-      },
+      }
     );
   });
   test('Bucket 带有 :', function (done, assert) {
@@ -2510,7 +2510,7 @@ group('Bucket 格式有误', function () {
       function (err, data) {
         assert.ok(err && err.error === 'Bucket should format as "test-1250000000".');
         done();
-      },
+      }
     );
   });
 });
@@ -2525,7 +2525,7 @@ group('Region 格式有误', function () {
       function (err, data) {
         assert.ok(err && err.error === 'Region format error.');
         done();
-      },
+      }
     );
   });
   test('Region 带有 /', function (done, assert) {
@@ -2537,7 +2537,7 @@ group('Region 格式有误', function () {
       function (err, data) {
         assert.ok(err && err.error === 'Region format error.');
         done();
-      },
+      }
     );
   });
   test('Region 带有 :', function (done, assert) {
@@ -2549,7 +2549,7 @@ group('Region 格式有误', function () {
       function (err, data) {
         assert.ok(err && err.error === 'Region format error.');
         done();
-      },
+      }
     );
   });
 });
@@ -2582,9 +2582,9 @@ group('复制文件', function () {
           function (err, data) {
             assert.ok(data && data.ETag, '成功进行分片复制');
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
 
@@ -2603,7 +2603,7 @@ group('复制文件', function () {
         if (err) throw err;
         assert.ok(data && data.ETag, '成功进行单片复制');
         done();
-      },
+      }
     );
   });
 });
@@ -2623,7 +2623,7 @@ group('putObject 中文 Content-MD5', function () {
       function (err, data) {
         assert.ok(data && data.ETag, '成功进行上传');
         done();
-      },
+      }
     );
   });
   test('putObject 中文字符串 带 Content-MD5', function (done, assert) {
@@ -2638,7 +2638,7 @@ group('putObject 中文 Content-MD5', function () {
       function (err, data) {
         assert.ok(data && data.ETag, '成功进行上传');
         done();
-      },
+      }
     );
   });
 });
@@ -2659,7 +2659,7 @@ group('deleteMultipleObject Key 带中文字符', function () {
       function (err, data) {
         assert.ok(!err, '成功进行批量删除');
         done();
-      },
+      }
     );
   });
 });
@@ -2684,9 +2684,9 @@ group('upload Content-Type', function () {
           function (err, data) {
             assert.ok(data.headers['content-type'] === 'application/zip', 'Content-Type 正确');
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
   test('putObject string Content-Type text/xml -> text/xml', function (done, assert) {
@@ -2708,9 +2708,9 @@ group('upload Content-Type', function () {
           function (err, data) {
             assert.ok(data.headers['content-type'] === 'text/xml', 'Content-Type 正确');
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
   test('putObject empty blob Content-Type null application/octet-stream', function (done, assert) {
@@ -2731,9 +2731,9 @@ group('upload Content-Type', function () {
           function (err, data) {
             assert.ok(data.headers['content-type'] === 'application/octet-stream', 'Content-Type 正确');
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
   // sliceUploadFile
@@ -2756,9 +2756,9 @@ group('upload Content-Type', function () {
           function (err, data) {
             assert.ok(data.headers['content-type'] === 'text/xml', 'Content-Type 正确');
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
   test('sliceUploadFile ArrayBuffer Content-Type null application/octet-stream', function (done, assert) {
@@ -2779,9 +2779,9 @@ group('upload Content-Type', function () {
           function (err, data) {
             assert.ok(data.headers['content-type'] === 'application/octet-stream', 'Content-Type 正确');
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
 });
@@ -2806,12 +2806,12 @@ group('Cache-Control', function () {
           function (err, data) {
             assert.ok(
               data.headers['cache-control'] === undefined || data.headers['cache-control'] === 'max-age=259200',
-              'cache-control 正确',
+              'cache-control 正确'
             );
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
   test('putObject Cache-Control: max-age=7200 -> Cache-Control: max-age=7200', function (done, assert) {
@@ -2833,9 +2833,9 @@ group('Cache-Control', function () {
           function (err, data) {
             assert.ok(data.headers['cache-control'] === 'max-age=7200', 'cache-control 正确');
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
   test('putObject Cache-Control: no-cache -> Cache-Control: no-cache', function (done, assert) {
@@ -2857,13 +2857,13 @@ group('Cache-Control', function () {
           function (err, data) {
             assert.ok(
               data.headers['cache-control'] === 'no-cache' ||
-                data.headers['cache-control'] === 'no-cache, max-age=259200',
-              'cache-control 正确',
+              data.headers['cache-control'] === 'no-cache, max-age=259200',
+              'cache-control 正确'
             );
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
   // sliceUploadFile
@@ -2886,12 +2886,12 @@ group('Cache-Control', function () {
           function (err, data) {
             assert.ok(
               data.headers['cache-control'] === undefined || data.headers['cache-control'] === 'max-age=259200',
-              'cache-control 正确',
+              'cache-control 正确'
             );
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
   test('sliceUploadFile Cache-Control: max-age=7200 -> Cache-Control: max-age=7200', function (done, assert) {
@@ -2914,9 +2914,9 @@ group('Cache-Control', function () {
           function (err, data) {
             assert.ok(data.headers['cache-control'] === 'max-age=7200', 'cache-control 正确');
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
   test('sliceUploadFile Cache-Control: no-cache -> Cache-Control: no-cache', function (done, assert) {
@@ -2942,13 +2942,13 @@ group('Cache-Control', function () {
           function (err, data) {
             assert.ok(
               data.headers['cache-control'] === 'no-cache' ||
-                data.headers['cache-control'] === 'no-cache, max-age=259200',
-              'cache-control 正确',
+              data.headers['cache-control'] === 'no-cache, max-age=259200',
+              'cache-control 正确'
             );
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
 });
@@ -2981,9 +2981,9 @@ group('BucketLogging', function () {
             delete data.BucketLoggingStatus._xmlns;
             assert.ok(comparePlainObject(BucketLoggingStatus, data.BucketLoggingStatus));
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
 
@@ -3005,9 +3005,9 @@ group('BucketLogging', function () {
             delete data.BucketLoggingStatus._xmlns;
             assert.ok(comparePlainObject(data.BucketLoggingStatus, {}));
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
 });
@@ -3079,9 +3079,9 @@ group('BucketInventory', function () {
           function (err, data) {
             assert.ok(comparePlainObject(InventoryConfiguration, data.InventoryConfiguration));
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
 
@@ -3101,7 +3101,7 @@ group('BucketInventory', function () {
         assert.ok(comparePlainObject(InventoryConfiguration, targetInventory));
         assert.ok(data.IsTruncated === 'false' || data.IsTruncated === 'true');
         done();
-      },
+      }
     );
   });
 
@@ -3125,9 +3125,9 @@ group('BucketInventory', function () {
           function (err, data) {
             assert.ok(comparePlainObject(InventoryConfigurationNoEncryption, data.InventoryConfiguration));
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
 
@@ -3149,9 +3149,9 @@ group('BucketInventory', function () {
           function (err, data) {
             assert.ok(err && err.statusCode === 404);
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
 });
@@ -3201,11 +3201,11 @@ group('上传带 tagging', function () {
               function (err3, data3) {
                 assert.ok(comparePlainObject(Tags, data3.Tags));
                 done();
-              },
+              }
             );
-          },
+          }
         );
-      },
+      }
     );
   });
 
@@ -3271,10 +3271,10 @@ group('ObjectTagging', function () {
             function (err, data) {
               assert.ok(comparePlainObject(Tags, data.Tags));
               done();
-            },
+            }
           );
         }, 1000);
-      },
+      }
     );
   });
   test('deleteObjectTagging()', function (done, assert) {
@@ -3296,10 +3296,10 @@ group('ObjectTagging', function () {
             function (err, data) {
               assert.ok(comparePlainObject([], data.Tags));
               done();
-            },
+            }
           );
         }, 1000);
-      },
+      }
     );
   });
 });
@@ -3325,10 +3325,10 @@ group('getBucketAccelerate', function () {
             function (err2, data2) {
               assert.ok(data2 && data2.AccelerateConfiguration && data2.AccelerateConfiguration.Status === 'Enabled');
               done();
-            },
+            }
           );
         }, 2000);
-      },
+      }
     );
   });
 
@@ -3352,10 +3352,10 @@ group('getBucketAccelerate', function () {
             function (err2, data2) {
               assert.ok(data2 && data2.AccelerateConfiguration && data2.AccelerateConfiguration.Status === 'Suspended');
               done();
-            },
+            }
           );
         }, 1000);
-      },
+      }
     );
   });
 });
@@ -3498,11 +3498,11 @@ group('Query 的键值带有特殊字符', function () {
                 assert.ok(response.statusCode === 200);
                 assert.ok(body === content);
                 done();
-              },
+              }
             );
-          },
+          }
         );
-      },
+      }
     );
   });
 });
@@ -3531,9 +3531,9 @@ group('appendObject', function () {
           function (err, data) {
             assert.ok(!err);
             done();
-          },
+          }
         );
-      },
+      }
     );
   });
 });
@@ -3560,7 +3560,7 @@ group('数据万象', function () {
       function (err, data) {
         assert.ok(!err);
         done();
-      },
+      }
     );
   });
   test('getMediaInfo()', function (done, assert) {
@@ -3577,7 +3577,7 @@ group('数据万象', function () {
       function (err, data) {
         assert.ok(!err);
         done();
-      },
+      }
     );
   });
   test('getSnapshot()', function (done, assert) {
@@ -3601,7 +3601,7 @@ group('数据万象', function () {
       function (err, data) {
         assert.ok(!err);
         done();
-      },
+      }
     );
   });
 });
