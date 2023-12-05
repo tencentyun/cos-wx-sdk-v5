@@ -9,7 +9,7 @@ var timer;
 var getCache = function () {
   try {
     var val = JSON.parse(wx.getStorageSync(cacheKey));
-  } catch (e) {}
+  } catch (e) { }
   if (!val) val = [];
   return val;
 };
@@ -17,7 +17,7 @@ var setCache = function () {
   try {
     if (cache.length) wx.setStorageSync(cacheKey, JSON.stringify(cache));
     else wx.removeStorageSync(cacheKey);
-  } catch (e) {}
+  } catch (e) { }
 };
 
 var init = function () {

@@ -24,7 +24,7 @@ var util = {
       } catch (e) {
         try {
           wxfs.writeFileSync(filePath, buffer);
-        } catch (e) {}
+        } catch (e) { }
       }
     }
     return buffer;
@@ -1986,20 +1986,20 @@ group('BucketPolicy', function () {
         ],
         resource: [
           'qcs::cos:' +
-            config.Region +
-            ':uid/' +
-            AppId +
-            ':' +
-            BucketLongName +
-            '.cos.' +
-            config.Region +
-            '.myqcloud.com//' +
-            AppId +
-            '/' +
-            BucketShortName +
-            '/' +
-            Prefix +
-            '/*',
+          config.Region +
+          ':uid/' +
+          AppId +
+          ':' +
+          BucketLongName +
+          '.cos.' +
+          config.Region +
+          '.myqcloud.com//' +
+          AppId +
+          '/' +
+          BucketShortName +
+          '/' +
+          Prefix +
+          '/*',
         ], // 1250000000 是 appid
       },
     ],
@@ -2074,8 +2074,8 @@ group('BucketLocation', function () {
         };
         assert.ok(
           data.LocationConstraint === config.Region ||
-            data.LocationConstraint === map1[config.Region] ||
-            data.LocationConstraint === map2[config.Region]
+          data.LocationConstraint === map1[config.Region] ||
+          data.LocationConstraint === map2[config.Region]
         );
         done();
       }
@@ -2857,7 +2857,7 @@ group('Cache-Control', function () {
           function (err, data) {
             assert.ok(
               data.headers['cache-control'] === 'no-cache' ||
-                data.headers['cache-control'] === 'no-cache, max-age=259200',
+              data.headers['cache-control'] === 'no-cache, max-age=259200',
               'cache-control 正确'
             );
             done();
@@ -2942,7 +2942,7 @@ group('Cache-Control', function () {
           function (err, data) {
             assert.ok(
               data.headers['cache-control'] === 'no-cache' ||
-                data.headers['cache-control'] === 'no-cache, max-age=259200',
+              data.headers['cache-control'] === 'no-cache, max-age=259200',
               'cache-control 正确'
             );
             done();
