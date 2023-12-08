@@ -612,9 +612,8 @@ var objectDao = {
       Bucket: config.Bucket,
       Region: config.Region,
       Key: '1.png',
-      function(err, data) {
-        console.log('getObject:', err || data);
-      },
+    }, function (err, data) {
+      console.log('getObject:', err || data);
     });
   },
   'abortUploadTask 抛弃分块上传任务': function () {

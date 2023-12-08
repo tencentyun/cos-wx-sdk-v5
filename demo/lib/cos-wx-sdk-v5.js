@@ -8348,7 +8348,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, scripts, repository, author, license, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.4.13\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo-sdk.js demo/test.js\",\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\",\"mime\":\"^2.4.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.5.0\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo-sdk.js demo/test.js\",\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\",\"mime\":\"^2.4.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -13157,7 +13157,8 @@ function getAuthorizationAsync(params, callback) {
       SecurityToken: StsData.SecurityToken || StsData.XCosSecurityToken || '',
       Token: StsData.Token || '',
       ClientIP: StsData.ClientIP || '',
-      ClientUA: StsData.ClientUA || ''
+      ClientUA: StsData.ClientUA || '',
+      SignFrom: 'client'
     };
     cb(null, AuthData);
   };
@@ -13259,7 +13260,8 @@ function getAuthorizationAsync(params, callback) {
       });
       var AuthData = {
         Authorization: Authorization,
-        SecurityToken: self.options.SecurityToken || self.options.XCosSecurityToken
+        SecurityToken: self.options.SecurityToken || self.options.XCosSecurityToken,
+        SignFrom: 'client'
       };
       cb(null, AuthData);
       return AuthData;
@@ -13268,9 +13270,11 @@ function getAuthorizationAsync(params, callback) {
   return '';
 }
 
-// 调整时间偏差
+// 判断当前请求出错时能否重试
 function allowRetry(err) {
-  var allowRetry = false;
+  var self = this;
+  var canRetry = false;
+  var networkError = false;
   var isTimeError = false;
   var serverDate = err.headers && (err.headers.date || err.headers.Date) || err.error && err.error.ServerTime;
   try {
@@ -13286,13 +13290,53 @@ function allowRetry(err) {
       if (this.options.CorrectClockSkew && Math.abs(util.getSkewTime(this.options.SystemClockOffset) - serverTime) >= 30000) {
         console.error('error: Local time is too skewed.');
         this.options.SystemClockOffset = serverTime - Date.now();
-        allowRetry = true;
+        canRetry = true;
       }
     } else if (Math.floor(err.statusCode / 100) === 5) {
-      allowRetry = true;
+      canRetry = true;
+    }
+    /**
+     * 需要切换域名的场景，归为网络错误
+     * 1、no statusCode
+     * 2、statusCode === 4xx || 5xx && no requestId
+     */
+    if (!err.statusCode) {
+      canRetry = self.options.AutoSwitchHost;
+      networkError = true;
+    } else {
+      var statusCode = Math.floor(err.statusCode / 100);
+      var requestId = (err === null || err === void 0 ? void 0 : err.headers) && (err === null || err === void 0 ? void 0 : err.headers['x-cos-request-id']);
+      if ((statusCode === 4 || statusCode === 5) && !requestId) {
+        canRetry = self.options.AutoSwitchHost;
+        networkError = true;
+      }
     }
   }
-  return allowRetry;
+  return {
+    canRetry: canRetry,
+    networkError: networkError
+  };
+}
+
+/**
+ * 判断能否从cos主域名切到备用域名
+ * requestUrl：请求的url，用于判断是否cos主域名，true才切
+ * clientCalcSign：是否客户端计算签名，服务端返回的签名不能切，true才切
+ * networkError：是否未知网络错误，true才切
+ * */
+function canSwitchHost(_ref) {
+  var requestUrl = _ref.requestUrl,
+    clientCalcSign = _ref.clientCalcSign,
+    networkError = _ref.networkError;
+  if (!this.options.AutoSwitchHost) return false;
+  if (!requestUrl) return false;
+  if (!clientCalcSign) return false;
+  if (!networkError) return false;
+  var commonReg = /^https?:\/\/[^\/]*\.cos\.[^\/]*\.myqcloud\.com(\/.*)?$/;
+  var accelerateReg = /^https?:\/\/[^\/]*\.cos\.accelerate\.myqcloud\.com(\/.*)?$/;
+  // 当前域名是cos主域名才切换
+  var isCommonCosHost = commonReg.test(requestUrl) && !accelerateReg.test(requestUrl);
+  return isCommonCosHost;
 }
 
 // 获取签名并发起请求
@@ -13321,6 +13365,10 @@ function submitRequest(params, callback) {
   var tracker = params.tracker;
   var next = function next(tryTimes) {
     var oldClockOffset = self.options.SystemClockOffset;
+    if (params.SwitchHost) {
+      // 更换要签的host
+      SignHost = SignHost.replace(/myqcloud.com/, 'tencentcos.cn');
+    }
     tracker && tracker.setParams({
       signStartTime: new Date().getTime(),
       retryTimes: tryTimes - 1
@@ -13348,10 +13396,17 @@ function submitRequest(params, callback) {
       });
       params.AuthData = AuthData;
       _submitRequest.call(self, params, function (err, data) {
+        var canRetry = false;
+        var networkError = false;
+        if (err) {
+          var info = allowRetry.call(self, err);
+          canRetry = info.canRetry || oldClockOffset !== self.options.SystemClockOffset;
+          networkError = info.networkError;
+        }
         tracker && tracker.setParams({
           httpEndTime: new Date().getTime()
         });
-        if (err && tryTimes < 2 && (oldClockOffset !== self.options.SystemClockOffset || allowRetry.call(self, err))) {
+        if (err && tryTimes < 2 && canRetry) {
           if (params.headers) {
             delete params.headers.Authorization;
             delete params.headers['token'];
@@ -13360,6 +13415,13 @@ function submitRequest(params, callback) {
             params.headers['x-cos-security-token'] && delete params.headers['x-cos-security-token'];
             params.headers['x-ci-security-token'] && delete params.headers['x-ci-security-token'];
           }
+          // 进入重试逻辑时 需判断是否需要切换cos备用域名
+          var switchHost = canSwitchHost.call(self, {
+            requestUrl: (err === null || err === void 0 ? void 0 : err.url) || '',
+            clientCalcSign: (AuthData === null || AuthData === void 0 ? void 0 : AuthData.SignFrom) === 'client',
+            networkError: networkError
+          });
+          params.SwitchHost = switchHost;
           next(tryTimes + 1);
         } else {
           callback(err, data);
@@ -13397,6 +13459,10 @@ function _submitRequest(params, callback) {
     region: region,
     object: object
   });
+  if (params.SwitchHost) {
+    // 更换请求的url
+    url = url.replace(/myqcloud.com/, 'tencentcos.cn');
+  }
   if (params.action) {
     url = url + '?' + params.action;
   }
@@ -13478,6 +13544,8 @@ function _submitRequest(params, callback) {
       response && response.statusCode && (attrs.statusCode = response.statusCode);
       response && response.headers && (attrs.headers = response.headers);
       if (err) {
+        opt.url && (attrs.url = opt.url);
+        opt.method && (attrs.method = opt.method);
         err = util.extend(err || {}, attrs);
         callback(err, null);
       } else {
@@ -13486,7 +13554,6 @@ function _submitRequest(params, callback) {
       }
       sender = null;
     };
-
     // 请求错误，发生网络错误
     if (err) {
       cb({
@@ -13695,7 +13762,9 @@ var defaultOptions = {
   // 上报时是否对每个分块上传做单独上报
   TrackerDelay: 5000,
   // 周期性上报，单位毫秒。0代表实时上报
-  CustomId: '' // 自定义上报id
+  CustomId: '',
+  // 自定义上报id
+  AutoSwitchHost: false // 重试请求自动切换cos备用域名
 };
 
 // 对外暴露的类
@@ -13720,6 +13789,10 @@ var COS = function COS(options) {
   if (this.options.SecretKey && this.options.SecretKey.indexOf(' ') > -1) {
     console.error('error: SecretKey格式错误，请检查');
     console.error('error: SecretKey format is incorrect. Please check');
+  }
+  if (this.options.ForcePathStyle) {
+    console.warn('cos-wx-sdk-v5不再支持使用path-style，仅支持使用virtual-hosted-style，参考文档：https://cloud.tencent.com/document/product/436/96243');
+    throw new Error('ForcePathStyle is not supported');
   }
   event.init(this);
   task.init(this);
