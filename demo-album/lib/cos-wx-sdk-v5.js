@@ -7444,6 +7444,7 @@ var request = function request(params, callback) {
       header: headers,
       dataType: 'text',
       data: params.body,
+      responseType: params.dataType || 'text',
       timeout: params.timeout,
       success: function success(response) {
         cb(null, response);
@@ -11692,6 +11693,7 @@ function getObject(params, callback) {
     qs: reqParams,
     qsStr: reqParamsStr,
     rawBody: true,
+    dataType: params.DataType,
     tracker: tracker
   }, function (err, data) {
     if (err) {
@@ -12810,7 +12812,8 @@ function request(params, callback) {
     qs: params.Query,
     body: params.Body,
     Url: params.Url,
-    rawBody: params.RawBody
+    rawBody: params.RawBody,
+    dataType: params.DataType
   }, function (err, data) {
     if (err) return callback(err);
     if (data && data.body) {
@@ -13445,6 +13448,7 @@ function _submitRequest(params, callback) {
   var body = params.body;
   var json = params.json;
   var rawBody = params.rawBody;
+  var dataType = params.dataType;
   var httpDNSServiceId = self.options.HttpDNSServiceId;
 
   // url
@@ -13481,7 +13485,8 @@ function _submitRequest(params, callback) {
     filePath: params.filePath,
     body: body,
     json: json,
-    httpDNSServiceId: httpDNSServiceId
+    httpDNSServiceId: httpDNSServiceId,
+    dataType: dataType
   };
 
   // 兼容ci接口

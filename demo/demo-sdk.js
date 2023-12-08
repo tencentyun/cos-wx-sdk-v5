@@ -608,13 +608,16 @@ var objectDao = {
   // 上传文件
   'putObject base64 转 ArrayBuffer 上传': putObjectBase64,
   'getObject 下载对象': function () {
-    cos.getObject({
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Key: '1.png',
-    }, function (err, data) {
-      console.log('getObject:', err || data);
-    });
+    cos.getObject(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: '1.png',
+      },
+      function (err, data) {
+        console.log('getObject:', err || data);
+      }
+    );
   },
   'abortUploadTask 抛弃分块上传任务': function () {
     cos.abortUploadTask(
@@ -876,9 +879,15 @@ var ciObjectDao = {
           // mode: 'exactframe', /** 截帧方式，默认为'exactframe'，非必须 */
         },
         RawBody: true,
+        DataType: 'arraybuffer',
       },
       function (err, data) {
-        console.log(err || data);
+        if (err) {
+          console.log('请求出错');
+        } else {
+          const imgBase64 = wx.arrayBufferToBase64(data.Body);
+          console.log(imgBase64);
+        }
       }
     );
   },

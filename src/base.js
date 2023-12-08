@@ -591,7 +591,7 @@ function getBucketPolicy(params, callback) {
       var Policy = {};
       try {
         Policy = JSON.parse(data.body);
-      } catch (e) { }
+      } catch (e) {}
       callback(null, {
         Policy: Policy,
         statusCode: data.statusCode,
@@ -717,7 +717,7 @@ function getBucketTagging(params, callback) {
       var Tags = [];
       try {
         Tags = data.Tagging.TagSet.Tag || [];
-      } catch (e) { }
+      } catch (e) {}
       Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
       callback(null, {
         Tags: Tags,
@@ -825,7 +825,7 @@ function getBucketLifecycle(params, callback) {
       var Rules = [];
       try {
         Rules = data.LifecycleConfiguration.Rule || [];
-      } catch (e) { }
+      } catch (e) {}
       Rules = util.clone(util.isArray(Rules) ? Rules : [Rules]);
       callback(null, {
         Rules: Rules,
@@ -1339,7 +1339,7 @@ function getBucketDomain(params, callback) {
       var DomainRule = [];
       try {
         DomainRule = data.DomainConfiguration.DomainRule || [];
-      } catch (e) { }
+      } catch (e) {}
       DomainRule = util.clone(util.isArray(DomainRule) ? DomainRule : [DomainRule]);
       callback(null, {
         DomainRule: DomainRule,
@@ -1454,7 +1454,7 @@ function getBucketOrigin(params, callback) {
       var OriginRule = [];
       try {
         OriginRule = data.OriginConfiguration.OriginRule || [];
-      } catch (e) { }
+      } catch (e) {}
       OriginRule = util.clone(util.isArray(OriginRule) ? OriginRule : [OriginRule]);
       callback(null, {
         OriginRule: OriginRule,
@@ -2001,6 +2001,7 @@ function getObject(params, callback) {
       qs: reqParams,
       qsStr: reqParamsStr,
       rawBody: true,
+      dataType: params.DataType,
       tracker: tracker,
     },
     function (err, data) {
@@ -2713,7 +2714,7 @@ function getObjectTagging(params, callback) {
       var Tags = [];
       try {
         Tags = data.Tagging.TagSet.Tag || [];
-      } catch (e) { }
+      } catch (e) {}
       Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
       callback(null, {
         Tags: Tags,
@@ -3206,6 +3207,7 @@ function request(params, callback) {
       body: params.Body,
       Url: params.Url,
       rawBody: params.RawBody,
+      dataType: params.DataType,
     },
     function (err, data) {
       if (err) return callback(err);
@@ -3401,7 +3403,7 @@ function uniqGrant(str) {
   var arr = str.split(',');
   var exist = {};
   var i, item;
-  for (i = 0; i < arr.length;) {
+  for (i = 0; i < arr.length; ) {
     item = arr[i].trim();
     if (exist[item]) {
       arr.splice(i, 1);
@@ -3617,7 +3619,7 @@ function getAuthorizationAsync(params, callback) {
             ) {
               formatAllow = true;
             }
-          } catch (e) { }
+          } catch (e) {}
         }
       }
       if (!formatAllow) return util.error(new Error('getAuthorization callback params format error'));
@@ -3735,7 +3737,7 @@ function allowRetry(err) {
     ) {
       isTimeError = true;
     }
-  } catch (e) { }
+  } catch (e) {}
   if (err) {
     if (isTimeError && serverDate) {
       var serverTime = Date.parse(serverDate);
@@ -3890,6 +3892,7 @@ function _submitRequest(params, callback) {
   var body = params.body;
   var json = params.json;
   var rawBody = params.rawBody;
+  var dataType = params.dataType;
   var httpDNSServiceId = self.options.HttpDNSServiceId;
 
   // url
@@ -3931,6 +3934,7 @@ function _submitRequest(params, callback) {
     body: body,
     json: json,
     httpDNSServiceId: httpDNSServiceId,
+    dataType,
   };
 
   // 兼容ci接口
@@ -3967,8 +3971,8 @@ function _submitRequest(params, callback) {
   var useAccelerate = opt.url.includes('accelerate.');
   var queryString = opt.qs
     ? Object.keys(opt.qs)
-      .map((key) => `${key}=${opt.qs[key]}`)
-      .join('&')
+        .map((key) => `${key}=${opt.qs[key]}`)
+        .join('&')
     : '';
   var fullUrl = queryString ? opt.url + '?' + queryString : opt.url;
   params.tracker && params.tracker.setParams({ reqUrl: fullUrl, accelerate: useAccelerate ? 'Y' : 'N' });
