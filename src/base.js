@@ -3753,7 +3753,7 @@ function allowRetry(err) {
       canRetry = true;
     }
     /**
-     * 需要切换域名的场景，归为网络错误
+     * 归为网络错误
      * 1、no statusCode
      * 2、statusCode === 4xx || 5xx && no requestId
      */
@@ -3773,7 +3773,6 @@ function allowRetry(err) {
 }
 
 /**
- * 判断能否从cos主域名切到备用域名
  * requestUrl：请求的url，用于判断是否cos主域名，true才切
  * clientCalcSign：是否客户端计算签名，服务端返回的签名不能切，true才切
  * networkError：是否未知网络错误，true才切
