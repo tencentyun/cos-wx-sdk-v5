@@ -4,7 +4,7 @@
   "description": "小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)",
   "main": "demo/lib/cos-wx-sdk-v5.min.js",
   "scripts": {
-    "prettier": "prettier --write src demo/demo-sdk.js demo/test.js",
+    "prettier": "prettier --write src demo/demo-sdk.js demo/test.js demo/ciDemo",
     "dev": "cross-env NODE_ENV=development node build.js --mode=development",
     "build": "cross-env NODE_ENV=production node build.js --mode=production",
     "sts.js": "node server/sts.js"

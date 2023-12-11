@@ -1,4 +1,8 @@
 /**index.wxss**/
+.btn-content button {
+  margin: 0 0 10px 0;
+  border-radius: 0;
+}
 .title {
     display:block;
     box-sizing: border-box;
