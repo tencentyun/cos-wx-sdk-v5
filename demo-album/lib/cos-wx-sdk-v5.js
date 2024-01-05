@@ -7419,6 +7419,7 @@ var request = function request(params, callback) {
       data: params.body,
       responseType: params.dataType || 'text',
       timeout: params.timeout,
+      redirect: 'manual',
       success: function success(response) {
         cb(null, response);
       },
@@ -13050,12 +13051,14 @@ function allowRetry(err) {
      * 1、no statusCode
      * 2、statusCode === 4xx || 5xx && no requestId
      */
+    console.log("err statusCode=".concat(err.statusCode));
     if (!err.statusCode) {
       canRetry = self.options.AutoSwitchHost;
       networkError = true;
     } else {
       var statusCode = Math.floor(err.statusCode / 100);
       var requestId = (err === null || err === void 0 ? void 0 : err.headers) && (err === null || err === void 0 ? void 0 : err.headers['x-cos-request-id']);
+      console.log("err headers=".concat(JSON.stringify(err.headers)));
       if ((statusCode === 4 || statusCode === 5) && !requestId) {
         canRetry = self.options.AutoSwitchHost;
         networkError = true;
@@ -13171,8 +13174,10 @@ function submitRequest(params, callback) {
             networkError: networkError
           });
           params.SwitchHost = switchHost;
+          console.log("\u8BF7\u6C42\u5931\u8D25, ".concat(err === null || err === void 0 ? void 0 : err.url, ", \u662F\u5426\u9700\u8981\u5207\u6362\u57DF\u540D=").concat(switchHost));
           next(tryTimes + 1);
         } else {
+          !err && console.log('请求成功');
           callback(err, data);
         }
       });
@@ -14643,7 +14648,7 @@ var hasMissingParams = function hasMissingParams(apiName, params) {
   if (apiName.indexOf('Bucket') > -1 || apiName === 'deleteMultipleObject' || apiName === 'multipartList' || apiName === 'listObjectVersions') {
     if (!Bucket) return 'Bucket';
     if (!Region) return 'Region';
-  } else if (apiName.indexOf('Object') > -1 || apiName.indexOf('multipart') > -1 || apiName === 'sliceUploadFile' || apiName === 'abortUploadTask') {
+  } else if (apiName.indexOf('Object') > -1 || apiName.indexOf('multipart') > -1 || apiName === 'sliceUploadFile' || apiName === 'abortUploadTask' || apiName === 'uploadFile') {
     if (!Bucket) return 'Bucket';
     if (!Region) return 'Region';
     if (!Key) return 'Key';

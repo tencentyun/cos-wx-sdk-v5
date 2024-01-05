@@ -3757,12 +3757,14 @@ function allowRetry(err) {
      * 1、no statusCode
      * 2、statusCode === 4xx || 5xx && no requestId
      */
+    console.log(`err statusCode=${err.statusCode}`);
     if (!err.statusCode) {
       canRetry = self.options.AutoSwitchHost;
       networkError = true;
     } else {
       const statusCode = Math.floor(err.statusCode / 100);
       const requestId = err?.headers && err?.headers['x-cos-request-id'];
+      console.log(`err headers=${JSON.stringify(err.headers)}`);
       if ((statusCode === 4 || statusCode === 5) && !requestId) {
         canRetry = self.options.AutoSwitchHost;
         networkError = true;
@@ -3866,8 +3868,10 @@ function submitRequest(params, callback) {
               networkError,
             });
             params.SwitchHost = switchHost;
+            console.log(`请求失败, ${err?.url}, 是否需要切换域名=${switchHost}`);
             next(tryTimes + 1);
           } else {
+            !err && console.log('请求成功');
             callback(err, data);
           }
         });
