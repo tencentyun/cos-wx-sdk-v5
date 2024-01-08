@@ -3483,9 +3483,7 @@ var getSignHost = function (opt) {
       region: useAccelerate ? 'accelerate' : opt.Region,
     });
   var urlHost = url.replace(/^https?:\/\/([^/]+)(\/.*)?$/, '$1');
-  var standardHostReg = new RegExp('^([a-z\\d-]+-\\d+\\.)?(cos|cosv6|ci|pic)\\.([a-z\\d-]+)\\.myqcloud\\.com$');
-  if (standardHostReg.test(urlHost)) return urlHost;
-  return '';
+  return urlHost;
 };
 
 // 异步获取签名
