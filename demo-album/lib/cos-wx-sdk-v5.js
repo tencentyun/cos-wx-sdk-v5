@@ -13049,17 +13049,15 @@ function allowRetry(err) {
     /**
      * 归为网络错误
      * 1、no statusCode
-     * 2、statusCode === 4xx || 5xx && no requestId
+     * 2、statusCode === 3xx || 4xx || 5xx && no requestId
      */
-    console.log("err statusCode=".concat(err.statusCode));
     if (!err.statusCode) {
       canRetry = self.options.AutoSwitchHost;
       networkError = true;
     } else {
       var statusCode = Math.floor(err.statusCode / 100);
       var requestId = (err === null || err === void 0 ? void 0 : err.headers) && (err === null || err === void 0 ? void 0 : err.headers['x-cos-request-id']);
-      console.log("err headers=".concat(JSON.stringify(err.headers)));
-      if ((statusCode === 4 || statusCode === 5) && !requestId) {
+      if ([3, 4, 5].includes(statusCode) && !requestId) {
         canRetry = self.options.AutoSwitchHost;
         networkError = true;
       }
@@ -13174,10 +13172,8 @@ function submitRequest(params, callback) {
             networkError: networkError
           });
           params.SwitchHost = switchHost;
-          console.log("\u8BF7\u6C42\u5931\u8D25, ".concat(err === null || err === void 0 ? void 0 : err.url, ", \u662F\u5426\u9700\u8981\u5207\u6362\u57DF\u540D=").concat(switchHost));
           next(tryTimes + 1);
         } else {
-          !err && console.log('请求成功');
           callback(err, data);
         }
       });
