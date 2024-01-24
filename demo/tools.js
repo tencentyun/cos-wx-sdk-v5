@@ -1,5 +1,6 @@
 var COS = require('./lib/cos-wx-sdk-v5');
 var config = require('./config');
+const Beacon = require('./lib/beacon_mp.min');
 
 // 签名回调
 var getAuthorization = function (options, callback) {
@@ -86,8 +87,8 @@ var getAuthorization = function (options, callback) {
 };
 
 var cos = new COS({
-  // path style 指正式请求时，Bucket 是在 path 里，这样用相同园区多个 bucket 只需要配置一个园区域名
-  // ForcePathStyle: true,
+  // EnableTracker: true, // 开启灯塔上报
+  // Beacon,
   getAuthorization: getAuthorization,
   // 是否使用全球加速域名。开启该配置后仅以下接口支持操作：putObject、getObject、headObject、optionsObject、multipartInit、multipartListPart、multipartUpload、multipartAbort、multipartComplete、multipartList、sliceUploadFile、uploadFiles
   // UseAccelerate: true,

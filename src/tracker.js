@@ -1,10 +1,13 @@
 const pkg = require('../package.json');
-const BeaconAction = require('../lib/beacon_mp.min');
 let beacon = null;
 
-const getBeacon = (delay) => {
+const getBeacon = (Beacon, delay) => {
   if (!beacon) {
-    beacon = new BeaconAction({
+    // 生成 beacon
+    if (!Beacon) {
+      throw new Error('Beacon not found');
+    }
+    beacon = new Beacon({
       appkey: '0AND0VEVB24UBGDU',
       versionCode: pkg.version,
       channelID: 'mp_sdk', //渠道,选填
@@ -202,8 +205,20 @@ function formatParams(params) {
 // 链路追踪器
 class Tracker {
   constructor(opt) {
-    const { parent, traceId, bucket, region, apiName, fileKey, fileSize, accelerate, customId, delay, deepTracker } =
-      opt;
+    const {
+      parent,
+      traceId,
+      bucket,
+      region,
+      apiName,
+      fileKey,
+      fileSize,
+      accelerate,
+      customId,
+      delay,
+      deepTracker,
+      Beacon,
+    } = opt;
     const appid = (bucket && bucket.substr(bucket.lastIndexOf('-') + 1)) || '';
     this.parent = parent;
     this.deepTracker = deepTracker;
@@ -254,7 +269,7 @@ class Tracker {
       startTime: new Date().getTime(), // sdk api调用起始时间，不是纯网络耗时
       endTime: 0, //  sdk api调用结束时间，不是纯网络耗时
     };
-    this.beacon = getBeacon(delay);
+    this.beacon = getBeacon(Beacon, delay);
   }
 
   // 格式化sdk回调
