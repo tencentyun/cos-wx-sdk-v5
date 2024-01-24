@@ -1,8 +1,13 @@
 <!--index.wxml-->
 <view class="container">
+  <view class="btn-content">
+    <button type="{{ demoType === 'cos' ? 'primary' : 'default' }}" class="button" bindtap="switchCosDemo">cos demo</button>
+    <button type="{{ demoType === 'ci' ? 'primary' : 'default' }}" class="button" bindtap="switchCiDemo">ci demo</button>
+  </view>
+  <block wx:if="{{ demoType === 'cos' }}">
     <view class="title">简单上传例子（推荐）</view>
     <view class="list">
-        <button type="primary" class="button" bindtap="postUpload"><text style="font-weight:bold;">[推荐]</text> PostObject简单上传</button>
+        <button type="primary" class="button" bindtap="postUpload">不使用SDK Post 直传</button>
     </view>
     <view class="title">小程序完整 SDK 例子（功能齐全，文件较大）</view>
     <view class="list-panel" wx:for="{{listMap}}" wx:index="index" wx:for-item="list" wx:key="index">
@@ -11,4 +16,15 @@
             <button type="primary" class="button {{index}}" bindtap="{{item}}" wx:for="{{list}}" wx:key="key">{{item}}</button>
         </view>
     </view>
+  </block>
+  <block wx:else>
+    <view class="title">数据万象示例</view>
+    <view class="list-panel" wx:for="{{ciListMap}}" wx:index="index" wx:for-item="list" wx:key="index">
+        <view class="sub-title"> {{ciTitle[index]}} {{key}}</view>
+        <view class="list">
+            <button type="primary" class="button {{index}}" bindtap="{{item}}" wx:for="{{list}}" wx:key="key">{{item}}</button>
+        </view>
+    </view>
+  </block>
 </view>
+

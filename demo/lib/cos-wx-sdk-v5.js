@@ -6678,7 +6678,7 @@ module.exports = json2xml;
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-/* WEBPACK VAR INJECTION */(function(process, global, module) {var __WEBPACK_AMD_DEFINE_RESULT__;function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+/* WEBPACK VAR INJECTION */(function(module) {var __WEBPACK_AMD_DEFINE_RESULT__;function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 /* https://github.com/emn178/js-md5 */
 (function () {
   'use strict';
@@ -6690,10 +6690,7 @@ module.exports = json2xml;
     WINDOW = false;
   }
   var WEB_WORKER = !WINDOW && (typeof self === "undefined" ? "undefined" : _typeof(self)) === 'object';
-  var NODE_JS = !root.JS_MD5_NO_NODE_JS && (typeof process === "undefined" ? "undefined" : _typeof(process)) === 'object' && process.versions && process.versions.node;
-  if (NODE_JS) {
-    root = global;
-  } else if (WEB_WORKER) {
+  if (WEB_WORKER) {
     root = self;
   }
   var COMMON_JS = !root.JS_MD5_NO_COMMON_JS && ( false ? undefined : _typeof(module)) === 'object' && module.exports;
@@ -6807,9 +6804,6 @@ module.exports = json2xml;
    */
   var createMethod = function createMethod() {
     var method = createOutputMethod('hex');
-    if (NODE_JS) {
-      method = nodeWrap(method);
-    }
     method.getCtx = method.create = function () {
       return new Md5();
     };
@@ -6821,27 +6815,6 @@ module.exports = json2xml;
       method[type] = createOutputMethod(type);
     }
     return method;
-  };
-  var nodeWrap = function nodeWrap(method) {
-    var crypto = eval("require('crypto')");
-    var Buffer = eval("require('buffer').Buffer");
-    var nodeMethod = function nodeMethod(message) {
-      if (typeof message === 'string') {
-        return crypto.createHash('md5').update(message, 'utf8').digest('hex');
-      } else {
-        if (message === null || message === undefined) {
-          throw ERROR;
-        } else if (message.constructor === ArrayBuffer) {
-          message = new Uint8Array(message);
-        }
-      }
-      if (Array.isArray(message) || ArrayBuffer.isView(message) || message.constructor === Buffer) {
-        return crypto.createHash('md5').update(new Buffer(message)).digest('hex');
-      } else {
-        return method(message);
-      }
-    };
-    return nodeMethod;
   };
 
   /**
@@ -7325,7 +7298,7 @@ module.exports = json2xml;
     }
   }
 })();
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../node_modules/process/browser.js */ "./node_modules/process/browser.js"), __webpack_require__(/*! ./../node_modules/webpack/buildin/global.js */ "./node_modules/webpack/buildin/global.js"), __webpack_require__(/*! ./../node_modules/webpack/buildin/module.js */ "./node_modules/webpack/buildin/module.js")(module)))
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../node_modules/webpack/buildin/module.js */ "./node_modules/webpack/buildin/module.js")(module)))
 
 /***/ }),
 
@@ -7444,7 +7417,9 @@ var request = function request(params, callback) {
       header: headers,
       dataType: 'text',
       data: params.body,
+      responseType: params.dataType || 'text',
       timeout: params.timeout,
+      redirect: 'manual',
       success: function success(response) {
         cb(null, response);
       },
@@ -8068,201 +8043,6 @@ module.exports = {"application/andrew-inset":["ez"],"application/applixware":["a
 
 /***/ }),
 
-/***/ "./node_modules/process/browser.js":
-/*!*****************************************!*\
-  !*** ./node_modules/process/browser.js ***!
-  \*****************************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-// shim for using process in browser
-var process = module.exports = {};
-
-// cached from whatever global is present so that test runners that stub it
-// don't break things.  But we need to wrap it in a try catch in case it is
-// wrapped in strict mode code which doesn't define any globals.  It's inside a
-// function because try/catches deoptimize in certain engines.
-
-var cachedSetTimeout;
-var cachedClearTimeout;
-
-function defaultSetTimout() {
-    throw new Error('setTimeout has not been defined');
-}
-function defaultClearTimeout () {
-    throw new Error('clearTimeout has not been defined');
-}
-(function () {
-    try {
-        if (typeof setTimeout === 'function') {
-            cachedSetTimeout = setTimeout;
-        } else {
-            cachedSetTimeout = defaultSetTimout;
-        }
-    } catch (e) {
-        cachedSetTimeout = defaultSetTimout;
-    }
-    try {
-        if (typeof clearTimeout === 'function') {
-            cachedClearTimeout = clearTimeout;
-        } else {
-            cachedClearTimeout = defaultClearTimeout;
-        }
-    } catch (e) {
-        cachedClearTimeout = defaultClearTimeout;
-    }
-} ())
-function runTimeout(fun) {
-    if (cachedSetTimeout === setTimeout) {
-        //normal enviroments in sane situations
-        return setTimeout(fun, 0);
-    }
-    // if setTimeout wasn't available but was latter defined
-    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
-        cachedSetTimeout = setTimeout;
-        return setTimeout(fun, 0);
-    }
-    try {
-        // when when somebody has screwed with setTimeout but no I.E. maddness
-        return cachedSetTimeout(fun, 0);
-    } catch(e){
-        try {
-            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
-            return cachedSetTimeout.call(null, fun, 0);
-        } catch(e){
-            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
-            return cachedSetTimeout.call(this, fun, 0);
-        }
-    }
-
-
-}
-function runClearTimeout(marker) {
-    if (cachedClearTimeout === clearTimeout) {
-        //normal enviroments in sane situations
-        return clearTimeout(marker);
-    }
-    // if clearTimeout wasn't available but was latter defined
-    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
-        cachedClearTimeout = clearTimeout;
-        return clearTimeout(marker);
-    }
-    try {
-        // when when somebody has screwed with setTimeout but no I.E. maddness
-        return cachedClearTimeout(marker);
-    } catch (e){
-        try {
-            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
-            return cachedClearTimeout.call(null, marker);
-        } catch (e){
-            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
-            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
-            return cachedClearTimeout.call(this, marker);
-        }
-    }
-
-
-
-}
-var queue = [];
-var draining = false;
-var currentQueue;
-var queueIndex = -1;
-
-function cleanUpNextTick() {
-    if (!draining || !currentQueue) {
-        return;
-    }
-    draining = false;
-    if (currentQueue.length) {
-        queue = currentQueue.concat(queue);
-    } else {
-        queueIndex = -1;
-    }
-    if (queue.length) {
-        drainQueue();
-    }
-}
-
-function drainQueue() {
-    if (draining) {
-        return;
-    }
-    var timeout = runTimeout(cleanUpNextTick);
-    draining = true;
-
-    var len = queue.length;
-    while(len) {
-        currentQueue = queue;
-        queue = [];
-        while (++queueIndex < len) {
-            if (currentQueue) {
-                currentQueue[queueIndex].run();
-            }
-        }
-        queueIndex = -1;
-        len = queue.length;
-    }
-    currentQueue = null;
-    draining = false;
-    runClearTimeout(timeout);
-}
-
-process.nextTick = function (fun) {
-    var args = new Array(arguments.length - 1);
-    if (arguments.length > 1) {
-        for (var i = 1; i < arguments.length; i++) {
-            args[i - 1] = arguments[i];
-        }
-    }
-    queue.push(new Item(fun, args));
-    if (queue.length === 1 && !draining) {
-        runTimeout(drainQueue);
-    }
-};
-
-// v8 likes predictible objects
-function Item(fun, array) {
-    this.fun = fun;
-    this.array = array;
-}
-Item.prototype.run = function () {
-    this.fun.apply(null, this.array);
-};
-process.title = 'browser';
-process.browser = true;
-process.env = {};
-process.argv = [];
-process.version = ''; // empty string to avoid regexp issues
-process.versions = {};
-
-function noop() {}
-
-process.on = noop;
-process.addListener = noop;
-process.once = noop;
-process.off = noop;
-process.removeListener = noop;
-process.removeAllListeners = noop;
-process.emit = noop;
-process.prependListener = noop;
-process.prependOnceListener = noop;
-
-process.listeners = function (name) { return [] }
-
-process.binding = function (name) {
-    throw new Error('process.binding is not supported');
-};
-
-process.cwd = function () { return '/' };
-process.chdir = function (dir) {
-    throw new Error('process.chdir is not supported');
-};
-process.umask = function() { return 0; };
-
-
-/***/ }),
-
 /***/ "./node_modules/webpack/buildin/amd-options.js":
 /*!****************************************!*\
   !*** (webpack)/buildin/amd-options.js ***!
@@ -8274,37 +8054,6 @@ process.umask = function() { return 0; };
 module.exports = __webpack_amd_options__;
 
 /* WEBPACK VAR INJECTION */}.call(this, {}))
-
-/***/ }),
-
-/***/ "./node_modules/webpack/buildin/global.js":
-/*!***********************************!*\
-  !*** (webpack)/buildin/global.js ***!
-  \***********************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-var g;
-
-// This works in non-strict mode
-g = (function() {
-	return this;
-})();
-
-try {
-	// This works if eval is allowed (see CSP)
-	g = g || new Function("return this")();
-} catch (e) {
-	// This works if the window reference is available
-	if (typeof window === "object") g = window;
-}
-
-// g can still be undefined, but nothing to do about it...
-// We return undefined, instead of nothing here, so it's
-// easier to handle this case. if(!global) { ...}
-
-module.exports = g;
-
 
 /***/ }),
 
@@ -8348,7 +8097,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, scripts, repository, author, license, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.4.13\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo-sdk.js demo/test.js\",\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\",\"mime\":\"^2.4.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.5.0\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo-sdk.js demo/test.js demo/ciDemo\",\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\",\"mime\":\"^2.4.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -11692,6 +11441,7 @@ function getObject(params, callback) {
     qs: reqParams,
     qsStr: reqParamsStr,
     rawBody: true,
+    dataType: params.DataType,
     tracker: tracker
   }, function (err, data) {
     if (err) {
@@ -12810,7 +12560,8 @@ function request(params, callback) {
     qs: params.Query,
     body: params.Body,
     Url: params.Url,
-    rawBody: params.RawBody
+    rawBody: params.RawBody,
+    dataType: params.DataType
   }, function (err, data) {
     if (err) return callback(err);
     if (data && data.body) {
@@ -13059,9 +12810,7 @@ var getSignHost = function getSignHost(opt) {
     region: useAccelerate ? 'accelerate' : opt.Region
   });
   var urlHost = url.replace(/^https?:\/\/([^/]+)(\/.*)?$/, '$1');
-  var standardHostReg = new RegExp('^([a-z\\d-]+-\\d+\\.)?(cos|cosv6|ci|pic)\\.([a-z\\d-]+)\\.myqcloud\\.com$');
-  if (standardHostReg.test(urlHost)) return urlHost;
-  return '';
+  return urlHost;
 };
 
 // 异步获取签名
@@ -13157,7 +12906,8 @@ function getAuthorizationAsync(params, callback) {
       SecurityToken: StsData.SecurityToken || StsData.XCosSecurityToken || '',
       Token: StsData.Token || '',
       ClientIP: StsData.ClientIP || '',
-      ClientUA: StsData.ClientUA || ''
+      ClientUA: StsData.ClientUA || '',
+      SignFrom: 'client'
     };
     cb(null, AuthData);
   };
@@ -13259,7 +13009,8 @@ function getAuthorizationAsync(params, callback) {
       });
       var AuthData = {
         Authorization: Authorization,
-        SecurityToken: self.options.SecurityToken || self.options.XCosSecurityToken
+        SecurityToken: self.options.SecurityToken || self.options.XCosSecurityToken,
+        SignFrom: 'client'
       };
       cb(null, AuthData);
       return AuthData;
@@ -13268,9 +13019,11 @@ function getAuthorizationAsync(params, callback) {
   return '';
 }
 
-// 调整时间偏差
+// 判断当前请求出错时能否重试
 function allowRetry(err) {
-  var allowRetry = false;
+  var self = this;
+  var canRetry = false;
+  var networkError = false;
   var isTimeError = false;
   var serverDate = err.headers && (err.headers.date || err.headers.Date) || err.error && err.error.ServerTime;
   try {
@@ -13286,13 +13039,52 @@ function allowRetry(err) {
       if (this.options.CorrectClockSkew && Math.abs(util.getSkewTime(this.options.SystemClockOffset) - serverTime) >= 30000) {
         console.error('error: Local time is too skewed.');
         this.options.SystemClockOffset = serverTime - Date.now();
-        allowRetry = true;
+        canRetry = true;
       }
     } else if (Math.floor(err.statusCode / 100) === 5) {
-      allowRetry = true;
+      canRetry = true;
+    }
+    /**
+     * 归为网络错误
+     * 1、no statusCode
+     * 2、statusCode === 3xx || 4xx || 5xx && no requestId
+     */
+    if (!err.statusCode) {
+      canRetry = self.options.AutoSwitchHost;
+      networkError = true;
+    } else {
+      var statusCode = Math.floor(err.statusCode / 100);
+      var requestId = (err === null || err === void 0 ? void 0 : err.headers) && (err === null || err === void 0 ? void 0 : err.headers['x-cos-request-id']);
+      if ([3, 4, 5].includes(statusCode) && !requestId) {
+        canRetry = self.options.AutoSwitchHost;
+        networkError = true;
+      }
     }
   }
-  return allowRetry;
+  return {
+    canRetry: canRetry,
+    networkError: networkError
+  };
+}
+
+/**
+ * requestUrl：请求的url，用于判断是否cos主域名，true才切
+ * clientCalcSign：是否客户端计算签名，服务端返回的签名不能切，true才切
+ * networkError：是否未知网络错误，true才切
+ * */
+function canSwitchHost(_ref) {
+  var requestUrl = _ref.requestUrl,
+    clientCalcSign = _ref.clientCalcSign,
+    networkError = _ref.networkError;
+  if (!this.options.AutoSwitchHost) return false;
+  if (!requestUrl) return false;
+  if (!clientCalcSign) return false;
+  if (!networkError) return false;
+  var commonReg = /^https?:\/\/[^\/]*\.cos\.[^\/]*\.myqcloud\.com(\/.*)?$/;
+  var accelerateReg = /^https?:\/\/[^\/]*\.cos\.accelerate\.myqcloud\.com(\/.*)?$/;
+  // 当前域名是cos主域名才切换
+  var isCommonCosHost = commonReg.test(requestUrl) && !accelerateReg.test(requestUrl);
+  return isCommonCosHost;
 }
 
 // 获取签名并发起请求
@@ -13321,6 +13113,10 @@ function submitRequest(params, callback) {
   var tracker = params.tracker;
   var next = function next(tryTimes) {
     var oldClockOffset = self.options.SystemClockOffset;
+    if (params.SwitchHost) {
+      // 更换要签的host
+      SignHost = SignHost.replace(/myqcloud.com/, 'tencentcos.cn');
+    }
     tracker && tracker.setParams({
       signStartTime: new Date().getTime(),
       retryTimes: tryTimes - 1
@@ -13348,10 +13144,17 @@ function submitRequest(params, callback) {
       });
       params.AuthData = AuthData;
       _submitRequest.call(self, params, function (err, data) {
+        var canRetry = false;
+        var networkError = false;
+        if (err) {
+          var info = allowRetry.call(self, err);
+          canRetry = info.canRetry || oldClockOffset !== self.options.SystemClockOffset;
+          networkError = info.networkError;
+        }
         tracker && tracker.setParams({
           httpEndTime: new Date().getTime()
         });
-        if (err && tryTimes < 2 && (oldClockOffset !== self.options.SystemClockOffset || allowRetry.call(self, err))) {
+        if (err && tryTimes < 2 && canRetry) {
           if (params.headers) {
             delete params.headers.Authorization;
             delete params.headers['token'];
@@ -13360,6 +13163,13 @@ function submitRequest(params, callback) {
             params.headers['x-cos-security-token'] && delete params.headers['x-cos-security-token'];
             params.headers['x-ci-security-token'] && delete params.headers['x-ci-security-token'];
           }
+          // 进入重试逻辑时 需判断是否需要切换cos备用域名
+          var switchHost = canSwitchHost.call(self, {
+            requestUrl: (err === null || err === void 0 ? void 0 : err.url) || '',
+            clientCalcSign: (AuthData === null || AuthData === void 0 ? void 0 : AuthData.SignFrom) === 'client',
+            networkError: networkError
+          });
+          params.SwitchHost = switchHost;
           next(tryTimes + 1);
         } else {
           callback(err, data);
@@ -13383,6 +13193,7 @@ function _submitRequest(params, callback) {
   var body = params.body;
   var json = params.json;
   var rawBody = params.rawBody;
+  var dataType = params.dataType;
   var httpDNSServiceId = self.options.HttpDNSServiceId;
 
   // url
@@ -13397,6 +13208,10 @@ function _submitRequest(params, callback) {
     region: region,
     object: object
   });
+  if (params.SwitchHost) {
+    // 更换请求的url
+    url = url.replace(/myqcloud.com/, 'tencentcos.cn');
+  }
   if (params.action) {
     url = url + '?' + params.action;
   }
@@ -13415,7 +13230,8 @@ function _submitRequest(params, callback) {
     filePath: params.filePath,
     body: body,
     json: json,
-    httpDNSServiceId: httpDNSServiceId
+    httpDNSServiceId: httpDNSServiceId,
+    dataType: dataType
   };
 
   // 兼容ci接口
@@ -13478,6 +13294,8 @@ function _submitRequest(params, callback) {
       response && response.statusCode && (attrs.statusCode = response.statusCode);
       response && response.headers && (attrs.headers = response.headers);
       if (err) {
+        opt.url && (attrs.url = opt.url);
+        opt.method && (attrs.method = opt.method);
         err = util.extend(err || {}, attrs);
         callback(err, null);
       } else {
@@ -13486,7 +13304,6 @@ function _submitRequest(params, callback) {
       }
       sender = null;
     };
-
     // 请求错误，发生网络错误
     if (err) {
       cb({
@@ -13695,7 +13512,9 @@ var defaultOptions = {
   // 上报时是否对每个分块上传做单独上报
   TrackerDelay: 5000,
   // 周期性上报，单位毫秒。0代表实时上报
-  CustomId: '' // 自定义上报id
+  CustomId: '',
+  // 自定义上报id
+  AutoSwitchHost: false
 };
 
 // 对外暴露的类
@@ -13720,6 +13539,10 @@ var COS = function COS(options) {
   if (this.options.SecretKey && this.options.SecretKey.indexOf(' ') > -1) {
     console.error('error: SecretKey格式错误，请检查');
     console.error('error: SecretKey format is incorrect. Please check');
+  }
+  if (this.options.ForcePathStyle) {
+    console.warn('cos-wx-sdk-v5不再支持使用path-style，仅支持使用virtual-hosted-style，参考文档：https://cloud.tencent.com/document/product/436/96243');
+    throw new Error('ForcePathStyle is not supported');
   }
   event.init(this);
   task.init(this);
@@ -14819,7 +14642,7 @@ var hasMissingParams = function hasMissingParams(apiName, params) {
   if (apiName.indexOf('Bucket') > -1 || apiName === 'deleteMultipleObject' || apiName === 'multipartList' || apiName === 'listObjectVersions') {
     if (!Bucket) return 'Bucket';
     if (!Region) return 'Region';
-  } else if (apiName.indexOf('Object') > -1 || apiName.indexOf('multipart') > -1 || apiName === 'sliceUploadFile' || apiName === 'abortUploadTask') {
+  } else if (apiName.indexOf('Object') > -1 || apiName.indexOf('multipart') > -1 || apiName === 'sliceUploadFile' || apiName === 'abortUploadTask' || apiName === 'uploadFile') {
     if (!Bucket) return 'Bucket';
     if (!Region) return 'Region';
     if (!Key) return 'Key';

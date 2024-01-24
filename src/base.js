@@ -591,7 +591,7 @@ function getBucketPolicy(params, callback) {
       var Policy = {};
       try {
         Policy = JSON.parse(data.body);
-      } catch (e) { }
+      } catch (e) {}
       callback(null, {
         Policy: Policy,
         statusCode: data.statusCode,
@@ -717,7 +717,7 @@ function getBucketTagging(params, callback) {
       var Tags = [];
       try {
         Tags = data.Tagging.TagSet.Tag || [];
-      } catch (e) { }
+      } catch (e) {}
       Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
       callback(null, {
         Tags: Tags,
@@ -825,7 +825,7 @@ function getBucketLifecycle(params, callback) {
       var Rules = [];
       try {
         Rules = data.LifecycleConfiguration.Rule || [];
-      } catch (e) { }
+      } catch (e) {}
       Rules = util.clone(util.isArray(Rules) ? Rules : [Rules]);
       callback(null, {
         Rules: Rules,
@@ -1339,7 +1339,7 @@ function getBucketDomain(params, callback) {
       var DomainRule = [];
       try {
         DomainRule = data.DomainConfiguration.DomainRule || [];
-      } catch (e) { }
+      } catch (e) {}
       DomainRule = util.clone(util.isArray(DomainRule) ? DomainRule : [DomainRule]);
       callback(null, {
         DomainRule: DomainRule,
@@ -1454,7 +1454,7 @@ function getBucketOrigin(params, callback) {
       var OriginRule = [];
       try {
         OriginRule = data.OriginConfiguration.OriginRule || [];
-      } catch (e) { }
+      } catch (e) {}
       OriginRule = util.clone(util.isArray(OriginRule) ? OriginRule : [OriginRule]);
       callback(null, {
         OriginRule: OriginRule,
@@ -2001,6 +2001,7 @@ function getObject(params, callback) {
       qs: reqParams,
       qsStr: reqParamsStr,
       rawBody: true,
+      dataType: params.DataType,
       tracker: tracker,
     },
     function (err, data) {
@@ -2713,7 +2714,7 @@ function getObjectTagging(params, callback) {
       var Tags = [];
       try {
         Tags = data.Tagging.TagSet.Tag || [];
-      } catch (e) { }
+      } catch (e) {}
       Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
       callback(null, {
         Tags: Tags,
@@ -3206,6 +3207,7 @@ function request(params, callback) {
       body: params.Body,
       Url: params.Url,
       rawBody: params.RawBody,
+      dataType: params.DataType,
     },
     function (err, data) {
       if (err) return callback(err);
@@ -3401,7 +3403,7 @@ function uniqGrant(str) {
   var arr = str.split(',');
   var exist = {};
   var i, item;
-  for (i = 0; i < arr.length;) {
+  for (i = 0; i < arr.length; ) {
     item = arr[i].trim();
     if (exist[item]) {
       arr.splice(i, 1);
@@ -3481,9 +3483,7 @@ var getSignHost = function (opt) {
       region: useAccelerate ? 'accelerate' : opt.Region,
     });
   var urlHost = url.replace(/^https?:\/\/([^/]+)(\/.*)?$/, '$1');
-  var standardHostReg = new RegExp('^([a-z\\d-]+-\\d+\\.)?(cos|cosv6|ci|pic)\\.([a-z\\d-]+)\\.myqcloud\\.com$');
-  if (standardHostReg.test(urlHost)) return urlHost;
-  return '';
+  return urlHost;
 };
 
 // 异步获取签名
@@ -3584,6 +3584,7 @@ function getAuthorizationAsync(params, callback) {
       Token: StsData.Token || '',
       ClientIP: StsData.ClientIP || '',
       ClientUA: StsData.ClientUA || '',
+      SignFrom: 'client',
     };
     cb(null, AuthData);
   };
@@ -3616,7 +3617,7 @@ function getAuthorizationAsync(params, callback) {
             ) {
               formatAllow = true;
             }
-          } catch (e) { }
+          } catch (e) {}
         }
       }
       if (!formatAllow) return util.error(new Error('getAuthorization callback params format error'));
@@ -3709,6 +3710,7 @@ function getAuthorizationAsync(params, callback) {
       var AuthData = {
         Authorization: Authorization,
         SecurityToken: self.options.SecurityToken || self.options.XCosSecurityToken,
+        SignFrom: 'client',
       };
       cb(null, AuthData);
       return AuthData;
@@ -3717,9 +3719,11 @@ function getAuthorizationAsync(params, callback) {
   return '';
 }
 
-// 调整时间偏差
+// 判断当前请求出错时能否重试
 function allowRetry(err) {
-  var allowRetry = false;
+  var self = this;
+  var canRetry = false;
+  var networkError = false;
   var isTimeError = false;
   var serverDate = (err.headers && (err.headers.date || err.headers.Date)) || (err.error && err.error.ServerTime);
   try {
@@ -3731,7 +3735,7 @@ function allowRetry(err) {
     ) {
       isTimeError = true;
     }
-  } catch (e) { }
+  } catch (e) {}
   if (err) {
     if (isTimeError && serverDate) {
       var serverTime = Date.parse(serverDate);
@@ -3741,13 +3745,46 @@ function allowRetry(err) {
       ) {
         console.error('error: Local time is too skewed.');
         this.options.SystemClockOffset = serverTime - Date.now();
-        allowRetry = true;
+        canRetry = true;
       }
     } else if (Math.floor(err.statusCode / 100) === 5) {
-      allowRetry = true;
+      canRetry = true;
+    }
+    /**
+     * 归为网络错误
+     * 1、no statusCode
+     * 2、statusCode === 3xx || 4xx || 5xx && no requestId
+     */
+    if (!err.statusCode) {
+      canRetry = self.options.AutoSwitchHost;
+      networkError = true;
+    } else {
+      const statusCode = Math.floor(err.statusCode / 100);
+      const requestId = err?.headers && err?.headers['x-cos-request-id'];
+      if ([3, 4, 5].includes(statusCode) && !requestId) {
+        canRetry = self.options.AutoSwitchHost;
+        networkError = true;
+      }
     }
   }
-  return allowRetry;
+  return { canRetry, networkError };
+}
+
+/**
+ * requestUrl：请求的url，用于判断是否cos主域名，true才切
+ * clientCalcSign：是否客户端计算签名，服务端返回的签名不能切，true才切
+ * networkError：是否未知网络错误，true才切
+ * */
+function canSwitchHost({ requestUrl, clientCalcSign, networkError }) {
+  if (!this.options.AutoSwitchHost) return false;
+  if (!requestUrl) return false;
+  if (!clientCalcSign) return false;
+  if (!networkError) return false;
+  const commonReg = /^https?:\/\/[^\/]*\.cos\.[^\/]*\.myqcloud\.com(\/.*)?$/;
+  const accelerateReg = /^https?:\/\/[^\/]*\.cos\.accelerate\.myqcloud\.com(\/.*)?$/;
+  // 当前域名是cos主域名才切换
+  const isCommonCosHost = commonReg.test(requestUrl) && !accelerateReg.test(requestUrl);
+  return isCommonCosHost;
 }
 
 // 获取签名并发起请求
@@ -3775,6 +3812,10 @@ function submitRequest(params, callback) {
   var tracker = params.tracker;
   var next = function (tryTimes) {
     var oldClockOffset = self.options.SystemClockOffset;
+    if (params.SwitchHost) {
+      // 更换要签的host
+      SignHost = SignHost.replace(/myqcloud.com/, 'tencentcos.cn');
+    }
     tracker && tracker.setParams({ signStartTime: new Date().getTime(), retryTimes: tryTimes - 1 });
     getAuthorizationAsync.call(
       self,
@@ -3799,12 +3840,15 @@ function submitRequest(params, callback) {
         tracker && tracker.setParams({ signEndTime: new Date().getTime(), httpStartTime: new Date().getTime() });
         params.AuthData = AuthData;
         _submitRequest.call(self, params, function (err, data) {
+          let canRetry = false;
+          let networkError = false;
+          if (err) {
+            const info = allowRetry.call(self, err);
+            canRetry = info.canRetry || oldClockOffset !== self.options.SystemClockOffset;
+            networkError = info.networkError;
+          }
           tracker && tracker.setParams({ httpEndTime: new Date().getTime() });
-          if (
-            err &&
-            tryTimes < 2 &&
-            (oldClockOffset !== self.options.SystemClockOffset || allowRetry.call(self, err))
-          ) {
+          if (err && tryTimes < 2 && canRetry) {
             if (params.headers) {
               delete params.headers.Authorization;
               delete params.headers['token'];
@@ -3813,6 +3857,13 @@ function submitRequest(params, callback) {
               params.headers['x-cos-security-token'] && delete params.headers['x-cos-security-token'];
               params.headers['x-ci-security-token'] && delete params.headers['x-ci-security-token'];
             }
+            // 进入重试逻辑时 需判断是否需要切换cos备用域名
+            const switchHost = canSwitchHost.call(self, {
+              requestUrl: err?.url || '',
+              clientCalcSign: AuthData?.SignFrom === 'client',
+              networkError,
+            });
+            params.SwitchHost = switchHost;
             next(tryTimes + 1);
           } else {
             callback(err, data);
@@ -3838,6 +3889,7 @@ function _submitRequest(params, callback) {
   var body = params.body;
   var json = params.json;
   var rawBody = params.rawBody;
+  var dataType = params.dataType;
   var httpDNSServiceId = self.options.HttpDNSServiceId;
 
   // url
@@ -3854,6 +3906,11 @@ function _submitRequest(params, callback) {
       region: region,
       object: object,
     });
+
+  if (params.SwitchHost) {
+    // 更换请求的url
+    url = url.replace(/myqcloud.com/, 'tencentcos.cn');
+  }
   if (params.action) {
     url = url + '?' + params.action;
   }
@@ -3874,6 +3931,7 @@ function _submitRequest(params, callback) {
     body: body,
     json: json,
     httpDNSServiceId: httpDNSServiceId,
+    dataType,
   };
 
   // 兼容ci接口
@@ -3910,8 +3968,8 @@ function _submitRequest(params, callback) {
   var useAccelerate = opt.url.includes('accelerate.');
   var queryString = opt.qs
     ? Object.keys(opt.qs)
-      .map((key) => `${key}=${opt.qs[key]}`)
-      .join('&')
+        .map((key) => `${key}=${opt.qs[key]}`)
+        .join('&')
     : '';
   var fullUrl = queryString ? opt.url + '?' + queryString : opt.url;
   params.tracker && params.tracker.setParams({ reqUrl: fullUrl, accelerate: useAccelerate ? 'Y' : 'N' });
@@ -3933,6 +3991,8 @@ function _submitRequest(params, callback) {
       response && response.headers && (attrs.headers = response.headers);
 
       if (err) {
+        opt.url && (attrs.url = opt.url);
+        opt.method && (attrs.method = opt.method);
         err = util.extend(err || {}, attrs);
         callback(err, null);
       } else {
@@ -3941,7 +4001,6 @@ function _submitRequest(params, callback) {
       }
       sender = null;
     };
-
     // 请求错误，发生网络错误
     if (err) {
       cb({ error: err });

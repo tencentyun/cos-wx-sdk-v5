@@ -167,7 +167,7 @@ var getSourceParams = function (source) {
   return { Bucket: m[1], Region: m[3], Key: m[7] };
 };
 
-var noop = function () { };
+var noop = function () {};
 
 // 清除对象里值为的 undefined 或 null 的属性
 var clearKey = function (obj) {
@@ -327,7 +327,8 @@ var hasMissingParams = function (apiName, params) {
     apiName.indexOf('Object') > -1 ||
     apiName.indexOf('multipart') > -1 ||
     apiName === 'sliceUploadFile' ||
-    apiName === 'abortUploadTask'
+    apiName === 'abortUploadTask' ||
+    apiName === 'uploadFile'
   ) {
     if (!Bucket) return 'Bucket';
     if (!Region) return 'Region';
@@ -563,7 +564,7 @@ var throttleOnProgress = function (total, onProgress) {
           speed: speed,
           percent: percent,
         });
-      } catch (e) { }
+      } catch (e) {}
     }
   }
 
