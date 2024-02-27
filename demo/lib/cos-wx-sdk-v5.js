@@ -13361,7 +13361,7 @@ var beacon = null;
 var getBeacon = function getBeacon(Beacon, delay) {
   if (!beacon) {
     // 生成 beacon
-    if (!Beacon) {
+    if (!Beacon || typeof Beacon !== 'function') {
       throw new Error('Beacon not found');
     }
     beacon = new Beacon({

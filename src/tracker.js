@@ -4,7 +4,7 @@ let beacon = null;
 const getBeacon = (Beacon, delay) => {
   if (!beacon) {
     // 生成 beacon
-    if (!Beacon) {
+    if (!Beacon || typeof Beacon !== 'function') {
       throw new Error('Beacon not found');
     }
     beacon = new Beacon({
