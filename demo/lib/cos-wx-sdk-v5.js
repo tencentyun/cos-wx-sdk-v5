@@ -12871,7 +12871,8 @@ var defaultOptions = {
   // 周期性上报，单位毫秒。0代表实时上报
   CustomId: '',
   // 自定义上报id
-  AutoSwitchHost: false
+  AutoSwitchHost: false,
+  CopySourceParser: null // 自定义拷贝源解析器
 };
 
 // 对外暴露的类
