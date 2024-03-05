@@ -39,9 +39,11 @@ var defaultOptions = {
   SimpleUploadMethod: 'postObject', // 高级上传内部判断需要走简单上传时，指定的上传方法，可选postObject或putObject
   EnableTracker: false, // 默认关闭上报
   DeepTracker: false, // 上报时是否对每个分块上传做单独上报
+  Beacon: null, // 灯塔上报组件，如有需要请自行传入
   TrackerDelay: 5000, // 周期性上报，单位毫秒。0代表实时上报
   CustomId: '', // 自定义上报id
   AutoSwitchHost: false,
+  CopySourceParser: null, // 自定义拷贝源解析器
 };
 
 // 对外暴露的类

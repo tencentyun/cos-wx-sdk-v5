@@ -947,6 +947,7 @@ async function uploadFile(params, callback) {
       self.options.UseAccelerate ||
       (typeof self.options.Domain === 'string' && self.options.Domain.includes('accelerate.'));
     params.tracker = new Tracker({
+      Beacon: self.options.Beacon,
       bucket: params.Bucket,
       region: params.Region,
       apiName: 'uploadFile',
@@ -1046,6 +1047,7 @@ async function uploadFiles(params, callback) {
             self.options.UseAccelerate ||
             (typeof self.options.Domain === 'string' && self.options.Domain.includes('accelerate.'));
           fileParams.tracker = new Tracker({
+            Beacon: self.options.Beacon,
             bucket: fileParams.Bucket,
             region: fileParams.Region,
             apiName: 'uploadFiles',
