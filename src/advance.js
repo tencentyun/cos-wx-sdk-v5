@@ -938,6 +938,7 @@ async function uploadFile(params, callback) {
     FileSize = await util.getFileSizeByPath(params.FilePath);
   } catch (e) {
     callback({ error: e });
+    return;
   }
   var fileInfo = { TaskId: '' };
 
