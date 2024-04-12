@@ -4,11 +4,11 @@ let beacon = null;
 const getBeacon = (Beacon, delay) => {
   if (!beacon) {
     // 生成 beacon
-    if (!Beacon || typeof Beacon !== 'function') {
+    if (typeof Beacon !== 'function') {
       throw new Error('Beacon not found');
     }
     beacon = new Beacon({
-      appkey: '0AND0VEVB24UBGDU',
+      appkey: '0WEB05PY6MHRGK0U',
       versionCode: pkg.version,
       channelID: 'mp_sdk', //渠道,选填
       openid: 'openid', // 用户id, 选填
@@ -21,6 +21,12 @@ const getBeacon = (Beacon, delay) => {
   return beacon;
 };
 
+// 毫秒转秒
+const ms2s = function (ms) {
+  if (!ms || ms < 0) return 0;
+  return (ms / 1000).toFixed(3);
+};
+
 const utils = {
   // 生成uid 每个链路对应唯一一条uid
   getUid() {
@@ -29,7 +35,7 @@ const utils = {
     };
     return S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4();
   },
-  // 获取网络类型
+  // 获取网络类型 4g ｜ wifi
   getNetType() {
     return new Promise((resolve) => {
       if (wx.canIUse('getNetworkType')) {
@@ -117,15 +123,16 @@ const uploadApi = ['putObject', 'postObject', 'appendObject', 'sliceUploadFile',
 );
 const downloadApi = ['getObject'];
 
-function getEventCode(apiName) {
-  if (uploadApi.includes(apiName)) {
-    return 'cos_upload';
+const transApiName = (api) => {
+  if (['putObject', 'sliceUploadFile', 'uploadFile', 'uploadFiles'].includes(api)) {
+    return 'UploadTask';
+  } else if (api === 'getObject') {
+    return 'DownloadTask';
+  } else if (['putObjectCopy', 'sliceCopyFile'].includes(api)) {
+    return 'CopyTask';
   }
-  if (downloadApi.includes(apiName)) {
-    return 'cos_download';
-  }
-  return 'base_service';
-}
+  return api;
+};
 
 // 上报参数驼峰改下划线
 function camel2underline(key) {
@@ -133,72 +140,55 @@ function camel2underline(key) {
 }
 function formatParams(params) {
   const formattedParams = {};
-  const allReporterKeys = [
-    'tracePlatform',
-    'cossdkVersion',
-    'region',
+  const successKeys = [
+    'sdkVersionName',
+    'sdkVersionCode',
+    'osName',
     'networkType',
-    'host',
+    'requestName',
+    'requestResult',
+    'bucket',
+    'region',
+    'appid',
     'accelerate',
+    'url',
+    'host',
     'requestPath',
-    'size',
+    'userAgent',
+    'httpMethod',
+    'httpSize',
+    'httpSpeed',
+    'httpTookTime',
     'httpMd5',
     'httpSign',
-    'httpFull',
-    'name',
-    'result',
-    'tookTime',
+    'httpFullTime',
+    'httpDomain',
+    'partNumber',
+    'httpRetryTimes',
+    'customId',
+    'traceId',
+    'realApi',
+  ];
+  const failureKeys = [
+    ...successKeys,
     'errorNode',
     'errorCode',
+    'errorName',
     'errorMessage',
     'errorRequestId',
-    'errorStatusCode',
+    'errorHttpCode',
     'errorServiceName',
     'errorType',
-    'traceId',
-    'bucket',
-    'appid',
-    'partNumber',
-    'retryTimes',
-    'reqUrl',
-    'customId',
     'fullError',
-    'devicePlatform',
-    'wxVersion',
-    'wxSystem',
-    'wxSdkVersion',
-  ];
-  const successKeys = [
-    'tracePlatform',
-    'cossdkVersion',
-    'region',
-    'bucket',
-    'appid',
-    'networkType',
-    'host',
-    'accelerate',
-    'requestPath',
-    'partNumber',
-    'size',
-    'name',
-    'result',
-    'tookTime',
-    'errorRequestId',
-    'retryTimes',
-    'reqUrl',
-    'customId',
-    'devicePlatform',
-    'wxVersion',
-    'wxSystem',
-    'wxSdkVersion',
   ];
   // 需要上报的参数字段
-  const reporterKeys = params.result === 'Success' ? successKeys : allReporterKeys;
+  const reporterKeys = params.requestResult === 'Success' ? successKeys : failureKeys;
   for (let key in params) {
     if (!reporterKeys.includes(key)) continue;
     const formattedKey = camel2underline(key);
     formattedParams[formattedKey] = params[key];
   }
+  formattedParams['request_name'] = params.realApi ? transApiName(params.realApi) : params.requestName;
   return formattedParams;
 }
 
@@ -211,6 +201,8 @@ class Tracker {
       bucket,
       region,
       apiName,
+      realApi,
+      httpMethod,
       fileKey,
       fileSize,
       accelerate,
@@ -218,48 +210,58 @@ class Tracker {
       delay,
       deepTracker,
       Beacon,
+      clsReporter,
     } = opt;
     const appid = (bucket && bucket.substr(bucket.lastIndexOf('-') + 1)) || '';
     this.parent = parent;
     this.deepTracker = deepTracker;
     this.delay = delay;
+    if (clsReporter && !this.clsReporter) {
+      this.clsReporter = clsReporter;
+    }
     // 上报用到的字段
     this.params = {
       // 通用字段
-      cossdkVersion: pkg.version,
-      region,
+      sdkVersionName: 'cos-wx-sdk-v5',
+      sdkVersionCode: pkg.version,
+      osName: deviceInfo.devicePlatform,
       networkType: '',
+
+      requestName: apiName || '',
+      requestResult: '', // sdk api调用结果Success、Failure
+      realApi,
+
+      bucket,
+      region,
+      accelerate,
+      httpMethod,
+      url: '',
       host: '',
-      accelerate: accelerate ? 'Y' : 'N',
+      httpDomain: '',
       requestPath: fileKey || '',
-      size: fileSize || -1,
+
+      errorType: '',
+      errorCode: '',
+      errorName: '',
+      errorMessage: '',
+      errorRequestId: '',
+      errorHttpCode: 0,
+      errorServiceName: '',
+      errorNode: '',
+
+      httpTookTime: 0, // http整体耗时
+      httpSize: fileSize || 0, // 主要是文件大小，大小 B
+      httpMd5: 0, // MD5耗时
+      httpSign: 0, // 计算签名耗时
+      httpFullTime: 0, // 任务整体耗时(包括md5、签名等)
+      httpSpeed: 0, // 主要关注上传速度，KB/s
+
+      size: fileSize || 0,
       httpMd5: 0, // MD5耗时
       httpSign: 0, // 计算签名耗时
       httpFull: 0, // http请求耗时
       name: apiName || '',
-      result: '', // sdk api调用结果Success、Fail
       tookTime: 0, // 总耗时
-      errorNode: '',
-      errorCode: '',
-      errorMessage: '',
-      errorRequestId: '',
-      errorStatusCode: 0,
-      errorServiceName: '',
-
-      // 小程序补充字段
-      tracePlatform: 'cos-wx-sdk-v5', // 上报平台=小程序
-      traceId: traceId || utils.getUid(), // 每条上报唯一标识
-      bucket,
-      appid,
-      partNumber: 0, // 分块上传编号
-      retryTimes: 0, // sdk内部发起的请求重试
-      reqUrl: '', // 请求url
-      customId: customId || '', // 业务id
-      devicePlatform: deviceInfo.devicePlatform,
-      wxVersion: deviceInfo.wxVersion,
-      wxSystem: deviceInfo.wxSystem,
-      wxSdkVersion: deviceInfo.wxSdkVersion,
-
       md5StartTime: 0, // md5计算开始时间
       md5EndTime: 0, // md5计算结束时间
       signStartTime: 0, // 计算签名开始时间
@@ -268,8 +270,18 @@ class Tracker {
       httpEndTime: 0, // 网路请求结束时间
       startTime: new Date().getTime(), // sdk api调用起始时间，不是纯网络耗时
       endTime: 0, //  sdk api调用结束时间，不是纯网络耗时
+
+      // 小程序补充字段
+      traceId: traceId || utils.getUid(), // 每条上报唯一标识
+      appid,
+      partNumber: 0, // 分块上传编号
+      httpRetryTimes: 0, // sdk内部发起的请求重试
+      customId: customId || '', // 业务id
+      partTime: 0,
     };
-    this.beacon = getBeacon(Beacon, delay);
+    if (Beacon) {
+      this.beacon = getBeacon(Beacon, delay);
+    }
   }
 
   // 格式化sdk回调
@@ -292,24 +304,59 @@ class Tracker {
      * {error: 'message'}或{error: {error: 'message' }}
      */
     const now = new Date().getTime();
-    const tookTime = now - this.params.startTime;
     const networkType = await utils.getNetType();
     const errorCode = err ? err?.error?.error?.Code || 'Error' : '';
     const errorMessage = err ? err?.error?.error?.Message || err?.error?.error || err?.error || '' : '';
-    const errorStatusCode = err ? err?.error?.statusCode : data.statusCode;
+    const errorName = errorMessage;
+    const errorHttpCode = err ? err?.error?.statusCode : data.statusCode;
     const errorServiceName = err ? err?.error?.error?.Resource : '';
     const requestId = err ? err?.error?.RequestId || '' : data?.RequestId || '';
     const errorType = err ? (requestId ? 'Server' : 'Client') : '';
+
+    if (this.params.requestName === 'getObject') {
+      this.params.httpSize = data ? data.headers && data.headers['content-length'] : 0;
+    }
+
+    // 上报 sliceUploadFile || uploadFile || uploadFiles 命中分块上传时
+    const isSliceUploadFile = this.params.realApi === 'sliceUploadFile';
+    const isSliceCopyFile = this.params.realApi === 'sliceCopyFile';
+
+    if (isSliceUploadFile || isSliceCopyFile) {
+      const speed = this.params.httpSize / 1024 / this.params.partTime;
+      Object.assign(this.params, { httpSpeed: speed < 0 ? 0 : speed.toFixed(3) });
+    } else {
+      const httpFullTime = now - this.params.startTime;
+      const httpTookTime = this.params.httpEndTime - this.params.httpStartTime;
+      const speed = this.params.httpSize / 1024 / (httpTookTime / 1000);
+      const httpMd5 = this.params.md5EndTime - this.params.md5StartTime;
+      const httpSign = this.params.signEndTime - this.params.signStartTime;
+
+      if (this.parent) {
+        this.parent.addParamValue('httpTookTime', ms2s(httpTookTime));
+        this.parent.addParamValue('httpFullTime', ms2s(httpFullTime));
+        this.parent.addParamValue('httpMd5', ms2s(httpMd5));
+        this.parent.addParamValue('httpSign', ms2s(httpSign));
+        if (['multipartUpload', 'uploadPartCopy', 'putObjectCopy'].includes(this.params.requestName)) {
+          // 只有小分块上传|复制才累计纯请求耗时，计算速度时用到
+          this.parent.addParamValue('partTime', ms2s(httpTookTime));
+        }
+      }
+      Object.assign(this.params, {
+        httpFullTime: ms2s(httpFullTime),
+        httpMd5: ms2s(httpMd5),
+        httpSign: ms2s(httpSign),
+        httpTookTime: ms2s(httpTookTime),
+        httpSpeed: speed < 0 ? 0 : speed.toFixed(3),
+      });
+    }
+
     Object.assign(this.params, {
-      tookTime,
       networkType,
-      httpMd5: this.params.md5EndTime - this.params.md5StartTime,
-      httpSign: this.params.signEndTime - this.params.signStartTime,
-      httpFull: this.params.httpEndTime - this.params.httpStartTime,
-      result: err ? 'Fail' : 'Success',
+      requestResult: err ? 'Failure' : 'Success',
       errorType,
       errorCode,
-      errorStatusCode,
+      errorHttpCode,
+      errorName,
       errorMessage,
       errorServiceName,
       errorRequestId: requestId,
@@ -321,15 +368,28 @@ class Tracker {
     if (this.params.name === 'getObject') {
       this.params.size = data ? data.headers && data.headers['content-length'] : -1;
     }
-    if (this.params.reqUrl) {
+    if (this.params.url) {
       try {
-        const exec = /^http(s)?:\/\/(.*?)\//.exec(this.params.reqUrl);
+        const exec = /^http(s)?:\/\/(.*?)\//.exec(this.params.url);
         this.params.host = exec[2];
       } catch (e) {
-        this.params.host = this.params.reqUrl;
+        this.params.host = this.params.url;
       }
+      this.params.httpDomain = this.params.host;
     }
-    this.sendEvents();
+  }
+
+  // 上报
+  async report(err, data) {
+    if (!this.beacon && !this.clsReporter) return;
+    await this.formatResult(err, data);
+    const formattedParams = formatParams(this.params);
+    if (this.beacon) {
+      this.sendEventsToBeacon(formattedParams);
+    }
+    if (this.clsReporter) {
+      this.sendEventsToCLS(formattedParams);
+    }
   }
 
   // 设置当前链路的参数
@@ -337,27 +397,35 @@ class Tracker {
     Object.assign(this.params, params);
   }
 
-  // 使用灯塔延时上报
-  sendEvents() {
+  addParamValue(key, value) {
+    this.params[key] = (+this.params[key] + +value).toFixed(3);
+  }
+
+  // 上报灯塔
+  sendEventsToBeacon(formattedParams) {
     // DeepTracker模式下才会上报分块上传内部细节
-    if (sliceUploadMethods.includes(this.params.name) && !this.deepTracker) {
+    const isSliceUploadFile =
+      this.params.requestName === 'sliceUploadFile' || this.params.realApi === 'sliceUploadFile';
+    if (isSliceUploadFile && !this.deepTracker) {
       return;
     }
-    const eventCode = getEventCode(this.params.name);
-    const formattedParams = formatParams(this.params);
+    const eventCode = 'qcloud_track_cos_sdk';
 
-    // 兜底处理
-    if (!this.beacon) {
-      this.beacon = getBeacon(this.delay || 5000);
-    }
-
-    if (this.params.delay === 0) {
+    if (this.delay === 0) {
       // 实时上报
       this.beacon && this.beacon.onDirectUserAction(eventCode, formattedParams);
     } else {
       // 周期性上报
       this.beacon && this.beacon.onUserAction(eventCode, formattedParams);
     }
+  }
+
+  // 上报 cls
+  sendEventsToCLS(formattedParams) {
+    // 是否实时上报
+    const immediate = !!(this.delay === 0);
+
+    this.clsReporter.log(formattedParams, immediate);
   }
 
   // 生成子实例，与父所属一个链路，可用于分块上传内部流程上报单个分块操作
@@ -368,9 +436,11 @@ class Tracker {
       traceId: this.params.traceId,
       bucket: this.params.bucket,
       region: this.params.region,
+      accelerate: this.params.accelerate,
       fileKey: this.params.requestPath,
       customId: this.params.customId,
       delay: this.params.delay,
+      clsReporter: this.clsReporter,
     });
     return new Tracker(subParams);
   }
