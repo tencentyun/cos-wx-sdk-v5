@@ -943,15 +943,18 @@ async function uploadFile(params, callback) {
   var fileInfo = { TaskId: '' };
 
   // 上传链路
-  if (self.options.EnableTracker) {
+  if (self.options.EnableReporter) {
     const accelerate =
       self.options.UseAccelerate ||
       (typeof self.options.Domain === 'string' && self.options.Domain.includes('accelerate.'));
+    const realApi = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject';
     params.tracker = new Tracker({
-      Beacon: self.options.Beacon,
+      Beacon: self.options.BeaconReporter,
+      clsReporter: self.options.ClsReporter,
       bucket: params.Bucket,
       region: params.Region,
       apiName: 'uploadFile',
+      realApi,
       fileKey: params.Key,
       fileSize: FileSize,
       accelerate,
@@ -979,7 +982,7 @@ async function uploadFile(params, callback) {
   var _onFileFinish = params.onFileFinish;
   var onFileFinish = function (err, data) {
     // 格式化上报参数并上报
-    params.tracker && params.tracker.formatResult(err, data);
+    params.tracker && params.tracker.report(err, data);
     _onFileFinish && _onFileFinish(err, data, fileInfo);
     callback && callback(err, data);
   };
@@ -1043,15 +1046,18 @@ async function uploadFiles(params, callback) {
         TotalSize += FileSize;
 
         // 单个文件上传链路
-        if (self.options.EnableTracker) {
+        if (self.options.EnableReporter) {
           const accelerate =
             self.options.UseAccelerate ||
             (typeof self.options.Domain === 'string' && self.options.Domain.includes('accelerate.'));
+          const realApi = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject';
           fileParams.tracker = new Tracker({
-            Beacon: self.options.Beacon,
+            Beacon: self.options.BeaconReporter,
+            clsReporter: self.options.ClsReporter,
             bucket: fileParams.Bucket,
             region: fileParams.Region,
             apiName: 'uploadFiles',
+            realApi,
             fileKey: fileParams.Key,
             fileSize: FileSize,
             accelerate,
@@ -1089,7 +1095,7 @@ async function uploadFiles(params, callback) {
         var _onFileFinish = fileParams.onFileFinish;
         var onFileFinish = function (err, data) {
           // 格式化上报参数并上报
-          fileParams.tracker && fileParams.tracker.formatResult(err, data);
+          fileParams.tracker && fileParams.tracker.report(err, data);
           _onFileFinish && _onFileFinish(err, data);
           onTotalFileFinish && onTotalFileFinish(err, data, fileInfo);
         };
@@ -1166,6 +1172,7 @@ function sliceCopyFile(params, callback) {
             Key: Key,
             UploadId: UploadData.UploadId,
             Parts: Parts,
+            tracker: params.tracker,
             calledBySdk: 'sliceCopyFile',
           },
           tryCallback
@@ -1217,6 +1224,8 @@ function sliceCopyFile(params, callback) {
                 UploadId: UploadData.UploadId,
                 PartNumber: PartNumber,
                 CopySourceRange: CopySourceRange,
+                tracker: params.tracker,
+                calledBySdk: 'sliceCopyFile',
                 onProgress: function (data) {
                   FinishSize += data.loaded - preAddSize;
                   preAddSize = data.loaded;
@@ -1257,6 +1266,8 @@ function sliceCopyFile(params, callback) {
           Region: Region,
           Key: Key,
           Headers: TargetHeader,
+          tracker: params.tracker,
+          calledBySdk: 'sliceCopyFile',
         },
         function (err, data) {
           if (err) return callback(err);
@@ -1285,6 +1296,8 @@ function sliceCopyFile(params, callback) {
           Region: Region,
           Key: Key,
           UploadId: UploadId,
+          tracker: params.tracker,
+          calledBySdk: 'sliceCopyFile',
         },
         function (err, PartListData) {
           if (err) {
@@ -1383,6 +1396,8 @@ function sliceCopyFile(params, callback) {
       Bucket: SourceBucket,
       Region: SourceRegion,
       Key: SourceKey,
+      tracker: params.tracker,
+      calledBySdk: 'sliceCopyFile',
     },
     function (err, data) {
       if (err) {
@@ -1400,6 +1415,7 @@ function sliceCopyFile(params, callback) {
         return;
       }
 
+      params.tracker && params.tracker.setParams({ httpSize: FileSize });
       onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
 
       // 开始上传
@@ -1407,7 +1423,7 @@ function sliceCopyFile(params, callback) {
         if (!params.Headers['x-cos-metadata-directive']) {
           params.Headers['x-cos-metadata-directive'] = 'Copy';
         }
-        self.putObjectCopy(params, function (err, data) {
+        self.putObjectCopy(Object.assign(params, { calledBySdk: 'sliceCopyFile' }), function (err, data) {
           if (err) {
             onProgress(null, true);
             return callback(err);
@@ -1466,6 +1482,8 @@ function copySliceItem(params, callback) {
           PartNumber: PartNumber,
           CopySourceRange: CopySourceRange,
           onProgress: params.onProgress,
+          tracker: params.tracker,
+          calledBySdk: params.calledBySdk,
         },
         function (err, data) {
           tryCallback(err || null, data);

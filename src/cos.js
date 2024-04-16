@@ -37,13 +37,14 @@ var defaultOptions = {
   ForceSignHost: true, // 默认将host加入签名计算，关闭后可能导致越权风险，建议保持为true
   HttpDNSServiceId: '', // HttpDNS 服务商 Id,填写后代表开启 HttpDNS 服务。HttpDNS 用法详见https://developers.weixin.qq.com/miniprogram/dev/framework/ability/HTTPDNS.html
   SimpleUploadMethod: 'postObject', // 高级上传内部判断需要走简单上传时，指定的上传方法，可选postObject或putObject
-  EnableTracker: false, // 默认关闭上报
-  DeepTracker: false, // 上报时是否对每个分块上传做单独上报
-  Beacon: null, // 灯塔上报组件，如有需要请自行传入
-  TrackerDelay: 5000, // 周期性上报，单位毫秒。0代表实时上报
-  CustomId: '', // 自定义上报id
   AutoSwitchHost: false,
   CopySourceParser: null, // 自定义拷贝源解析器
+  /** 上报相关配置 **/
+  DeepTracker: false, // 上报时是否对每个分块上传做单独上报
+  TrackerDelay: 5000, // 周期性上报，单位毫秒。0代表实时上报
+  CustomId: '', // 自定义上报id
+  BeaconReporter: null, // 灯塔上报组件，如有需要请自行传入，传入即代表开启上报
+  ClsReporter: null, // cls 上报组件，如有需要请自行传入，传入即代表开启上报
 };
 
 // 对外暴露的类
@@ -58,6 +59,7 @@ var COS = function (options) {
   this.options.CopySliceSize = Math.max(0, this.options.CopySliceSize);
   this.options.MaxPartNumber = Math.max(1024, Math.min(10000, this.options.MaxPartNumber));
   this.options.Timeout = Math.max(0, this.options.Timeout);
+  this.options.EnableReporter = this.options.BeaconReporter || this.options.ClsReporter;
   if (this.options.AppId) {
     console.warn(
       'warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g: "test-1250000000").'

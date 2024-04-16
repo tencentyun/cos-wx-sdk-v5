@@ -199,7 +199,7 @@ function getAsrQueue() {
 }
 
 function putAsrQueue() {
-  // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/46946)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询
+  // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/46234)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询
   var queueId = 'pcc77499e85c311edb9865254008618d9';
   var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/asrqueue/' + queueId;
   var url = 'https://' + host;

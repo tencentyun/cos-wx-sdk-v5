@@ -1,6 +1,13 @@
 var COS = require('./lib/cos-wx-sdk-v5');
 var config = require('./config');
 const Beacon = require('./lib/beacon_mp.min');
+const ClsClient = require('./lib/cls.min');
+const clsClient = new ClsClient({
+  topicId: 'xxxxxx-xxxx-xxxx-xxxx-xxxxxx', // 日志主题 id
+  region: 'ap-guangzhou', // 日志主题所在地域，比如 ap-guangzhou，需在小程序平台设置域名白名单：https://ap-guangzhou.cls.tencentcs.com
+  maxRetainDuration: 30, // 默认 30s
+  maxRetainSize: 20, // 默认20条
+});
 
 // 签名回调
 var getAuthorization = function (options, callback) {
@@ -87,11 +94,11 @@ var getAuthorization = function (options, callback) {
 };
 
 var cos = new COS({
-  // EnableTracker: true, // 开启灯塔上报
-  // Beacon,
   getAuthorization: getAuthorization,
   // 是否使用全球加速域名。开启该配置后仅以下接口支持操作：putObject、getObject、headObject、optionsObject、multipartInit、multipartListPart、multipartUpload、multipartAbort、multipartComplete、multipartList、sliceUploadFile、uploadFiles
   // UseAccelerate: true,
+  // BeaconReporter: Beacon, // 开启灯塔上报
+  // ClsReporter: clsClient, // 开启 cls 上报
 });
 
 // 回调统一处理函数

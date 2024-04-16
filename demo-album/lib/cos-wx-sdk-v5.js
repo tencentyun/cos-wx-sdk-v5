@@ -7450,7 +7450,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, scripts, repository, author, license, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.6.1\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo-sdk.js demo/test.js demo/ciDemo\",\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\",\"mime\":\"^2.4.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.6.2\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo-sdk.js demo/test.js demo/ciDemo\",\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\",\"mime\":\"^2.4.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -8329,7 +8329,7 @@ function uploadFile(_x, _x2) {
 } // 批量上传文件
 function _uploadFile() {
   _uploadFile = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee(params, callback) {
-    var self, SliceSize, taskList, FileSize, fileInfo, accelerate, _onTaskReady, _onFileFinish, onFileFinish, simpleUploadMethod, api;
+    var self, SliceSize, taskList, FileSize, fileInfo, accelerate, realApi, _onTaskReady, _onFileFinish, onFileFinish, simpleUploadMethod, api;
     return _regeneratorRuntime().wrap(function _callee$(_context) {
       while (1) switch (_context.prev = _context.next) {
         case 0:
@@ -8354,13 +8354,16 @@ function _uploadFile() {
           fileInfo = {
             TaskId: ''
           }; // 上传链路
-          if (self.options.EnableTracker) {
+          if (self.options.EnableReporter) {
             accelerate = self.options.UseAccelerate || typeof self.options.Domain === 'string' && self.options.Domain.includes('accelerate.');
+            realApi = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject';
             params.tracker = new Tracker({
-              Beacon: self.options.Beacon,
+              Beacon: self.options.BeaconReporter,
+              clsReporter: self.options.ClsReporter,
               bucket: params.Bucket,
               region: params.Region,
               apiName: 'uploadFile',
+              realApi: realApi,
               fileKey: params.Key,
               fileSize: FileSize,
               accelerate: accelerate,
@@ -8388,7 +8391,7 @@ function _uploadFile() {
           _onFileFinish = params.onFileFinish;
           onFileFinish = function onFileFinish(err, data) {
             // 格式化上报参数并上报
-            params.tracker && params.tracker.formatResult(err, data);
+            params.tracker && params.tracker.report(err, data);
             _onFileFinish && _onFileFinish(err, data, fileInfo);
             callback && callback(err, data);
           }; // 添加上传任务
@@ -8444,7 +8447,7 @@ function _uploadFiles() {
             return params.files.map(function (fileParams, index) {
               return new Promise( /*#__PURE__*/function () {
                 var _ref = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee2(resolve) {
-                  var FileSize, fileInfo, accelerate, _onTaskReady, PreAddSize, _onProgress, _onFileFinish, onFileFinish, simpleUploadMethod, api;
+                  var FileSize, fileInfo, accelerate, realApi, _onTaskReady, PreAddSize, _onProgress, _onFileFinish, onFileFinish, simpleUploadMethod, api;
                   return _regeneratorRuntime().wrap(function _callee2$(_context2) {
                     while (1) switch (_context2.prev = _context2.next) {
                       case 0:
@@ -8467,13 +8470,16 @@ function _uploadFiles() {
                         TotalSize += FileSize;
 
                         // 单个文件上传链路
-                        if (self.options.EnableTracker) {
+                        if (self.options.EnableReporter) {
                           accelerate = self.options.UseAccelerate || typeof self.options.Domain === 'string' && self.options.Domain.includes('accelerate.');
+                          realApi = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject';
                           fileParams.tracker = new Tracker({
-                            Beacon: self.options.Beacon,
+                            Beacon: self.options.BeaconReporter,
+                            clsReporter: self.options.ClsReporter,
                             bucket: fileParams.Bucket,
                             region: fileParams.Region,
                             apiName: 'uploadFiles',
+                            realApi: realApi,
                             fileKey: fileParams.Key,
                             fileSize: FileSize,
                             accelerate: accelerate,
@@ -8514,7 +8520,7 @@ function _uploadFiles() {
                         _onFileFinish = fileParams.onFileFinish;
                         onFileFinish = function onFileFinish(err, data) {
                           // 格式化上报参数并上报
-                          fileParams.tracker && fileParams.tracker.formatResult(err, data);
+                          fileParams.tracker && fileParams.tracker.report(err, data);
                           _onFileFinish && _onFileFinish(err, data);
                           onTotalFileFinish && onTotalFileFinish(err, data, fileInfo);
                         }; // 添加上传任务
@@ -8600,6 +8606,7 @@ function sliceCopyFile(params, callback) {
         Key: Key,
         UploadId: UploadData.UploadId,
         Parts: Parts,
+        tracker: params.tracker,
         calledBySdk: 'sliceCopyFile'
       }, tryCallback);
     }, function (err, data) {
@@ -8642,6 +8649,8 @@ function sliceCopyFile(params, callback) {
           UploadId: UploadData.UploadId,
           PartNumber: PartNumber,
           CopySourceRange: CopySourceRange,
+          tracker: params.tracker,
+          calledBySdk: 'sliceCopyFile',
           onProgress: function onProgress(data) {
             FinishSize += data.loaded - preAddSize;
             preAddSize = data.loaded;
@@ -8678,7 +8687,9 @@ function sliceCopyFile(params, callback) {
         Bucket: Bucket,
         Region: Region,
         Key: Key,
-        Headers: TargetHeader
+        Headers: TargetHeader,
+        tracker: params.tracker,
+        calledBySdk: 'sliceCopyFile'
       }, function (err, data) {
         if (err) return callback(err);
         params.UploadId = data.UploadId;
@@ -8704,7 +8715,9 @@ function sliceCopyFile(params, callback) {
         Bucket: Bucket,
         Region: Region,
         Key: Key,
-        UploadId: UploadId
+        UploadId: UploadId,
+        tracker: params.tracker,
+        calledBySdk: 'sliceCopyFile'
       }, function (err, PartListData) {
         if (err) {
           // 如果 UploadId 获取会出错，跳过并删除
@@ -8800,7 +8813,9 @@ function sliceCopyFile(params, callback) {
   self.headObject({
     Bucket: SourceBucket,
     Region: SourceRegion,
-    Key: SourceKey
+    Key: SourceKey,
+    tracker: params.tracker,
+    calledBySdk: 'sliceCopyFile'
   }, function (err, data) {
     if (err) {
       if (err.statusCode && err.statusCode === 404) {
@@ -8819,6 +8834,9 @@ function sliceCopyFile(params, callback) {
       });
       return;
     }
+    params.tracker && params.tracker.setParams({
+      httpSize: FileSize
+    });
     _onProgress3 = util.throttleOnProgress.call(self, FileSize, params.onProgress);
 
     // 开始上传
@@ -8826,7 +8844,9 @@ function sliceCopyFile(params, callback) {
       if (!params.Headers['x-cos-metadata-directive']) {
         params.Headers['x-cos-metadata-directive'] = 'Copy';
       }
-      self.putObjectCopy(params, function (err, data) {
+      self.putObjectCopy(Object.assign(params, {
+        calledBySdk: 'sliceCopyFile'
+      }), function (err, data) {
         if (err) {
           _onProgress3(null, true);
           return callback(err);
@@ -8881,7 +8901,9 @@ function copySliceItem(params, callback) {
       UploadId: UploadId,
       PartNumber: PartNumber,
       CopySourceRange: CopySourceRange,
-      onProgress: params.onProgress
+      onProgress: params.onProgress,
+      tracker: params.tracker,
+      calledBySdk: params.calledBySdk
     }, function (err, data) {
       tryCallback(err || null, data);
     });
@@ -8979,7 +9001,6 @@ module.exports = async;
 
 
 var REQUEST = __webpack_require__(/*! ../lib/request */ "./lib/request.js");
-var base64 = __webpack_require__(/*! ../lib/base64 */ "./lib/base64.js");
 var util = __webpack_require__(/*! ./util */ "./src/util.js");
 var mime = __webpack_require__(/*! mime */ "./node_modules/mime/index.js");
 
@@ -9020,7 +9041,8 @@ function getService(params, callback) {
     Action: 'name/cos:GetService',
     url: domain,
     method: 'GET',
-    headers: params.Headers
+    headers: params.Headers,
+    tracker: params.tracker
   }, function (err, data) {
     if (err) return callback(err);
     var buckets = data && data.ListAllMyBucketsResult && data.ListAllMyBucketsResult.Buckets && data.ListAllMyBucketsResult.Buckets.Bucket || [];
@@ -9066,7 +9088,8 @@ function putBucket(params, callback) {
     Bucket: params.Bucket,
     Region: params.Region,
     headers: params.Headers,
-    body: xml
+    body: xml,
+    tracker: params.tracker
   }, function (err, data) {
     if (err) return callback(err);
     var url = getUrl({
@@ -9101,7 +9124,8 @@ function headBucket(params, callback) {
     Bucket: params.Bucket,
     Region: params.Region,
     headers: params.Headers,
-    method: 'HEAD'
+    method: 'HEAD',
+    tracker: params.tracker
   }, function (err, data) {
     callback(err, data);
   });
@@ -9136,7 +9160,8 @@ function getBucket(params, callback) {
     Bucket: params.Bucket,
     Region: params.Region,
     headers: params.Headers,
-    qs: reqParams
+    qs: reqParams,
+    tracker: params.tracker
   }, function (err, data) {
     if (err) return callback(err);
     var ListBucketResult = data.ListBucketResult || {};
@@ -9171,7 +9196,8 @@ function deleteBucket(params, callback) {
     Bucket: params.Bucket,
     Region: params.Region,
     headers: params.Headers,
-    method: 'DELETE'
+    method: 'DELETE',
+    tracker: params.tracker
   }, function (err, data) {
     if (err && err.statusCode === 204) {
       return callback(null, {
@@ -9232,7 +9258,8 @@ function putBucketAcl(params, callback) {
     Region: params.Region,
     headers: headers,
     action: 'acl',
-    body: xml
+    body: xml,
+    tracker: params.tracker
   }, function (err, data) {
     if (err) return callback(err);
     callback(null, {
@@ -9259,7 +9286,8 @@ function getBucketAcl(params, callback) {
     Bucket: params.Bucket,
     Region: params.Region,
     headers: params.Headers,
-    action: 'acl'
+    action: 'acl',
+    tracker: params.tracker
   }, function (err, data) {
     if (err) return callback(err);
     var AccessControlPolicy = data.AccessControlPolicy || {};
@@ -9320,7 +9348,8 @@ function putBucketCors(params, callback) {
     Region: params.Region,
     body: xml,
     action: 'cors',
-    headers: headers
+    headers: headers,
+    tracker: params.tracker
   }, function (err, data) {
     if (err) return callback(err);
     callback(null, {
@@ -9347,7 +9376,8 @@ function getBucketCors(params, callback) {
     Bucket: params.Bucket,
     Region: params.Region,
     headers: params.Headers,
-    action: 'cors'
+    action: 'cors',
+    tracker: params.tracker
   }, function (err, data) {
     if (err) {
       if (err.statusCode === 404 && err.error && err.error.Code === 'NoSuchCORSConfiguration') {
@@ -9399,7 +9429,8 @@ function deleteBucketCors(params, callback) {
     Bucket: params.Bucket,
     Region: params.Region,
     headers: params.Headers,
-    action: 'cors'
+    action: 'cors',
+    tracker: params.tracker
   }, function (err, data) {
     if (err && err.statusCode === 204) {
       return callback(null, {
@@ -9431,7 +9462,8 @@ function getBucketLocation(params, callback) {
     Bucket: params.Bucket,
     Region: params.Region,
     headers: params.Headers,
-    action: 'location'
+    action: 'location',
+    tracker: params.tracker
   }, function (err, data) {
     if (err) return callback(err);
     callback(null, data);
@@ -9462,7 +9494,8 @@ function putBucketPolicy(params, callback) {
     action: 'policy',
     body: PolicyStr,
     headers: headers,
-    json: true
+    json: true,
+    tracker: params.tracker
   }, function (err, data) {
     if (err && err.statusCode === 204) {
       return callback(null, {
@@ -9495,7 +9528,8 @@ function getBucketPolicy(params, callback) {
     Region: params.Region,
     headers: params.Headers,
     action: 'policy',
-    rawBody: true
+    rawBody: true,
+    tracker: params.tracker
   }, function (err, data) {
     if (err) {
       if (err.statusCode && err.statusCode === 403) {
@@ -9543,7 +9577,8 @@ function deleteBucketPolicy(params, callback) {
     Bucket: params.Bucket,
     Region: params.Region,
     headers: params.Headers,
-    action: 'policy'
+    action: 'policy',
+    tracker: params.tracker
   }, function (err, data) {
     if (err && err.statusCode === 204) {
       return callback(null, {
@@ -9590,7 +9625,8 @@ function putBucketTagging(params, callback) {
     Region: params.Region,
     body: xml,
     action: 'tagging',
-    headers: headers
+    headers: headers,
+    tracker: params.tracker
   }, function (err, data) {
     if (err && err.statusCode === 204) {
       return callback(null, {
@@ -9622,7 +9658,8 @@ function getBucketTagging(params, callback) {
     Bucket: params.Bucket,
     Region: params.Region,
     headers: params.Headers,
-    action: 'tagging'
+    action: 'tagging',
+    tracker: params.tracker
   }, function (err, data) {
     if (err) {
       if (err.statusCode === 404 && err.error && (err.error === 'Not Found' || err.error.Code === 'NoSuchTagSet')) {
@@ -9666,7 +9703,8 @@ function deleteBucketTagging(params, callback) {
     Bucket: params.Bucket,
     Region: params.Region,
     headers: params.Headers,
-    action: 'tagging'
+    action: 'tagging',
+    tracker: params.tracker
   }, function (err, data) {
     if (err && err.statusCode === 204) {
       return callback(null, {
@@ -9700,7 +9738,8 @@ function putBucketLifecycle(params, callback) {
     Region: params.Region,
     body: xml,
     action: 'lifecycle',
-    headers: headers
+    headers: headers,
+    tracker: params.tracker
   }, function (err, data) {
     if (err && err.statusCode === 204) {
       return callback(null, {
@@ -9722,7 +9761,8 @@ function getBucketLifecycle(params, callback) {
     Bucket: params.Bucket,
     Region: params.Region,
     headers: params.Headers,
-    action: 'lifecycle'
+    action: 'lifecycle',
+    tracker: params.tracker
   }, function (err, data) {
     if (err) {
       if (err.statusCode === 404 && err.error && err.error.Code === 'NoSuchLifecycleConfiguration') {
@@ -9756,7 +9796,8 @@ function deleteBucketLifecycle(params, callback) {
     Bucket: params.Bucket,
     Region: params.Region,
     headers: params.Headers,
-    action: 'lifecycle'
+    action: 'lifecycle',
+    tracker: params.tracker
   }, function (err, data) {
     if (err && err.statusCode === 204) {
       return callback(null, {
@@ -9792,7 +9833,8 @@ function putBucketVersioning(params, callback) {
     Region: params.Region,
     body: xml,
     action: 'versioning',
-    headers: headers
+    headers: headers,
+    tracker: params.tracker
   }, function (err, data) {
     if (err && err.statusCode === 204) {
       return callback(null, {
@@ -9814,7 +9856,8 @@ function getBucketVersioning(params, callback) {
     Bucket: params.Bucket,
     Region: params.Region,
     headers: params.Headers,
-    action: 'versioning'
+    action: 'versioning',
+    tracker: params.tracker
   }, function (err, data) {
     if (!err) {
       !data.VersioningConfiguration && (data.VersioningConfiguration = {});
@@ -9839,7 +9882,8 @@ function putBucketReplication(params, callback) {
     Region: params.Region,
     body: xml,
     action: 'replication',
-    headers: headers
+    headers: headers,
+    tracker: params.tracker
   }, function (err, data) {
     if (err && err.statusCode === 204) {
       return callback(null, {
@@ -9861,7 +9905,8 @@ function getBucketReplication(params, callback) {
     Bucket: params.Bucket,
     Region: params.Region,
     headers: params.Headers,
-    action: 'replication'
+    action: 'replication',
+    tracker: params.tracker
   }, function (err, data) {
     if (err) {
       if (err.statusCode === 404 && err.error && (err.error === 'Not Found' || err.error.Code === 'ReplicationConfigurationnotFoundError')) {
@@ -9895,7 +9940,8 @@ function deleteBucketReplication(params, callback) {
     Bucket: params.Bucket,
     Region: params.Region,
     headers: params.Headers,
-    action: 'replication'
+    action: 'replication',
+    tracker: params.tracker
   }, function (err, data) {
     if (err && err.statusCode === 204) {
       return callback(null, {
@@ -9953,7 +9999,8 @@ function putBucketWebsite(params, callback) {
     Region: params.Region,
     body: xml,
     action: 'website',
-    headers: headers
+    headers: headers,
+    tracker: params.tracker
   }, function (err, data) {
     if (err && err.statusCode === 204) {
       return callback(null, {
@@ -9986,7 +10033,8 @@ function getBucketWebsite(params, callback) {
     Region: params.Region,
     Key: params.Key,
     headers: params.Headers,
-    action: 'website'
+    action: 'website',
+    tracker: params.tracker
   }, function (err, data) {
     if (err) {
       if (err.statusCode === 404 && err.error.Code === 'NoSuchWebsiteConfiguration') {
@@ -10031,7 +10079,8 @@ function deleteBucketWebsite(params, callback) {
     Bucket: params.Bucket,
     Region: params.Region,
     headers: params.Headers,
-    action: 'website'
+    action: 'website',
+    tracker: params.tracker
   }, function (err, data) {
     if (err && err.statusCode === 204) {
       return callback(null, {
@@ -10088,7 +10137,8 @@ function putBucketReferer(params, callback) {
     Region: params.Region,
     body: xml,
     action: 'referer',
-    headers: headers
+    headers: headers,
+    tracker: params.tracker
   }, function (err, data) {
     if (err && err.statusCode === 204) {
       return callback(null, {
@@ -10121,7 +10171,8 @@ function getBucketReferer(params, callback) {
     Region: params.Region,
     Key: params.Key,
     headers: params.Headers,
-    action: 'referer'
+    action: 'referer',
+    tracker: params.tracker
   }, function (err, data) {
     if (err) {
       if (err.statusCode === 404 && err.error.Code === 'NoSuchRefererConfiguration') {
@@ -10179,7 +10230,8 @@ function putBucketDomain(params, callback) {
     Region: params.Region,
     body: xml,
     action: 'domain',
-    headers: headers
+    headers: headers,
+    tracker: params.tracker
   }, function (err, data) {
     if (err && err.statusCode === 204) {
       return callback(null, {
@@ -10211,7 +10263,8 @@ function getBucketDomain(params, callback) {
     Bucket: params.Bucket,
     Region: params.Region,
     headers: params.Headers,
-    action: 'domain'
+    action: 'domain',
+    tracker: params.tracker
   }, function (err, data) {
     if (err) return callback(err);
     var DomainRule = [];
@@ -10243,7 +10296,8 @@ function deleteBucketDomain(params, callback) {
     Bucket: params.Bucket,
     Region: params.Region,
     headers: params.Headers,
-    action: 'domain'
+    action: 'domain',
+    tracker: params.tracker
   }, function (err, data) {
     if (err && err.statusCode === 204) {
       return callback(null, {
@@ -10287,7 +10341,8 @@ function putBucketOrigin(params, callback) {
     Region: params.Region,
     body: xml,
     action: 'origin',
-    headers: headers
+    headers: headers,
+    tracker: params.tracker
   }, function (err, data) {
     if (err && err.statusCode === 204) {
       return callback(null, {
@@ -10319,7 +10374,8 @@ function getBucketOrigin(params, callback) {
     Bucket: params.Bucket,
     Region: params.Region,
     headers: params.Headers,
-    action: 'origin'
+    action: 'origin',
+    tracker: params.tracker
   }, function (err, data) {
     if (err) return callback(err);
     var OriginRule = [];
@@ -10351,7 +10407,8 @@ function deleteBucketOrigin(params, callback) {
     Bucket: params.Bucket,
     Region: params.Region,
     headers: params.Headers,
-    action: 'origin'
+    action: 'origin',
+    tracker: params.tracker
   }, function (err, data) {
     if (err && err.statusCode === 204) {
       return callback(null, {
@@ -10391,7 +10448,8 @@ function putBucketLogging(params, callback) {
     Region: params.Region,
     body: xml,
     action: 'logging',
-    headers: headers
+    headers: headers,
+    tracker: params.tracker
   }, function (err, data) {
     if (err && err.statusCode === 204) {
       return callback(null, {
@@ -10423,7 +10481,8 @@ function getBucketLogging(params, callback) {
     Bucket: params.Bucket,
     Region: params.Region,
     headers: params.Headers,
-    action: 'logging'
+    action: 'logging',
+    tracker: params.tracker
   }, function (err, data) {
     if (err) return callback(err);
     delete data.BucketLoggingStatus._xmlns;
@@ -10477,7 +10536,8 @@ function putBucketInventory(params, callback) {
     qs: {
       id: params['Id']
     },
-    headers: headers
+    headers: headers,
+    tracker: params.tracker
   }, function (err, data) {
     if (err && err.statusCode === 204) {
       return callback(null, {
@@ -10513,7 +10573,8 @@ function getBucketInventory(params, callback) {
     action: 'inventory',
     qs: {
       id: params['Id']
-    }
+    },
+    tracker: params.tracker
   }, function (err, data) {
     if (err) return callback(err);
     var InventoryConfiguration = data['InventoryConfiguration'];
@@ -10559,7 +10620,8 @@ function listBucketInventory(params, callback) {
     action: 'inventory',
     qs: {
       'continuation-token': params['ContinuationToken']
-    }
+    },
+    tracker: params.tracker
   }, function (err, data) {
     if (err) return callback(err);
     var ListInventoryConfigurationResult = data['ListInventoryConfigurationResult'];
@@ -10611,7 +10673,8 @@ function deleteBucketInventory(params, callback) {
     action: 'inventory',
     qs: {
       id: params['Id']
-    }
+    },
+    tracker: params.tracker
   }, function (err, data) {
     if (err && err.statusCode === 204) {
       return callback(null, {
@@ -10650,7 +10713,8 @@ function putBucketAccelerate(params, callback) {
     Region: params.Region,
     body: xml,
     action: 'accelerate',
-    headers: headers
+    headers: headers,
+    tracker: params.tracker
   }, function (err, data) {
     if (err) return callback(err);
     callback(null, {
@@ -10666,7 +10730,8 @@ function getBucketAccelerate(params, callback) {
     method: 'GET',
     Bucket: params.Bucket,
     Region: params.Region,
-    action: 'accelerate'
+    action: 'accelerate',
+    tracker: params.tracker
   }, function (err, data) {
     if (!err) {
       !data.AccelerateConfiguration && (data.AccelerateConfiguration = {});
@@ -10697,7 +10762,8 @@ function headObject(params, callback) {
     Region: params.Region,
     Key: params.Key,
     VersionId: params.VersionId,
-    headers: params.Headers
+    headers: params.Headers,
+    tracker: params.tracker
   }, function (err, data) {
     if (err) {
       var statusCode = err.statusCode;
@@ -10729,7 +10795,8 @@ function listObjectVersions(params, callback) {
     Region: params.Region,
     headers: params.Headers,
     qs: reqParams,
-    action: 'versions'
+    action: 'versions',
+    tracker: params.tracker
   }, function (err, data) {
     if (err) return callback(err);
     var ListVersionsResult = data.ListVersionsResult || {};
@@ -10972,7 +11039,8 @@ function postObject(params, callback) {
     qs: params.Query,
     filePath: filePath,
     TaskId: params.TaskId,
-    onProgress: onProgress
+    onProgress: onProgress,
+    tracker: params.tracker
   }, function (err, data) {
     onProgress(null, true);
     if (err) return callback(err);
@@ -11018,7 +11086,8 @@ function deleteObject(params, callback) {
     Region: params.Region,
     Key: params.Key,
     headers: params.Headers,
-    VersionId: params.VersionId
+    VersionId: params.VersionId,
+    tracker: params.tracker
   }, function (err, data) {
     if (err) {
       var statusCode = err.statusCode;
@@ -11066,7 +11135,8 @@ function getObjectAcl(params, callback) {
     Key: params.Key,
     headers: params.Headers,
     qs: reqParams,
-    action: 'acl'
+    action: 'acl',
+    tracker: params.tracker
   }, function (err, data) {
     if (err) return callback(err);
     var AccessControlPolicy = data.AccessControlPolicy || {};
@@ -11130,7 +11200,8 @@ function putObjectAcl(params, callback) {
     Key: params.Key,
     action: 'acl',
     headers: headers,
-    body: xml
+    body: xml,
+    tracker: params.tracker
   }, function (err, data) {
     if (err) return callback(err);
     callback(null, {
@@ -11161,7 +11232,8 @@ function optionsObject(params, callback) {
     Bucket: params.Bucket,
     Region: params.Region,
     Key: params.Key,
-    headers: headers
+    headers: headers,
+    tracker: params.tracker
   }, function (err, data) {
     if (err) {
       if (err.statusCode && err.statusCode === 403) {
@@ -11244,7 +11316,8 @@ function putObjectCopy(params, callback) {
     Region: params.Region,
     Key: params.Key,
     VersionId: params.VersionId,
-    headers: params.Headers
+    headers: params.Headers,
+    tracker: params.tracker
   }, function (err, data) {
     if (err) return callback(err);
     var result = util.clone(data.CopyObjectResult || {});
@@ -11288,7 +11361,8 @@ function uploadPartCopy(params, callback) {
       partNumber: params['PartNumber'],
       uploadId: params['UploadId']
     },
-    headers: params.Headers
+    headers: params.Headers,
+    tracker: params.tracker
   }, function (err, data) {
     if (err) return callback(err);
     var result = util.clone(data.CopyPartResult || {});
@@ -11327,7 +11401,8 @@ function deleteMultipleObject(params, callback) {
     Region: params.Region,
     body: xml,
     action: 'delete',
-    headers: headers
+    headers: headers,
+    tracker: params.tracker
   }, function (err, data) {
     if (err) return callback(err);
     var DeleteResult = data.DeleteResult || {};
@@ -11368,7 +11443,8 @@ function restoreObject(params, callback) {
     VersionId: params.VersionId,
     body: xml,
     action: 'restore',
-    headers: headers
+    headers: headers,
+    tracker: params.tracker
   }, function (err, data) {
     callback(err, data);
   });
@@ -11408,7 +11484,8 @@ function putObjectTagging(params, callback) {
     body: xml,
     action: 'tagging',
     headers: headers,
-    VersionId: params.VersionId
+    VersionId: params.VersionId,
+    tracker: params.tracker
   }, function (err, data) {
     if (err && err.statusCode === 204) {
       return callback(null, {
@@ -11443,7 +11520,8 @@ function getObjectTagging(params, callback) {
     Region: params.Region,
     headers: params.Headers,
     action: 'tagging',
-    VersionId: params.VersionId
+    VersionId: params.VersionId,
+    tracker: params.tracker
   }, function (err, data) {
     if (err) {
       if (err.statusCode === 404 && err.error && (err.error === 'Not Found' || err.error.Code === 'NoSuchTagSet')) {
@@ -11490,7 +11568,8 @@ function deleteObjectTagging(params, callback) {
     Key: params.Key,
     headers: params.Headers,
     action: 'tagging',
-    VersionId: params.VersionId
+    VersionId: params.VersionId,
+    tracker: params.tracker
   }, function (err, data) {
     if (err && err.statusCode === 204) {
       return callback(null, {
@@ -11838,7 +11917,8 @@ function multipartAbort(params, callback) {
     Region: params.Region,
     Key: params.Key,
     headers: params.Headers,
-    qs: reqParams
+    qs: reqParams,
+    tracker: params.tracker
   }, function (err, data) {
     if (err) return callback(err);
     callback(null, {
@@ -11888,7 +11968,8 @@ function appendObject(params, callback) {
     qs: {
       position: params.Position
     },
-    headers: params.Headers
+    headers: params.Headers,
+    tracker: params.tracker
   }, function (err, data) {
     if (err) return callback(err);
     callback(null, data);
@@ -11917,7 +11998,8 @@ function request(params, callback) {
     body: params.Body,
     Url: params.Url,
     rawBody: params.RawBody,
-    dataType: params.DataType
+    dataType: params.DataType,
+    tracker: params.tracker
   }, function (err, data) {
     if (err) return callback(err);
     if (data && data.body) {
@@ -12475,7 +12557,7 @@ function submitRequest(params, callback) {
     }
     tracker && tracker.setParams({
       signStartTime: new Date().getTime(),
-      retryTimes: tryTimes - 1
+      httpRetryTimes: tryTimes - 1
     });
     getAuthorizationAsync.call(self, {
       Bucket: params.Bucket || '',
@@ -12568,6 +12650,7 @@ function _submitRequest(params, callback) {
     // 更换请求的url
     url = url.replace(/myqcloud.com/, 'tencentcos.cn');
   }
+  var repoterUrl = object ? url : '';
   if (params.action) {
     url = url + '?' + params.action;
   }
@@ -12628,15 +12711,22 @@ function _submitRequest(params, callback) {
     return "".concat(key, "=").concat(opt.qs[key]);
   }).join('&') : '';
   var fullUrl = queryString ? opt.url + '?' + queryString : opt.url;
-  params.tracker && params.tracker.setParams({
-    reqUrl: fullUrl,
-    accelerate: useAccelerate ? 'Y' : 'N'
-  });
-  // 分块上传时给父级tracker设置url信息
-  params.tracker && params.tracker.parent && params.tracker.parent.setParams({
-    reqUrl: fullUrl,
-    accelerate: useAccelerate ? 'Y' : 'N'
-  });
+  if (params.tracker) {
+    var _opt$body;
+    params.tracker.setParams({
+      url: fullUrl,
+      httpMethod: opt.method,
+      accelerate: useAccelerate,
+      httpSize: ((_opt$body = opt.body) === null || _opt$body === void 0 ? void 0 : _opt$body.size) || 0
+    });
+    // 分块上传时给父级tracker设置url信息
+    if (params.tracker.parent && !params.tracker.parent.params.url) {
+      params.tracker.parent.setParams({
+        url: repoterUrl,
+        accelerate: useAccelerate
+      });
+    }
+  }
   var sender = REQUEST(opt, function (err, response, body) {
     if (err === 'abort') return;
 
@@ -12862,18 +12952,19 @@ var defaultOptions = {
   // HttpDNS 服务商 Id,填写后代表开启 HttpDNS 服务。HttpDNS 用法详见https://developers.weixin.qq.com/miniprogram/dev/framework/ability/HTTPDNS.html
   SimpleUploadMethod: 'postObject',
   // 高级上传内部判断需要走简单上传时，指定的上传方法，可选postObject或putObject
-  EnableTracker: false,
-  // 默认关闭上报
+  AutoSwitchHost: false,
+  CopySourceParser: null,
+  // 自定义拷贝源解析器
+  /** 上报相关配置 **/
   DeepTracker: false,
   // 上报时是否对每个分块上传做单独上报
-  Beacon: null,
-  // 灯塔上报组件，如有需要请自行传入
   TrackerDelay: 5000,
   // 周期性上报，单位毫秒。0代表实时上报
   CustomId: '',
   // 自定义上报id
-  AutoSwitchHost: false,
-  CopySourceParser: null // 自定义拷贝源解析器
+  BeaconReporter: null,
+  // 灯塔上报组件，如有需要请自行传入，传入即代表开启上报
+  ClsReporter: null // cls 上报组件，如有需要请自行传入，传入即代表开启上报
 };
 
 // 对外暴露的类
@@ -12888,6 +12979,7 @@ var COS = function COS(options) {
   this.options.CopySliceSize = Math.max(0, this.options.CopySliceSize);
   this.options.MaxPartNumber = Math.max(1024, Math.min(10000, this.options.MaxPartNumber));
   this.options.Timeout = Math.max(0, this.options.Timeout);
+  this.options.EnableReporter = this.options.BeaconReporter || this.options.ClsReporter;
   if (this.options.AppId) {
     console.warn('warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g: "test-1250000000").');
   }
@@ -13353,6 +13445,7 @@ function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == 
 function _regeneratorRuntime() { "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */ _regeneratorRuntime = function _regeneratorRuntime() { return e; }; var t, e = {}, r = Object.prototype, n = r.hasOwnProperty, o = Object.defineProperty || function (t, e, r) { t[e] = r.value; }, i = "function" == typeof Symbol ? Symbol : {}, a = i.iterator || "@@iterator", c = i.asyncIterator || "@@asyncIterator", u = i.toStringTag || "@@toStringTag"; function define(t, e, r) { return Object.defineProperty(t, e, { value: r, enumerable: !0, configurable: !0, writable: !0 }), t[e]; } try { define({}, ""); } catch (t) { define = function define(t, e, r) { return t[e] = r; }; } function wrap(t, e, r, n) { var i = e && e.prototype instanceof Generator ? e : Generator, a = Object.create(i.prototype), c = new Context(n || []); return o(a, "_invoke", { value: makeInvokeMethod(t, r, c) }), a; } function tryCatch(t, e, r) { try { return { type: "normal", arg: t.call(e, r) }; } catch (t) { return { type: "throw", arg: t }; } } e.wrap = wrap; var h = "suspendedStart", l = "suspendedYield", f = "executing", s = "completed", y = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} var p = {}; define(p, a, function () { return this; }); var d = Object.getPrototypeOf, v = d && d(d(values([]))); v && v !== r && n.call(v, a) && (p = v); var g = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(p); function defineIteratorMethods(t) { ["next", "throw", "return"].forEach(function (e) { define(t, e, function (t) { return this._invoke(e, t); }); }); } function AsyncIterator(t, e) { function invoke(r, o, i, a) { var c = tryCatch(t[r], t, o); if ("throw" !== c.type) { var u = c.arg, h = u.value; return h && "object" == _typeof(h) && n.call(h, "__await") ? e.resolve(h.__await).then(function (t) { invoke("next", t, i, a); }, function (t) { invoke("throw", t, i, a); }) : e.resolve(h).then(function (t) { u.value = t, i(u); }, function (t) { return invoke("throw", t, i, a); }); } a(c.arg); } var r; o(this, "_invoke", { value: function value(t, n) { function callInvokeWithMethodAndArg() { return new e(function (e, r) { invoke(t, n, e, r); }); } return r = r ? r.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg(); } }); } function makeInvokeMethod(e, r, n) { var o = h; return function (i, a) { if (o === f) throw new Error("Generator is already running"); if (o === s) { if ("throw" === i) throw a; return { value: t, done: !0 }; } for (n.method = i, n.arg = a;;) { var c = n.delegate; if (c) { var u = maybeInvokeDelegate(c, n); if (u) { if (u === y) continue; return u; } } if ("next" === n.method) n.sent = n._sent = n.arg;else if ("throw" === n.method) { if (o === h) throw o = s, n.arg; n.dispatchException(n.arg); } else "return" === n.method && n.abrupt("return", n.arg); o = f; var p = tryCatch(e, r, n); if ("normal" === p.type) { if (o = n.done ? s : l, p.arg === y) continue; return { value: p.arg, done: n.done }; } "throw" === p.type && (o = s, n.method = "throw", n.arg = p.arg); } }; } function maybeInvokeDelegate(e, r) { var n = r.method, o = e.iterator[n]; if (o === t) return r.delegate = null, "throw" === n && e.iterator["return"] && (r.method = "return", r.arg = t, maybeInvokeDelegate(e, r), "throw" === r.method) || "return" !== n && (r.method = "throw", r.arg = new TypeError("The iterator does not provide a '" + n + "' method")), y; var i = tryCatch(o, e.iterator, r.arg); if ("throw" === i.type) return r.method = "throw", r.arg = i.arg, r.delegate = null, y; var a = i.arg; return a ? a.done ? (r[e.resultName] = a.value, r.next = e.nextLoc, "return" !== r.method && (r.method = "next", r.arg = t), r.delegate = null, y) : a : (r.method = "throw", r.arg = new TypeError("iterator result is not an object"), r.delegate = null, y); } function pushTryEntry(t) { var e = { tryLoc: t[0] }; 1 in t && (e.catchLoc = t[1]), 2 in t && (e.finallyLoc = t[2], e.afterLoc = t[3]), this.tryEntries.push(e); } function resetTryEntry(t) { var e = t.completion || {}; e.type = "normal", delete e.arg, t.completion = e; } function Context(t) { this.tryEntries = [{ tryLoc: "root" }], t.forEach(pushTryEntry, this), this.reset(!0); } function values(e) { if (e || "" === e) { var r = e[a]; if (r) return r.call(e); if ("function" == typeof e.next) return e; if (!isNaN(e.length)) { var o = -1, i = function next() { for (; ++o < e.length;) if (n.call(e, o)) return next.value = e[o], next.done = !1, next; return next.value = t, next.done = !0, next; }; return i.next = i; } } throw new TypeError(_typeof(e) + " is not iterable"); } return GeneratorFunction.prototype = GeneratorFunctionPrototype, o(g, "constructor", { value: GeneratorFunctionPrototype, configurable: !0 }), o(GeneratorFunctionPrototype, "constructor", { value: GeneratorFunction, configurable: !0 }), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, u, "GeneratorFunction"), e.isGeneratorFunction = function (t) { var e = "function" == typeof t && t.constructor; return !!e && (e === GeneratorFunction || "GeneratorFunction" === (e.displayName || e.name)); }, e.mark = function (t) { return Object.setPrototypeOf ? Object.setPrototypeOf(t, GeneratorFunctionPrototype) : (t.__proto__ = GeneratorFunctionPrototype, define(t, u, "GeneratorFunction")), t.prototype = Object.create(g), t; }, e.awrap = function (t) { return { __await: t }; }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, c, function () { return this; }), e.AsyncIterator = AsyncIterator, e.async = function (t, r, n, o, i) { void 0 === i && (i = Promise); var a = new AsyncIterator(wrap(t, r, n, o), i); return e.isGeneratorFunction(r) ? a : a.next().then(function (t) { return t.done ? t.value : a.next(); }); }, defineIteratorMethods(g), define(g, u, "Generator"), define(g, a, function () { return this; }), define(g, "toString", function () { return "[object Generator]"; }), e.keys = function (t) { var e = Object(t), r = []; for (var n in e) r.push(n); return r.reverse(), function next() { for (; r.length;) { var t = r.pop(); if (t in e) return next.value = t, next.done = !1, next; } return next.done = !0, next; }; }, e.values = values, Context.prototype = { constructor: Context, reset: function reset(e) { if (this.prev = 0, this.next = 0, this.sent = this._sent = t, this.done = !1, this.delegate = null, this.method = "next", this.arg = t, this.tryEntries.forEach(resetTryEntry), !e) for (var r in this) "t" === r.charAt(0) && n.call(this, r) && !isNaN(+r.slice(1)) && (this[r] = t); }, stop: function stop() { this.done = !0; var t = this.tryEntries[0].completion; if ("throw" === t.type) throw t.arg; return this.rval; }, dispatchException: function dispatchException(e) { if (this.done) throw e; var r = this; function handle(n, o) { return a.type = "throw", a.arg = e, r.next = n, o && (r.method = "next", r.arg = t), !!o; } for (var o = this.tryEntries.length - 1; o >= 0; --o) { var i = this.tryEntries[o], a = i.completion; if ("root" === i.tryLoc) return handle("end"); if (i.tryLoc <= this.prev) { var c = n.call(i, "catchLoc"), u = n.call(i, "finallyLoc"); if (c && u) { if (this.prev < i.catchLoc) return handle(i.catchLoc, !0); if (this.prev < i.finallyLoc) return handle(i.finallyLoc); } else if (c) { if (this.prev < i.catchLoc) return handle(i.catchLoc, !0); } else { if (!u) throw new Error("try statement without catch or finally"); if (this.prev < i.finallyLoc) return handle(i.finallyLoc); } } } }, abrupt: function abrupt(t, e) { for (var r = this.tryEntries.length - 1; r >= 0; --r) { var o = this.tryEntries[r]; if (o.tryLoc <= this.prev && n.call(o, "finallyLoc") && this.prev < o.finallyLoc) { var i = o; break; } } i && ("break" === t || "continue" === t) && i.tryLoc <= e && e <= i.finallyLoc && (i = null); var a = i ? i.completion : {}; return a.type = t, a.arg = e, i ? (this.method = "next", this.next = i.finallyLoc, y) : this.complete(a); }, complete: function complete(t, e) { if ("throw" === t.type) throw t.arg; return "break" === t.type || "continue" === t.type ? this.next = t.arg : "return" === t.type ? (this.rval = this.arg = t.arg, this.method = "return", this.next = "end") : "normal" === t.type && e && (this.next = e), y; }, finish: function finish(t) { for (var e = this.tryEntries.length - 1; e >= 0; --e) { var r = this.tryEntries[e]; if (r.finallyLoc === t) return this.complete(r.completion, r.afterLoc), resetTryEntry(r), y; } }, "catch": function _catch(t) { for (var e = this.tryEntries.length - 1; e >= 0; --e) { var r = this.tryEntries[e]; if (r.tryLoc === t) { var n = r.completion; if ("throw" === n.type) { var o = n.arg; resetTryEntry(r); } return o; } } throw new Error("illegal catch attempt"); }, delegateYield: function delegateYield(e, r, n) { return this.delegate = { iterator: values(e), resultName: r, nextLoc: n }, "next" === this.method && (this.arg = t), y; } }, e; }
 function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
+function _defineProperty(obj, key, value) { key = _toPropertyKey(key); if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, _toPropertyKey(descriptor.key), descriptor); } }
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
@@ -13363,11 +13456,11 @@ var beacon = null;
 var getBeacon = function getBeacon(Beacon, delay) {
   if (!beacon) {
     // 生成 beacon
-    if (!Beacon || typeof Beacon !== 'function') {
+    if (typeof Beacon !== 'function') {
       throw new Error('Beacon not found');
     }
     beacon = new Beacon({
-      appkey: '0AND0VEVB24UBGDU',
+      appkey: '0WEB05PY6MHRGK0U',
       versionCode: pkg.version,
       channelID: 'mp_sdk',
       //渠道,选填
@@ -13385,6 +13478,12 @@ var getBeacon = function getBeacon(Beacon, delay) {
 
   return beacon;
 };
+
+// 毫秒转秒
+var ms2s = function ms2s(ms) {
+  if (!ms || ms < 0) return 0;
+  return (ms / 1000).toFixed(3);
+};
 var utils = {
   // 生成uid 每个链路对应唯一一条uid
   getUid: function getUid() {
@@ -13393,7 +13492,7 @@ var utils = {
     };
     return S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4();
   },
-  // 获取网络类型
+  // 获取网络类型 4g ｜ wifi
   getNetType: function getNetType() {
     return new Promise(function (resolve) {
       if (wx.canIUse('getNetworkType')) {
@@ -13469,20 +13568,16 @@ var deviceInfo = {
 utils.getSystemInfo().then(function (res) {
   Object.assign(deviceInfo, res);
 });
-
-// 分块上传原子方法
-var sliceUploadMethods = ['multipartInit', 'multipartUpload', 'multipartComplete', 'multipartList', 'multipartListPart', 'multipartAbort'];
-var uploadApi = ['putObject', 'postObject', 'appendObject', 'sliceUploadFile', 'uploadFile', 'uploadFiles'].concat(sliceUploadMethods);
-var downloadApi = ['getObject'];
-function getEventCode(apiName) {
-  if (uploadApi.includes(apiName)) {
-    return 'cos_upload';
+var transApiName = function transApiName(api) {
+  if (['putObject', 'sliceUploadFile', 'uploadFile', 'uploadFiles'].includes(api)) {
+    return 'UploadTask';
+  } else if (api === 'getObject') {
+    return 'DownloadTask';
+  } else if (['putObjectCopy', 'sliceCopyFile'].includes(api)) {
+    return 'CopyTask';
   }
-  if (downloadApi.includes(apiName)) {
-    return 'cos_download';
-  }
-  return 'base_service';
-}
+  return api;
+};
 
 // 上报参数驼峰改下划线
 function camel2underline(key) {
@@ -13490,102 +13585,91 @@ function camel2underline(key) {
 }
 function formatParams(params) {
   var formattedParams = {};
-  var allReporterKeys = ['tracePlatform', 'cossdkVersion', 'region', 'networkType', 'host', 'accelerate', 'requestPath', 'size', 'httpMd5', 'httpSign', 'httpFull', 'name', 'result', 'tookTime', 'errorNode', 'errorCode', 'errorMessage', 'errorRequestId', 'errorStatusCode', 'errorServiceName', 'errorType', 'traceId', 'bucket', 'appid', 'partNumber', 'retryTimes', 'reqUrl', 'customId', 'fullError', 'devicePlatform', 'wxVersion', 'wxSystem', 'wxSdkVersion'];
-  var successKeys = ['tracePlatform', 'cossdkVersion', 'region', 'bucket', 'appid', 'networkType', 'host', 'accelerate', 'requestPath', 'partNumber', 'size', 'name', 'result', 'tookTime', 'errorRequestId', 'retryTimes', 'reqUrl', 'customId', 'devicePlatform', 'wxVersion', 'wxSystem', 'wxSdkVersion'];
+  var successKeys = ['sdkVersionName', 'sdkVersionCode', 'osName', 'networkType', 'requestName', 'requestResult', 'bucket', 'region', 'appid', 'accelerate', 'url', 'host', 'requestPath', 'userAgent', 'httpMethod', 'httpSize', 'httpSpeed', 'httpTookTime', 'httpMd5', 'httpSign', 'httpFullTime', 'httpDomain', 'partNumber', 'httpRetryTimes', 'customId', 'traceId', 'realApi'];
+  var failureKeys = [].concat(successKeys, ['errorNode', 'errorCode', 'errorName', 'errorMessage', 'errorRequestId', 'errorHttpCode', 'errorServiceName', 'errorType', 'fullError']);
   // 需要上报的参数字段
-  var reporterKeys = params.result === 'Success' ? successKeys : allReporterKeys;
+  var reporterKeys = params.requestResult === 'Success' ? successKeys : failureKeys;
   for (var key in params) {
     if (!reporterKeys.includes(key)) continue;
     var formattedKey = camel2underline(key);
     formattedParams[formattedKey] = params[key];
   }
+  formattedParams['request_name'] = params.realApi ? transApiName(params.realApi) : params.requestName;
   return formattedParams;
 }
 
 // 链路追踪器
 var Tracker = /*#__PURE__*/function () {
   function Tracker(opt) {
+    var _this$params;
     _classCallCheck(this, Tracker);
     var parent = opt.parent,
       traceId = opt.traceId,
       bucket = opt.bucket,
       region = opt.region,
       apiName = opt.apiName,
+      realApi = opt.realApi,
+      httpMethod = opt.httpMethod,
       fileKey = opt.fileKey,
       fileSize = opt.fileSize,
       accelerate = opt.accelerate,
       customId = opt.customId,
       delay = opt.delay,
       deepTracker = opt.deepTracker,
-      Beacon = opt.Beacon;
+      Beacon = opt.Beacon,
+      clsReporter = opt.clsReporter;
     var appid = bucket && bucket.substr(bucket.lastIndexOf('-') + 1) || '';
     this.parent = parent;
     this.deepTracker = deepTracker;
     this.delay = delay;
+    if (clsReporter && !this.clsReporter) {
+      this.clsReporter = clsReporter;
+    }
     // 上报用到的字段
-    this.params = {
+    this.params = (_this$params = {
       // 通用字段
-      cossdkVersion: pkg.version,
-      region: region,
+      sdkVersionName: 'cos-wx-sdk-v5',
+      sdkVersionCode: pkg.version,
+      osName: deviceInfo.devicePlatform,
       networkType: '',
+      requestName: apiName || '',
+      requestResult: '',
+      // sdk api调用结果Success、Failure
+      realApi: realApi,
+      bucket: bucket,
+      region: region,
+      accelerate: accelerate,
+      httpMethod: httpMethod,
+      url: '',
       host: '',
-      accelerate: accelerate ? 'Y' : 'N',
+      httpDomain: '',
       requestPath: fileKey || '',
-      size: fileSize || -1,
+      errorType: '',
+      errorCode: '',
+      errorName: '',
+      errorMessage: '',
+      errorRequestId: '',
+      errorHttpCode: 0,
+      errorServiceName: '',
+      errorNode: '',
+      httpTookTime: 0,
+      // http整体耗时
+      httpSize: fileSize || 0,
+      // 主要是文件大小，大小 B
       httpMd5: 0,
       // MD5耗时
       httpSign: 0,
       // 计算签名耗时
-      httpFull: 0,
-      // http请求耗时
-      name: apiName || '',
-      result: '',
-      // sdk api调用结果Success、Fail
-      tookTime: 0,
-      // 总耗时
-      errorNode: '',
-      errorCode: '',
-      errorMessage: '',
-      errorRequestId: '',
-      errorStatusCode: 0,
-      errorServiceName: '',
-      // 小程序补充字段
-      tracePlatform: 'cos-wx-sdk-v5',
-      // 上报平台=小程序
-      traceId: traceId || utils.getUid(),
-      // 每条上报唯一标识
-      bucket: bucket,
-      appid: appid,
-      partNumber: 0,
-      // 分块上传编号
-      retryTimes: 0,
-      // sdk内部发起的请求重试
-      reqUrl: '',
-      // 请求url
-      customId: customId || '',
-      // 业务id
-      devicePlatform: deviceInfo.devicePlatform,
-      wxVersion: deviceInfo.wxVersion,
-      wxSystem: deviceInfo.wxSystem,
-      wxSdkVersion: deviceInfo.wxSdkVersion,
-      md5StartTime: 0,
-      // md5计算开始时间
-      md5EndTime: 0,
-      // md5计算结束时间
-      signStartTime: 0,
-      // 计算签名开始时间
-      signEndTime: 0,
-      // 计算签名结束时间
-      httpStartTime: 0,
-      // 发起网络请求开始时间
-      httpEndTime: 0,
-      // 网路请求结束时间
-      startTime: new Date().getTime(),
-      // sdk api调用起始时间，不是纯网络耗时
-      endTime: 0 //  sdk api调用结束时间，不是纯网络耗时
-    };
+      httpFullTime: 0,
+      // 任务整体耗时(包括md5、签名等)
+      httpSpeed: 0,
+      // 主要关注上传速度，KB/s
 
-    this.beacon = getBeacon(Beacon, delay);
+      size: fileSize || 0
+    }, _defineProperty(_this$params, "httpMd5", 0), _defineProperty(_this$params, "httpSign", 0), _defineProperty(_this$params, "httpFull", 0), _defineProperty(_this$params, "name", apiName || ''), _defineProperty(_this$params, "tookTime", 0), _defineProperty(_this$params, "md5StartTime", 0), _defineProperty(_this$params, "md5EndTime", 0), _defineProperty(_this$params, "signStartTime", 0), _defineProperty(_this$params, "signEndTime", 0), _defineProperty(_this$params, "httpStartTime", 0), _defineProperty(_this$params, "httpEndTime", 0), _defineProperty(_this$params, "startTime", new Date().getTime()), _defineProperty(_this$params, "endTime", 0), _defineProperty(_this$params, "traceId", traceId || utils.getUid()), _defineProperty(_this$params, "appid", appid), _defineProperty(_this$params, "partNumber", 0), _defineProperty(_this$params, "httpRetryTimes", 0), _defineProperty(_this$params, "customId", customId || ''), _defineProperty(_this$params, "partTime", 0), _this$params);
+    if (Beacon) {
+      this.beacon = getBeacon(Beacon, delay);
+    }
   }
 
   // 格式化sdk回调
@@ -13594,7 +13678,7 @@ var Tracker = /*#__PURE__*/function () {
     value: function () {
       var _formatResult = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee(err, data) {
         var _err$error, _err$error$error, _err$error2, _err$error2$error, _err$error3, _err$error4, _err$error5, _err$error5$error, _err$error6;
-        var now, tookTime, networkType, errorCode, errorMessage, errorStatusCode, errorServiceName, requestId, errorType, exec;
+        var now, networkType, errorCode, errorMessage, errorName, errorHttpCode, errorServiceName, requestId, errorType, isSliceUploadFile, isSliceCopyFile, speed, httpFullTime, httpTookTime, _speed, httpMd5, httpSign, exec;
         return _regeneratorRuntime().wrap(function _callee$(_context) {
           while (1) switch (_context.prev = _context.next) {
             case 0:
@@ -13616,27 +13700,60 @@ var Tracker = /*#__PURE__*/function () {
                * {error: 'message'}或{error: {error: 'message' }}
                */
               now = new Date().getTime();
-              tookTime = now - this.params.startTime;
-              _context.next = 4;
+              _context.next = 3;
               return utils.getNetType();
-            case 4:
+            case 3:
               networkType = _context.sent;
               errorCode = err ? (err === null || err === void 0 ? void 0 : (_err$error = err.error) === null || _err$error === void 0 ? void 0 : (_err$error$error = _err$error.error) === null || _err$error$error === void 0 ? void 0 : _err$error$error.Code) || 'Error' : '';
               errorMessage = err ? (err === null || err === void 0 ? void 0 : (_err$error2 = err.error) === null || _err$error2 === void 0 ? void 0 : (_err$error2$error = _err$error2.error) === null || _err$error2$error === void 0 ? void 0 : _err$error2$error.Message) || (err === null || err === void 0 ? void 0 : (_err$error3 = err.error) === null || _err$error3 === void 0 ? void 0 : _err$error3.error) || (err === null || err === void 0 ? void 0 : err.error) || '' : '';
-              errorStatusCode = err ? err === null || err === void 0 ? void 0 : (_err$error4 = err.error) === null || _err$error4 === void 0 ? void 0 : _err$error4.statusCode : data.statusCode;
+              errorName = errorMessage;
+              errorHttpCode = err ? err === null || err === void 0 ? void 0 : (_err$error4 = err.error) === null || _err$error4 === void 0 ? void 0 : _err$error4.statusCode : data.statusCode;
               errorServiceName = err ? err === null || err === void 0 ? void 0 : (_err$error5 = err.error) === null || _err$error5 === void 0 ? void 0 : (_err$error5$error = _err$error5.error) === null || _err$error5$error === void 0 ? void 0 : _err$error5$error.Resource : '';
               requestId = err ? (err === null || err === void 0 ? void 0 : (_err$error6 = err.error) === null || _err$error6 === void 0 ? void 0 : _err$error6.RequestId) || '' : (data === null || data === void 0 ? void 0 : data.RequestId) || '';
               errorType = err ? requestId ? 'Server' : 'Client' : '';
+              if (this.params.requestName === 'getObject') {
+                this.params.httpSize = data ? data.headers && data.headers['content-length'] : 0;
+              }
+
+              // 上报 sliceUploadFile || uploadFile || uploadFiles 命中分块上传时
+              isSliceUploadFile = this.params.realApi === 'sliceUploadFile';
+              isSliceCopyFile = this.params.realApi === 'sliceCopyFile';
+              if (isSliceUploadFile || isSliceCopyFile) {
+                speed = this.params.httpSize / 1024 / this.params.partTime;
+                Object.assign(this.params, {
+                  httpSpeed: speed < 0 ? 0 : speed.toFixed(3)
+                });
+              } else {
+                httpFullTime = now - this.params.startTime;
+                httpTookTime = this.params.httpEndTime - this.params.httpStartTime;
+                _speed = this.params.httpSize / 1024 / (httpTookTime / 1000);
+                httpMd5 = this.params.md5EndTime - this.params.md5StartTime;
+                httpSign = this.params.signEndTime - this.params.signStartTime;
+                if (this.parent) {
+                  this.parent.addParamValue('httpTookTime', ms2s(httpTookTime));
+                  this.parent.addParamValue('httpFullTime', ms2s(httpFullTime));
+                  this.parent.addParamValue('httpMd5', ms2s(httpMd5));
+                  this.parent.addParamValue('httpSign', ms2s(httpSign));
+                  if (['multipartUpload', 'uploadPartCopy', 'putObjectCopy'].includes(this.params.requestName)) {
+                    // 只有小分块上传|复制才累计纯请求耗时，计算速度时用到
+                    this.parent.addParamValue('partTime', ms2s(httpTookTime));
+                  }
+                }
+                Object.assign(this.params, {
+                  httpFullTime: ms2s(httpFullTime),
+                  httpMd5: ms2s(httpMd5),
+                  httpSign: ms2s(httpSign),
+                  httpTookTime: ms2s(httpTookTime),
+                  httpSpeed: _speed < 0 ? 0 : _speed.toFixed(3)
+                });
+              }
               Object.assign(this.params, {
-                tookTime: tookTime,
                 networkType: networkType,
-                httpMd5: this.params.md5EndTime - this.params.md5StartTime,
-                httpSign: this.params.signEndTime - this.params.signStartTime,
-                httpFull: this.params.httpEndTime - this.params.httpStartTime,
-                result: err ? 'Fail' : 'Success',
+                requestResult: err ? 'Failure' : 'Success',
                 errorType: errorType,
                 errorCode: errorCode,
-                errorStatusCode: errorStatusCode,
+                errorHttpCode: errorHttpCode,
+                errorName: errorName,
                 errorMessage: errorMessage,
                 errorServiceName: errorServiceName,
                 errorRequestId: requestId
@@ -13648,16 +13765,16 @@ var Tracker = /*#__PURE__*/function () {
               if (this.params.name === 'getObject') {
                 this.params.size = data ? data.headers && data.headers['content-length'] : -1;
               }
-              if (this.params.reqUrl) {
+              if (this.params.url) {
                 try {
-                  exec = /^http(s)?:\/\/(.*?)\//.exec(this.params.reqUrl);
+                  exec = /^http(s)?:\/\/(.*?)\//.exec(this.params.url);
                   this.params.host = exec[2];
                 } catch (e) {
-                  this.params.host = this.params.reqUrl;
+                  this.params.host = this.params.url;
                 }
+                this.params.httpDomain = this.params.host;
               }
-              this.sendEvents();
-            case 16:
+            case 19:
             case "end":
               return _context.stop();
           }
@@ -13667,35 +13784,79 @@ var Tracker = /*#__PURE__*/function () {
         return _formatResult.apply(this, arguments);
       }
       return formatResult;
+    }() // 上报
+  }, {
+    key: "report",
+    value: function () {
+      var _report = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee2(err, data) {
+        var formattedParams;
+        return _regeneratorRuntime().wrap(function _callee2$(_context2) {
+          while (1) switch (_context2.prev = _context2.next) {
+            case 0:
+              if (!(!this.beacon && !this.clsReporter)) {
+                _context2.next = 2;
+                break;
+              }
+              return _context2.abrupt("return");
+            case 2:
+              _context2.next = 4;
+              return this.formatResult(err, data);
+            case 4:
+              formattedParams = formatParams(this.params);
+              if (this.beacon) {
+                this.sendEventsToBeacon(formattedParams);
+              }
+              if (this.clsReporter) {
+                this.sendEventsToCLS(formattedParams);
+              }
+            case 7:
+            case "end":
+              return _context2.stop();
+          }
+        }, _callee2, this);
+      }));
+      function report(_x3, _x4) {
+        return _report.apply(this, arguments);
+      }
+      return report;
     }() // 设置当前链路的参数
   }, {
     key: "setParams",
     value: function setParams(params) {
       Object.assign(this.params, params);
     }
-
-    // 使用灯塔延时上报
   }, {
-    key: "sendEvents",
-    value: function sendEvents() {
+    key: "addParamValue",
+    value: function addParamValue(key, value) {
+      this.params[key] = (+this.params[key] + +value).toFixed(3);
+    }
+
+    // 上报灯塔
+  }, {
+    key: "sendEventsToBeacon",
+    value: function sendEventsToBeacon(formattedParams) {
       // DeepTracker模式下才会上报分块上传内部细节
-      if (sliceUploadMethods.includes(this.params.name) && !this.deepTracker) {
+      var isSliceUploadFile = this.params.requestName === 'sliceUploadFile' || this.params.realApi === 'sliceUploadFile';
+      if (isSliceUploadFile && !this.deepTracker) {
         return;
       }
-      var eventCode = getEventCode(this.params.name);
-      var formattedParams = formatParams(this.params);
-
-      // 兜底处理
-      if (!this.beacon) {
-        this.beacon = getBeacon(this.delay || 5000);
-      }
-      if (this.params.delay === 0) {
+      var eventCode = 'qcloud_track_cos_sdk';
+      if (this.delay === 0) {
         // 实时上报
         this.beacon && this.beacon.onDirectUserAction(eventCode, formattedParams);
       } else {
         // 周期性上报
         this.beacon && this.beacon.onUserAction(eventCode, formattedParams);
       }
+    }
+
+    // 上报 cls
+  }, {
+    key: "sendEventsToCLS",
+    value: function sendEventsToCLS(formattedParams) {
+      // 是否实时上报
+      var immediate = !!(this.delay === 0);
+      this.clsReporter.log(formattedParams, immediate);
     }
 
     // 生成子实例，与父所属一个链路，可用于分块上传内部流程上报单个分块操作
@@ -13708,9 +13869,11 @@ var Tracker = /*#__PURE__*/function () {
         traceId: this.params.traceId,
         bucket: this.params.bucket,
         region: this.params.region,
+        accelerate: this.params.accelerate,
         fileKey: this.params.requestPath,
         customId: this.params.customId,
-        delay: this.params.delay
+        delay: this.params.delay,
+        clsReporter: this.clsReporter
       });
       return new Tracker(subParams);
     }
@@ -14094,8 +14257,8 @@ var apiWrapper = function apiWrapper(apiName, apiFn) {
 
     // tracker传递
     var tracker;
-    if (self.options.EnableTracker) {
-      if (params.calledBySdk === 'sliceUploadFile') {
+    if (self.options.EnableReporter) {
+      if (params.calledBySdk === 'sliceUploadFile' || params.calledBySdk === 'sliceCopyFile') {
         // 分块上传内部方法使用sliceUploadFile的子链路
         tracker = params.tracker && params.tracker.generateSubTracker({
           apiName: apiName
@@ -14104,15 +14267,19 @@ var apiWrapper = function apiWrapper(apiName, apiFn) {
         // uploadFile、uploadFiles方法在内部处理，此处不处理
         tracker = null;
       } else {
-        var fileSize = -1;
+        var fileSize = 0;
         if (params.Body) {
-          fileSize = typeof params.Body === 'string' ? params.Body.length : params.Body.size || params.Body.byteLength || -1;
+          fileSize = typeof params.Body === 'string' ? params.Body.length : params.Body.size || params.Body.byteLength || 0;
         }
+        var accelerate = self.options.UseAccelerate || typeof self.options.Domain === 'string' && self.options.Domain.includes('accelerate.');
         tracker = new Tracker({
-          Beacon: self.options.Beacon,
+          Beacon: self.options.BeaconReporter,
+          clsReporter: self.options.ClsReporter,
           bucket: params.Bucket,
           region: params.Region,
           apiName: apiName,
+          realApi: apiName,
+          accelerate: accelerate,
           fileKey: params.Key,
           fileSize: fileSize,
           deepTracker: self.options.DeepTracker,
@@ -14135,7 +14302,7 @@ var apiWrapper = function apiWrapper(apiName, apiFn) {
     };
     var _callback = function _callback(err, data) {
       // 格式化上报参数并上报
-      tracker && tracker.formatResult(err, data);
+      tracker && tracker.report(err, data);
       callback && callback(formatResult(err), formatResult(data));
     };
     var checkParams = function checkParams() {
