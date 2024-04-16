@@ -108,21 +108,6 @@ utils.getSystemInfo().then((res) => {
   Object.assign(deviceInfo, res);
 });
 
-// 分块上传原子方法
-const sliceUploadMethods = [
-  'multipartInit',
-  'multipartUpload',
-  'multipartComplete',
-  'multipartList',
-  'multipartListPart',
-  'multipartAbort',
-];
-
-const uploadApi = ['putObject', 'postObject', 'appendObject', 'sliceUploadFile', 'uploadFile', 'uploadFiles'].concat(
-  sliceUploadMethods
-);
-const downloadApi = ['getObject'];
-
 const transApiName = (api) => {
   if (['putObject', 'sliceUploadFile', 'uploadFile', 'uploadFiles'].includes(api)) {
     return 'UploadTask';

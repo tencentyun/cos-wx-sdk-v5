@@ -2,12 +2,12 @@ var COS = require('./lib/cos-wx-sdk-v5');
 var config = require('./config');
 const Beacon = require('./lib/beacon_mp.min');
 const ClsClient = require('./lib/cls.min');
-// const clsClient = new ClsClient({
-//   topicId: 'xxx',
-//   region: 'xxx',
-//   maxRetainDuration: 30, // 默认 30s
-//   maxRetainSize: 20, // 默认20条
-// });
+const clsClient = new ClsClient({
+  topicId: 'xxxxxx-xxxx-xxxx-xxxx-xxxxxx', // 日志主题 id
+  region: 'ap-guangzhou', // 日志主题所在地域，比如 ap-guangzhou，需在小程序平台设置域名白名单：https://ap-guangzhou.cls.tencentcs.com
+  maxRetainDuration: 30, // 默认 30s
+  maxRetainSize: 20, // 默认20条
+});
 
 // 签名回调
 var getAuthorization = function (options, callback) {

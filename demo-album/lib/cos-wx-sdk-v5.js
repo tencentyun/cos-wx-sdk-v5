@@ -13568,11 +13568,6 @@ var deviceInfo = {
 utils.getSystemInfo().then(function (res) {
   Object.assign(deviceInfo, res);
 });
-
-// 分块上传原子方法
-var sliceUploadMethods = ['multipartInit', 'multipartUpload', 'multipartComplete', 'multipartList', 'multipartListPart', 'multipartAbort'];
-var uploadApi = ['putObject', 'postObject', 'appendObject', 'sliceUploadFile', 'uploadFile', 'uploadFiles'].concat(sliceUploadMethods);
-var downloadApi = ['getObject'];
 var transApiName = function transApiName(api) {
   if (['putObject', 'sliceUploadFile', 'uploadFile', 'uploadFiles'].includes(api)) {
     return 'UploadTask';
