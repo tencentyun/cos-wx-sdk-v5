@@ -39,6 +39,7 @@ var defaultOptions = {
   SimpleUploadMethod: 'postObject', // 高级上传内部判断需要走简单上传时，指定的上传方法，可选postObject或putObject
   AutoSwitchHost: false,
   CopySourceParser: null, // 自定义拷贝源解析器
+  ObjectKeySimplifyCheck: true, // 开启合并校验 getObject Key
   /** 上报相关配置 **/
   DeepTracker: false, // 上报时是否对每个分块上传做单独上报
   TrackerDelay: 5000, // 周期性上报，单位毫秒。0代表实时上报
