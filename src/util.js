@@ -743,6 +743,21 @@ const encodeBase64 = function (str, safe) {
   return base64Str;
 };
 
+var simplifyPath = function (path) {
+  const names = path.split('/');
+  const stack = [];
+  for (const name of names) {
+    if (name === '..') {
+      if (stack.length) {
+        stack.pop();
+      }
+    } else if (name.length && name !== '.') {
+      stack.push(name);
+    }
+  }
+  return '/' + stack.join('/');
+};
+
 var util = {
   noop: noop,
   formatParams: formatParams,
@@ -778,6 +793,7 @@ var util = {
   error: error,
   getSourceParams: getSourceParams,
   encodeBase64: encodeBase64,
+  simplifyPath: simplifyPath
 };
 
 module.exports = util;
