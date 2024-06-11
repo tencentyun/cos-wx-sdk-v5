@@ -48,7 +48,6 @@ function createDataset() {
       Key: key, // 必须
       Url: url, // 请求的url，必须
       Body: body, // 请求体参数，必须
-      RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
       Headers: {
         // 设置请求体为 json，固定值，必须
         'Content-Type': 'application/json',
@@ -88,7 +87,6 @@ function updateDataset() {
       Key: key, // 必须
       Url: url, // 请求的url，必须
       Body: body, // 请求体参数，必须
-      RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
       Headers: {
         // 设置请求体为 json，固定值，必须
         'Content-Type': 'application/json',
@@ -124,7 +122,6 @@ function deleteDataset() {
       Key: key, // 必须
       Url: url, // 请求的url，必须
       Body: body, // 请求体参数，必须
-      RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
       Headers: {
         // 设置请求体为 json，固定值，必须
         'Content-Type': 'application/json',
@@ -162,7 +159,6 @@ function describeDatasets() {
         // 数据集名称前缀。;是否必传：否
         // prefix: 'test',
       },
-      RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
       Headers: {
         // 设置响应体为json，固定值，必须
         Accept: 'application/json',
@@ -197,7 +193,6 @@ function describeDataset() {
         // 是否需要实时统计数据集中文件相关信息。有效值： false：不统计，返回的文件的总大小、数量信息可能不正确也可能都为0。 true：需要统计，返回数据集中当前的文件的总大小、数量信息。 默认值为false。;是否必传：否
         statistics: false,
       },
-      RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
       Headers: {
         // 设置请求体为 json，固定值，必须
         'Content-Type': 'application/json',
@@ -235,7 +230,6 @@ function createDatasetBinding() {
       Key: key, // 必须
       Url: url, // 请求的url，必须
       Body: body, // 请求体参数，必须
-      RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
       Headers: {
         // 设置请求体为 json，固定值，必须
         'Content-Type': 'application/json',
@@ -273,7 +267,6 @@ function deleteDatasetBinding() {
       Key: key, // 必须
       Url: url, // 请求的url，必须
       Body: body, // 请求体参数，必须
-      RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
       Headers: {
         // 设置请求体为 json，固定值，必须
         'Content-Type': 'application/json',
@@ -310,7 +303,6 @@ function describeDatasetBinding() {
         // 资源标识字段，表示需要与数据集绑定的资源，当前仅支持COS存储桶，字段规则：cos://，其中BucketName表示COS存储桶名称，例如（需要进行urlencode）：cos%3A%2F%2Fexample-125000;是否必传：是
         uri: `cos://${config.Bucket}`,
       },
-      RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
       Headers: {
         // 设置响应体为json，固定值，必须
         Accept: 'application/json',
@@ -347,7 +339,6 @@ function describeDatasetBindings() {
         // 当绑定关系总数大于设置的MaxResults时，用于翻页的token。从NextToken开始按字典序返回绑定关系信息列表。第一次调用此接口时，设置为空。;是否必传：是
         // nexttoken: '',
       },
-      RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
       Headers: {
         // 设置响应体为json，固定值，必须
         Accept: 'application/json',
@@ -401,7 +392,6 @@ function createFileMetaIndex() {
       Key: key, // 必须
       Url: url, // 请求的url，必须
       Body: body, // 请求体参数，必须
-      RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
       Headers: {
         // 设置请求体为 json，固定值，必须
         'Content-Type': 'application/json',
@@ -439,7 +429,6 @@ function deleteFileMetaIndex() {
       Key: key, // 必须
       Url: url, // 请求的url，必须
       Body: body, // 请求体参数，必须
-      RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
       Headers: {
         // 设置请求体为 json，固定值，必须
         'Content-Type': 'application/json',
@@ -476,7 +465,6 @@ function describeFileMetaIndex() {
         // 资源标识字段，表示需要建立索引的文件地址，当前仅支持COS上的文件，字段规则：cos:///，其中BucketName表示COS存储桶名称，ObjectKey表示文件完整路径，例如：cos://examplebucket-1250000000/test1/img.jpg。 注意： 1、仅支持本账号内的COS文件 2、不支持HTTP开头的地址 3、需UrlEncode;是否必传：是
         uri: `cos://${config.Bucket}/ci/dog.jpeg`,
       },
-      RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
       Headers: {
         // 设置响应体为json，固定值，必须
         Accept: 'application/json',
@@ -527,7 +515,6 @@ function updateFileMetaIndex() {
       Key: key, // 必须
       Url: url, // 请求的url，必须
       Body: body, // 请求体参数，必须
-      RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
       Headers: {
         // 设置请求体为 json，固定值，必须
         'Content-Type': 'application/json',
@@ -586,7 +573,6 @@ function datasetSimpleQuery() {
       Key: key, // 必须
       Url: url, // 请求的url，必须
       Body: body, // 请求体参数，必须
-      RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
       Headers: {
         // 设置请求体为 json，固定值，必须
         'Content-Type': 'application/json',
@@ -630,7 +616,6 @@ function datasetFaceSearch() {
       Key: key, // 必须
       Url: url, // 请求的url，必须
       Body: body, // 请求体参数，必须
-      RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
       Headers: {
         // 设置请求体为 json，固定值，必须
         'Content-Type': 'application/json',
@@ -675,7 +660,6 @@ function searchImage() {
       Key: key, // 必须
       Url: url, // 请求的url，必须
       Body: body, // 请求体参数，必须
-      RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
       Headers: {
         // 设置请求体为 json，固定值，必须
         'Content-Type': 'application/json',

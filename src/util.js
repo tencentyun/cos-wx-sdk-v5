@@ -394,6 +394,10 @@ var formatParams = function (apiName, params) {
         'x-cos-server-side-encryption': 'ServerSideEncryption',
         'x-cos-server-side-encryption-cos-kms-key-id': 'SSEKMSKeyId',
         'x-cos-server-side-encryption-context': 'SSEContext',
+        // 上传时图片处理
+        'Pic-Operations': 'PicOperations',
+        // 上传返回 body
+        'x-cos-return-body': 'ReturnBody',
       };
       util.each(headerMap, function (paramKey, headerKey) {
         if (params[paramKey] !== undefined) {
@@ -764,6 +768,39 @@ var arrayBufferToString = function (arrayBuffer) {
   return decoder.decode(arrayBuffer);
 };
 
+// 解析响应体，兼容 xml、json
+var parseResBody = function (responseBody) {
+  var json;
+  if (responseBody && typeof responseBody === 'string') {
+    var isXml = responseBody.trim().indexOf('<') === 0;
+    var isJson = responseBody.trim().indexOf('{') === 0;
+    if (isXml) {
+      // xml 解析，解析失败返回{}
+      json = util.xml2json(responseBody) || {};
+    } else if (isJson) {
+      // json解析，解析失败返回原始 Body
+      try {
+        // 替换 json 中的换行符为空格，否则解析会出错
+        var formatBody = responseBody.replace(/\n/g, ' ');
+        var parsedBody = JSON.parse(formatBody);
+        // 确保解析出 json 对象
+        if (Object.prototype.toString.call(parsedBody) === '[object Object]') {
+          json = parsedBody;
+        } else {
+          json = responseBody;
+        }
+      } catch (e) {
+        json = responseBody;
+      }
+    } else {
+      json = responseBody;
+    }
+  } else {
+    json = responseBody || {};
+  }
+  return json;
+};
+
 var util = {
   noop: noop,
   formatParams: formatParams,
@@ -801,6 +838,7 @@ var util = {
   encodeBase64: encodeBase64,
   simplifyPath: simplifyPath,
   arrayBufferToString: arrayBufferToString,
+  parseResBody: parseResBody,
 };
 
 module.exports = util;
