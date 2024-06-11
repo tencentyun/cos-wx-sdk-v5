@@ -758,6 +758,12 @@ var simplifyPath = function (path) {
   return '/' + stack.join('/');
 };
 
+// 将ArrayBuffer转换为字符串
+var arrayBufferToString = function (arrayBuffer) {
+  const decoder = new TextDecoder('utf-8');
+  return decoder.decode(arrayBuffer);
+};
+
 var util = {
   noop: noop,
   formatParams: formatParams,
@@ -793,7 +799,8 @@ var util = {
   error: error,
   getSourceParams: getSourceParams,
   encodeBase64: encodeBase64,
-  simplifyPath: simplifyPath
+  simplifyPath: simplifyPath,
+  arrayBufferToString: arrayBufferToString,
 };
 
 module.exports = util;

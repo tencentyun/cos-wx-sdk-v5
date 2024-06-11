@@ -4085,22 +4085,60 @@ function _submitRequest(params, callback) {
       return;
     }
 
-    // 不对 body 进行转换，body 直接挂载返回
-    var jsonRes;
-    if (rawBody) {
-      jsonRes = {};
-      jsonRes.body = body;
-    } else {
-      try {
-        jsonRes = (body && body.indexOf('<') > -1 && body.indexOf('>') > -1 && util.xml2json(body)) || {};
-      } catch (e) {
-        jsonRes = body || {};
-      }
-    }
-
     // 请求返回码不为 200
     var statusCode = response.statusCode;
     var statusSuccess = Math.floor(statusCode / 100) === 2; // 200 202 204 206
+
+    // 响应错误时兼容 xml 和 json
+    var parseError = function (responseBody) {
+      var parsedBody = {};
+      var isXml = false;
+      try {
+        if (responseBody.indexOf('<') > -1 && responseBody.indexOf('>') > -1) {
+          var json = util.xml2json(responseBody) || {};
+          parsedBody = json && json.Error;
+          isXml = true;
+        }
+      } catch (e) {}
+      if (!isXml) {
+        try {
+          // 替换 json 中的换行符为空格，否则解析会出错
+          responseBody = responseBody.replace(/\n/g, ' ');
+          parsedBody = JSON.parse(responseBody);
+        } catch (e) {}
+      }
+      return parsedBody;
+    };
+
+    // 不对 body 进行转换，body 直接挂载返回
+    if (rawBody) {
+      if (statusSuccess) {
+        return cb(null, { body: body });
+      } else {
+        var errorBody = {};
+        // 报错但是返回了 blob，需要解析成 string
+        if (body instanceof ArrayBuffer) {
+          var errorStr = util.arrayBufferToString(body);
+          errorBody = parseError(errorStr);
+          return cb({ error: errorBody });
+        }
+        if (typeof body === 'string') {
+          errorBody = parseError(body);
+        } else {
+          errorBody = body;
+        }
+        return cb({ error: errorBody });
+      }
+    }
+
+    // 解析 xml body
+    var jsonRes;
+    try {
+      jsonRes = (body && body.indexOf('<') > -1 && body.indexOf('>') > -1 && util.xml2json(body)) || {};
+    } catch (e) {
+      jsonRes = body || {};
+    }
+
     if (!statusSuccess) {
       cb({ error: jsonRes.Error || jsonRes });
       return;

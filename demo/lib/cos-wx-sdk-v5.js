@@ -7448,7 +7448,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, scripts, repository, author, license, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.7.0\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo-sdk.js demo/test.js demo/ciDemo\",\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\",\"mime\":\"^2.4.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.7.1\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo-sdk.js demo/test.js demo/ciDemo\",\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\",\"mime\":\"^2.4.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -12764,22 +12764,65 @@ function _submitRequest(params, callback) {
       return;
     }
 
-    // 不对 body 进行转换，body 直接挂载返回
-    var jsonRes;
-    if (rawBody) {
-      jsonRes = {};
-      jsonRes.body = body;
-    } else {
-      try {
-        jsonRes = body && body.indexOf('<') > -1 && body.indexOf('>') > -1 && util.xml2json(body) || {};
-      } catch (e) {
-        jsonRes = body || {};
-      }
-    }
-
     // 请求返回码不为 200
     var statusCode = response.statusCode;
     var statusSuccess = Math.floor(statusCode / 100) === 2; // 200 202 204 206
+
+    // 响应错误时兼容 xml 和 json
+    var parseError = function parseError(responseBody) {
+      var parsedBody = {};
+      var isXml = false;
+      try {
+        if (responseBody.indexOf('<') > -1 && responseBody.indexOf('>') > -1) {
+          var json = util.xml2json(responseBody) || {};
+          parsedBody = json && json.Error;
+          isXml = true;
+        }
+      } catch (e) {}
+      if (!isXml) {
+        try {
+          // 替换 json 中的换行符为空格，否则解析会出错
+          responseBody = responseBody.replace(/\n/g, ' ');
+          parsedBody = JSON.parse(responseBody);
+        } catch (e) {}
+      }
+      return parsedBody;
+    };
+
+    // 不对 body 进行转换，body 直接挂载返回
+    if (rawBody) {
+      if (statusSuccess) {
+        return cb(null, {
+          body: body
+        });
+      } else {
+        var errorBody = {};
+        // 报错但是返回了 blob，需要解析成 string
+        if (body instanceof ArrayBuffer) {
+          var errorStr = util.arrayBufferToString(body);
+          errorBody = parseError(errorStr);
+          return cb({
+            error: errorBody
+          });
+        }
+        if (typeof body === 'string') {
+          errorBody = parseError(body);
+        } else {
+          errorBody = body;
+        }
+        return cb({
+          error: errorBody
+        });
+      }
+    }
+
+    // 解析 xml body
+    var jsonRes;
+    try {
+      jsonRes = body && body.indexOf('<') > -1 && body.indexOf('>') > -1 && util.xml2json(body) || {};
+    } catch (e) {
+      jsonRes = body || {};
+    }
     if (!statusSuccess) {
       cb({
         error: jsonRes.Error || jsonRes
@@ -14626,6 +14669,12 @@ var simplifyPath = function simplifyPath(path) {
   }
   return '/' + stack.join('/');
 };
+
+// 将ArrayBuffer转换为字符串
+var arrayBufferToString = function arrayBufferToString(arrayBuffer) {
+  var decoder = new TextDecoder('utf-8');
+  return decoder.decode(arrayBuffer);
+};
 var util = {
   noop: noop,
   formatParams: formatParams,
@@ -14661,7 +14710,8 @@ var util = {
   error: error,
   getSourceParams: getSourceParams,
   encodeBase64: encodeBase64,
-  simplifyPath: simplifyPath
+  simplifyPath: simplifyPath,
+  arrayBufferToString: arrayBufferToString
 };
 module.exports = util;
 
