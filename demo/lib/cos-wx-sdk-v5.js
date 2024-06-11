@@ -7522,12 +7522,18 @@ function sliceUploadFile(params, callback) {
 
   // 上传分块完成，开始 uploadSliceComplete 操作
   ep.on('upload_slice_complete', function (UploadData) {
+    var metaHeaders = {};
+    util.each(params.Headers, function (val, k) {
+      var shortKey = k.toLowerCase();
+      if (shortKey.indexOf('x-cos-meta-') === 0 || shortKey === 'pic-operations') metaHeaders[k] = val;
+    });
     uploadSliceComplete.call(self, {
       Bucket: Bucket,
       Region: Region,
       Key: Key,
       UploadId: UploadData.UploadId,
       SliceList: UploadData.SliceList,
+      Headers: metaHeaders,
       tracker: tracker
     }, function (err, data) {
       if (!self._isRunningTask(TaskId)) return;
@@ -8167,6 +8173,7 @@ function uploadSliceComplete(params, callback) {
       UploadId: UploadId,
       Parts: Parts,
       calledBySdk: 'sliceUploadFile',
+      Headers: params.Headers || {},
       tracker: params.tracker
     }, tryCallback);
   }, function (err, data) {
