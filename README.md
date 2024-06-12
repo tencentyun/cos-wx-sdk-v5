@@ -26,28 +26,36 @@ var Bucket = 'test-1250000000';
 var Region = 'ap-guangzhou';
 
 // 初始化实例
-var cos = new COS({
+const cos = new COS({
+    SimpleUploadMethod: 'putObject', // 强烈建议，高级上传、批量上传内部对小文件做简单上传时使用putObject,sdk版本至少需要v1.3.0
     getAuthorization: function (options, callback) {
-        // 异步获取签名
+        // 初始化时不会调用，只有调用 cos 方法（例如 cos.putObject）时才会进入
+        // 异步获取临时密钥
         wx.request({
-            url: 'https://example.com/sts.php', // 步骤二提供的签名接口
+            url: 'https://example.com/server/sts.php',
             data: {
-                Method: options.Method,
-                Key: options.Key
+                bucket: options.Bucket,
+                region: options.Region,
             },
-            dataType: 'text',
+            dataType: 'json',
             success: function (result) {
-                var data = result.data;
+                const data = result.data;
+                const credentials = data && data.credentials;
+                if (!data || !credentials) return console.error('credentials invalid');
                 callback({
-                    TmpSecretId: data.credentials && data.credentials.tmpSecretId,
-                    TmpSecretKey: data.credentials && data.credentials.tmpSecretKey,
-                    XCosSecurityToken: data.credentials && data.credentials.sessionToken,
-                    ExpiredTime: data.expiredTime,
+                    TmpSecretId: credentials.tmpSecretId,
+                    TmpSecretKey: credentials.tmpSecretKey,
+                    // v1.2.0之前版本的 SDK 使用 XCosSecurityToken 而不是 SecurityToken
+                    SecurityToken: credentials.sessionToken,
+                    // 建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
+                    StartTime: data.startTime, // 时间戳，单位秒，如：1580000000
+                    ExpiredTime: data.expiredTime, // 时间戳，单位秒，如：1580000900
                 });
             }
         });
     }
 });
+
 
 // 选择文件
 wx.chooseImage({

@@ -7448,7 +7448,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, scripts, repository, author, license, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.7.0\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo-sdk.js demo/test.js demo/ciDemo\",\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\",\"mime\":\"^2.4.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.7.1\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo-sdk.js demo/test.js demo/ciDemo\",\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\",\"mime\":\"^2.4.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -7522,12 +7522,20 @@ function sliceUploadFile(params, callback) {
 
   // 上传分块完成，开始 uploadSliceComplete 操作
   ep.on('upload_slice_complete', function (UploadData) {
+    var metaHeaders = {};
+    util.each(params.Headers, function (val, k) {
+      var shortKey = k.toLowerCase();
+      if (shortKey.indexOf('x-cos-meta-') === 0 || shortKey === 'pic-operations') {
+        metaHeaders[k] = val;
+      }
+    });
     uploadSliceComplete.call(self, {
       Bucket: Bucket,
       Region: Region,
       Key: Key,
       UploadId: UploadData.UploadId,
       SliceList: UploadData.SliceList,
+      Headers: metaHeaders,
       tracker: tracker
     }, function (err, data) {
       if (!self._isRunningTask(TaskId)) return;
@@ -8167,6 +8175,7 @@ function uploadSliceComplete(params, callback) {
       UploadId: UploadId,
       Parts: Parts,
       calledBySdk: 'sliceUploadFile',
+      Headers: params.Headers || {},
       tracker: params.tracker
     }, tryCallback);
   }, function (err, data) {
@@ -12764,22 +12773,31 @@ function _submitRequest(params, callback) {
       return;
     }
 
-    // 不对 body 进行转换，body 直接挂载返回
-    var jsonRes;
-    if (rawBody) {
-      jsonRes = {};
-      jsonRes.body = body;
-    } else {
-      try {
-        jsonRes = body && body.indexOf('<') > -1 && body.indexOf('>') > -1 && util.xml2json(body) || {};
-      } catch (e) {
-        jsonRes = body || {};
-      }
-    }
-
     // 请求返回码不为 200
     var statusCode = response.statusCode;
     var statusSuccess = Math.floor(statusCode / 100) === 2; // 200 202 204 206
+
+    // 不对 body 进行转换，body 直接挂载返回
+    if (rawBody) {
+      if (statusSuccess) {
+        return cb(null, {
+          body: body
+        });
+      } else {
+        // 报错但是返回了 ArrayBuffer，需要解析成 string
+        if (body instanceof ArrayBuffer) {
+          var errorStr = util.arrayBufferToString(body);
+          var json = util.parseResBody(errorStr);
+          var errorBody = json.Error || json;
+          return cb({
+            error: errorBody
+          });
+        }
+      }
+    }
+
+    // 解析body，兼容 xml、json，解析失败时完整返回
+    var jsonRes = util.parseResBody(body);
     if (!statusSuccess) {
       cb({
         error: jsonRes.Error || jsonRes
@@ -14240,7 +14258,9 @@ var formatParams = function formatParams(apiName, params) {
         // SSE-COS、SSE-KMS
         'x-cos-server-side-encryption': 'ServerSideEncryption',
         'x-cos-server-side-encryption-cos-kms-key-id': 'SSEKMSKeyId',
-        'x-cos-server-side-encryption-context': 'SSEContext'
+        'x-cos-server-side-encryption-context': 'SSEContext',
+        // 上传时图片处理
+        'Pic-Operations': 'PicOperations'
       };
       util.each(headerMap, function (paramKey, headerKey) {
         if (params[paramKey] !== undefined) {
@@ -14626,6 +14646,46 @@ var simplifyPath = function simplifyPath(path) {
   }
   return '/' + stack.join('/');
 };
+
+// 将ArrayBuffer转换为字符串
+var arrayBufferToString = function arrayBufferToString(arrayBuffer) {
+  var decoder = new TextDecoder('utf-8');
+  return decoder.decode(arrayBuffer);
+};
+
+// 解析响应体，兼容 xml、json
+var parseResBody = function parseResBody(responseBody) {
+  var json;
+  if (responseBody && typeof responseBody === 'string') {
+    var trimBody = responseBody.trim();
+    var isXml = trimBody.indexOf('<') === 0;
+    var isJson = trimBody.indexOf('{') === 0;
+    if (isXml) {
+      // xml 解析，解析失败返回{}
+      json = util.xml2json(responseBody) || {};
+    } else if (isJson) {
+      // json解析，解析失败返回原始 Body
+      try {
+        // 替换 json 中的换行符为空格，否则解析会出错
+        var formatBody = responseBody.replace(/\n/g, ' ');
+        var parsedBody = JSON.parse(formatBody);
+        // 确保解析出 json 对象
+        if (Object.prototype.toString.call(parsedBody) === '[object Object]') {
+          json = parsedBody;
+        } else {
+          json = responseBody;
+        }
+      } catch (e) {
+        json = responseBody;
+      }
+    } else {
+      json = responseBody;
+    }
+  } else {
+    json = responseBody || {};
+  }
+  return json;
+};
 var util = {
   noop: noop,
   formatParams: formatParams,
@@ -14661,7 +14721,9 @@ var util = {
   error: error,
   getSourceParams: getSourceParams,
   encodeBase64: encodeBase64,
-  simplifyPath: simplifyPath
+  simplifyPath: simplifyPath,
+  arrayBufferToString: arrayBufferToString,
+  parseResBody: parseResBody
 };
 module.exports = util;
 

@@ -22,6 +22,7 @@ var option = {
       picProcessDao: '图片处理',
       mediaProcessDao: '媒体处理',
       fileProcessDao: '文件处理',
+      metaDao: '智能检索',
       otherDao: '其他',
     },
   },

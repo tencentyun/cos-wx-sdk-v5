@@ -4085,22 +4085,28 @@ function _submitRequest(params, callback) {
       return;
     }
 
-    // 不对 body 进行转换，body 直接挂载返回
-    var jsonRes;
-    if (rawBody) {
-      jsonRes = {};
-      jsonRes.body = body;
-    } else {
-      try {
-        jsonRes = (body && body.indexOf('<') > -1 && body.indexOf('>') > -1 && util.xml2json(body)) || {};
-      } catch (e) {
-        jsonRes = body || {};
-      }
-    }
-
     // 请求返回码不为 200
     var statusCode = response.statusCode;
     var statusSuccess = Math.floor(statusCode / 100) === 2; // 200 202 204 206
+
+    // 不对 body 进行转换，body 直接挂载返回
+    if (rawBody) {
+      if (statusSuccess) {
+        return cb(null, { body: body });
+      } else {
+        // 报错但是返回了 ArrayBuffer，需要解析成 string
+        if (body instanceof ArrayBuffer) {
+          var errorStr = util.arrayBufferToString(body);
+          var json = util.parseResBody(errorStr);
+          var errorBody = json.Error || json;
+          return cb({ error: errorBody });
+        }
+      }
+    }
+
+    // 解析body，兼容 xml、json，解析失败时完整返回
+    var jsonRes = util.parseResBody(body);
+
     if (!statusSuccess) {
       cb({ error: jsonRes.Error || jsonRes });
       return;

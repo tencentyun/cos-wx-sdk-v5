@@ -4,6 +4,7 @@ const docPreviewDao = require('./ciDemo/docPreview');
 const picProcessDao = require('./ciDemo/picProcess');
 const mediaProcessDao = require('./ciDemo/mediaProcess');
 const fileProcessDao = require('./ciDemo/fileProcess');
+const metaDao =require('./ciDemo/meta');
 const otherDao = require('./ciDemo/other');
 
 module.exports = {
@@ -13,5 +14,6 @@ module.exports = {
   picProcessDao,
   mediaProcessDao,
   fileProcessDao,
+  metaDao,
   otherDao
 };

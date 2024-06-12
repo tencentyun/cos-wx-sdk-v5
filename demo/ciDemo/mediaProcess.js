@@ -71,7 +71,7 @@ function getSnapshot() {
     },
     function (err, data) {
       if (err) {
-        console.log('请求出错');
+        console.log(err);
       } else {
         const imgBase64 = wx.arrayBufferToBase64(data.Body);
         console.log(imgBase64);
