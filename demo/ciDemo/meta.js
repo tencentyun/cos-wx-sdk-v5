@@ -61,7 +61,7 @@ function createDataset() {
         console.log(err);
       } else {
         // 处理请求成功
-        console.log(data.Body && JSON.parse(data.Body));
+        console.log(data);
       }
     }
   );
@@ -100,7 +100,7 @@ function updateDataset() {
         console.log(err);
       } else {
         // 处理请求成功
-        console.log(data.Body && JSON.parse(data.Body));
+        console.log(data);
       }
     }
   );
@@ -135,7 +135,7 @@ function deleteDataset() {
         console.log(err);
       } else {
         // 处理请求成功
-        console.log(data.Body && JSON.parse(data.Body));
+        console.log(data);
       }
     }
   );
@@ -170,7 +170,7 @@ function describeDatasets() {
         console.log(err);
       } else {
         // 处理请求成功
-        console.log(data.Body && JSON.parse(data.Body));
+        console.log(data);
       }
     }
   );
@@ -206,7 +206,7 @@ function describeDataset() {
         console.log(err);
       } else {
         // 处理请求成功
-        console.log(data.Body && JSON.parse(data.Body));
+        console.log(data);
       }
     }
   );
@@ -243,7 +243,7 @@ function createDatasetBinding() {
         console.log(err);
       } else {
         // 处理请求成功
-        console.log(data.Body && JSON.parse(data.Body));
+        console.log(data);
       }
     }
   );
@@ -280,7 +280,7 @@ function deleteDatasetBinding() {
         console.log(err);
       } else {
         // 处理请求成功
-        console.log(data.Body && JSON.parse(data.Body));
+        console.log(data);
       }
     }
   );
@@ -314,7 +314,7 @@ function describeDatasetBinding() {
         console.log(err);
       } else {
         // 处理请求成功
-        console.log(data.Body && JSON.parse(data.Body));
+        console.log(data);
       }
     }
   );
@@ -350,7 +350,7 @@ function describeDatasetBindings() {
         console.log(err);
       } else {
         // 处理请求成功
-        console.log(data.Body && JSON.parse(data.Body));
+        console.log(data);
       }
     }
   );
@@ -405,7 +405,7 @@ function createFileMetaIndex() {
         console.log(err);
       } else {
         // 处理请求成功
-        console.log(data.Body && JSON.parse(data.Body));
+        console.log(data);
       }
     }
   );
@@ -442,7 +442,7 @@ function deleteFileMetaIndex() {
         console.log(err);
       } else {
         // 处理请求成功
-        console.log(data.Body && JSON.parse(data.Body));
+        console.log(data);
       }
     }
   );
@@ -476,7 +476,7 @@ function describeFileMetaIndex() {
         console.log(err.message);
       } else {
         // 处理请求成功
-        console.log(data.Body && JSON.parse(data.Body));
+        console.log(data);
       }
     }
   );
@@ -528,7 +528,7 @@ function updateFileMetaIndex() {
         console.log(err);
       } else {
         // 处理请求成功
-        console.log(data.Body && JSON.parse(data.Body));
+        console.log(data);
       }
     }
   );
@@ -586,7 +586,7 @@ function datasetSimpleQuery() {
         console.log(err);
       } else {
         // 处理请求成功
-        console.log(data.Body && JSON.parse(data.Body));
+        console.log(data);
       }
     }
   );
@@ -630,7 +630,7 @@ function datasetFaceSearch() {
         console.log(err);
       } else {
         // 处理请求成功
-        console.log(data.Body && JSON.parse(data.Body));
+        console.log(data);
       }
     }
   );
@@ -674,7 +674,7 @@ function searchImage() {
         console.log(err);
       } else {
         // 处理请求成功
-        console.log(data.Body && JSON.parse(data.Body));
+        console.log(data);
       }
     }
   );
