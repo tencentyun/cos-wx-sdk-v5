@@ -11,7 +11,7 @@
 
 由于签名计算放在前端会暴露 SecretId 和 SecretKey，我们把签名计算过程放在后端实现，前端通过 ajax 向后端获取签名结果，正式部署时请再后端加一层自己网站本身的权限检验。
 
-这里提供 [PHP 和 NodeJS 的签名例子](https://github.com/tencentyun/cos-js-sdk-v5/blob/master/server/)，其他语言，请参照对应的 [XML SDK](https://cloud.tencent.com/document/product/436/6474)
+这里提供 [NodeJS 的签名示例](https://github.com/tencentyun/cos-js-sdk-v5/blob/master/server/)，其他语言，请参照对应的 [XML SDK](https://cloud.tencent.com/document/product/436/6474)
 
 ### 三、上传例子
 
@@ -31,8 +31,11 @@ const cos = new COS({
     getAuthorization: function (options, callback) {
         // 初始化时不会调用，只有调用 cos 方法（例如 cos.putObject）时才会进入
         // 异步获取临时密钥
+        // 服务端 JS 示例：https://github.com/tencentyun/cos-js-sdk-v5/blob/master/server/
+        // 服务端其他语言参考 COS STS SDK ：https://github.com/tencentyun/qcloud-cos-sts-sdk
+        // STS 详细文档指引看：https://cloud.tencent.com/document/product/436/14048
         wx.request({
-            url: 'https://example.com/server/sts.php',
+            url: 'https://example.com/server/sts', // url 替换成您自己的后端服务
             data: {
                 bucket: options.Bucket,
                 region: options.Region,
@@ -42,6 +45,8 @@ const cos = new COS({
                 const data = result.data;
                 const credentials = data && data.credentials;
                 if (!data || !credentials) return console.error('credentials invalid');
+                // 检查credentials格式
+                console.log(credentials);
                 callback({
                     TmpSecretId: credentials.tmpSecretId,
                     TmpSecretKey: credentials.tmpSecretKey,
