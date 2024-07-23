@@ -3753,7 +3753,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, scripts, repository, author, license, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.7.1\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo-sdk.js demo/test.js demo/ciDemo\",\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"fast-xml-parser\":\"^4.4.0\",\"mime\":\"^2.4.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.7.2\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo-sdk.js demo/test.js demo/ciDemo\",\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"fast-xml-parser\":\"^4.4.0\",\"mime\":\"^2.4.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -8754,6 +8754,21 @@ function getAuthorizationAsync(params, callback) {
   } else {
     // 内部计算获取签名
     return function () {
+      var KeyTime = '';
+      if (self.options.StartTime && params.Expires) {
+        if (self.options.StartTime.toString().length !== 10) {
+          return cb(util.error(new Error('params "StartTime" should be 10 digits')));
+        }
+        KeyTime = self.options.StartTime + ';' + (self.options.StartTime + params.Expires * 1);
+      } else if (self.options.StartTime && self.options.ExpiredTime) {
+        if (self.options.StartTime.toString().length !== 10) {
+          return cb(util.error(new Error('params "StartTime" should be 10 digits')));
+        }
+        if (self.options.ExpiredTime.toString().length !== 10) {
+          return cb(util.error(new Error('params "ExpiredTime" should be 10 digits')));
+        }
+        KeyTime = self.options.StartTime + ';' + self.options.ExpiredTime * 1;
+      }
       var Authorization = util.getAuth({
         SecretId: params.SecretId || self.options.SecretId,
         SecretKey: params.SecretKey || self.options.SecretKey,
@@ -8762,6 +8777,7 @@ function getAuthorizationAsync(params, callback) {
         Query: params.Query,
         Headers: headers,
         Expires: params.Expires,
+        KeyTime: KeyTime,
         SystemClockOffset: self.options.SystemClockOffset,
         ForceSignHost: forceSignHost
       });
@@ -8928,6 +8944,7 @@ function submitRequest(params, callback) {
             networkError: networkError
           });
           params.SwitchHost = switchHost;
+          params.retry = true;
           next(tryTimes + 1);
         } else {
           callback(err, data);
@@ -9008,6 +9025,9 @@ function _submitRequest(params, callback) {
 
   // 清理 undefined 和 null 字段
   opt.headers && (opt.headers = util.clearKey(opt.headers));
+  if (params.retry) {
+    opt.headers['x-cos-sdk-retry'] = true;
+  }
   opt = util.clearKey(opt);
 
   // progress
@@ -9250,6 +9270,10 @@ var defaultOptions = {
   SecretKey: '',
   SecurityToken: '',
   // 使用临时密钥需要注意自行刷新 Token
+  StartTime: 0,
+  // 临时密钥返回起始时间
+  ExpiredTime: 0,
+  // 临时密钥过期时间
   ChunkRetryTimes: 2,
   FileParallelLimit: 3,
   ChunkParallelLimit: 3,
