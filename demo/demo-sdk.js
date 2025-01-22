@@ -524,6 +524,16 @@ var objectDao = {
       requestCallback
     );
   },
+  'deleteObject  删除文件': function () {
+    cos.deleteObject(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: '1.zip'
+      },
+      requestCallback
+    );
+  },
 };
 
 var advanceObjectDao = {
