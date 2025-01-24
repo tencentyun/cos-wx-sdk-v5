@@ -11051,7 +11051,7 @@ function submitRequest(params, callback) {
   var method = params.method.toLowerCase();
   var body = params.body;
   if (body) {
-    if (!contentLength) {
+    if (!contentLength && typeof body === 'string') {
       // 传了请求体需补充 content-length
       var buffer = Buffer.from(body, 'utf-8');
       var _contentLength = buffer.length;
