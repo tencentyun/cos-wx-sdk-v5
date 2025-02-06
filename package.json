@@ -2,7 +2,7 @@
   "name": "cos-wx-sdk-v5",
   "version": "1.8.0",
   "description": "小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)",
-  "main": "demo/lib/cos-wx-sdk-v5.min.js",
+  "main": "dist/cos-wx-sdk-v5.min.js",
   "scripts": {
     "prettier": "prettier --write src demo/demo-sdk.js demo/test.js demo/ciDemo",
     "dev": "cross-env NODE_ENV=development node build.js --mode=development",
@@ -18,8 +18,7 @@
   "license": "ISC",
   "dependencies": {
     "fast-xml-parser": "4.5.0",
-    "mime": "^2.4.6",
-    "patch-package": "^8.0.0"
+    "mime": "^2.4.6"
   },
   "devDependencies": {
     "@babel/core": "7.17.9",
@@ -28,6 +27,7 @@
     "body-parser": "^1.18.3",
     "cross-env": "^7.0.3",
     "express": "^4.17.1",
+    "patch-package": "^8.0.0",
     "prettier": "^3.0.1",
     "qcloud-cos-sts": "^3.0.2",
     "terser-webpack-plugin": "4.2.3",
