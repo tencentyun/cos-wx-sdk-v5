@@ -1,0 +1,9 @@
+.github/
+coverage/
+demo/
+demo-album/
+server/
+.babelrc
+.prettierrc
+build.js
+CHANGELOG.md
