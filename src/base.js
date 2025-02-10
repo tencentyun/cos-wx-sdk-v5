@@ -3017,7 +3017,7 @@ function multipartComplete(params, callback) {
         protocol: self.options.Protocol,
         domain: self.options.Domain,
         bucket: params.Bucket,
-        region: params.Region,
+        region: !self.options.UseAccelerate ? params.Region : 'accelerate',
         object: params.Key,
         isLocation: true,
       });
