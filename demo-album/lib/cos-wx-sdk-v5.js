@@ -5909,7 +5909,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, scripts, repository, author, license, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.8.0\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-wx-sdk-v5.min.js\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo-sdk.js demo/test.js demo/ciDemo\",\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\",\"postinstall\":\"patch-package\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"fast-xml-parser\":\"4.5.0\",\"mime\":\"^2.4.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"patch-package\":\"^8.0.0\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.8.0-beta.1\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-wx-sdk-v5.min.js\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo-sdk.js demo/test.js demo/ciDemo\",\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\",\"postinstall\":\"patch-package\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"fast-xml-parser\":\"4.5.0\",\"mime\":\"^2.4.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"patch-package\":\"^8.0.0\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -9395,7 +9395,9 @@ function putObject(params, callback) {
   // 特殊处理 Cache-Control、Content-Type，避免代理更改这两个字段导致写入到 Object 属性里
   var headers = params.Headers;
   if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
-  if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = mime.getType(params.Key) || 'application/octet-stream';
+  if (!headers['Content-Type'] && !headers['content-type']) {
+    headers['Content-Type'] = mime.getType(params.Key) || '';
+  }
   var needCalcMd5 = params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5 || self.options.UploadCheckContentMd5;
   var tracker = params.tracker;
   needCalcMd5 && tracker && tracker.setParams({
@@ -10092,7 +10094,9 @@ function multipartInit(params, callback) {
 
   // 特殊处理 Cache-Control、Content-Type
   if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
-  if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = mime.getType(params.Key) || 'application/octet-stream';
+  if (!headers['Content-Type'] && !headers['content-type']) {
+    headers['Content-Type'] = mime.getType(params.Key) || '';
+  }
   submitRequest.call(self, {
     Action: 'name/cos:InitiateMultipartUpload',
     method: 'POST',
@@ -11036,8 +11040,8 @@ function submitRequest(params, callback) {
   params.qs && (params.qs = util.clearKey(params.qs));
   var Query = util.clone(params.qs);
   params.action && (Query[params.action] = '');
-  var contentType = '';
-  var contentLength = '';
+  var contentType;
+  var contentLength = 0;
   // 指定一个默认的 content-type，如不指定小程序默认会指定 application/json
   var defaultContentType = 'application/json';
   util.each(params.headers, function (value, key) {
@@ -11064,8 +11068,8 @@ function submitRequest(params, callback) {
       params.headers['Content-Length'] = 0;
     }
   }
-  // 补充默认 content-type
-  if (!contentType) {
+  // 补充默认 content-type，(putObject/multipartInit 不需要补充)
+  if (contentType === undefined) {
     params.headers['Content-Type'] = defaultContentType;
   }
   var paramsUrl = params.url || params.Url;

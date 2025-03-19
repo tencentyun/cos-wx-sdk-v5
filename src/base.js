@@ -2111,8 +2111,9 @@ function putObject(params, callback) {
   // 特殊处理 Cache-Control、Content-Type，避免代理更改这两个字段导致写入到 Object 属性里
   var headers = params.Headers;
   if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
-  if (!headers['Content-Type'] && !headers['content-type'])
-    headers['Content-Type'] = mime.getType(params.Key) || 'application/octet-stream';
+  if (!headers['Content-Type'] && !headers['content-type']) {
+    headers['Content-Type'] = mime.getType(params.Key) || '';
+  }
 
   var needCalcMd5 = params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5 || self.options.UploadCheckContentMd5;
   var tracker = params.tracker;
@@ -2858,8 +2859,9 @@ function multipartInit(params, callback) {
 
   // 特殊处理 Cache-Control、Content-Type
   if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
-  if (!headers['Content-Type'] && !headers['content-type'])
-    headers['Content-Type'] = mime.getType(params.Key) || 'application/octet-stream';
+  if (!headers['Content-Type'] && !headers['content-type']) {
+    headers['Content-Type'] = mime.getType(params.Key) || '';
+  }
 
   submitRequest.call(
     self,
@@ -3892,8 +3894,8 @@ function submitRequest(params, callback) {
   var Query = util.clone(params.qs);
   params.action && (Query[params.action] = '');
 
-  var contentType = '';
-  var contentLength = '';
+  var contentType;
+  var contentLength = 0;
   // 指定一个默认的 content-type，如不指定小程序默认会指定 application/json
   var defaultContentType = 'application/json';
   util.each(params.headers, function (value, key) {
@@ -3921,8 +3923,8 @@ function submitRequest(params, callback) {
       params.headers['Content-Length'] = 0;
     }
   }
-  // 补充默认 content-type
-  if (!contentType) {
+  // 补充默认 content-type，(putObject/multipartInit 不需要补充)
+  if (contentType === undefined) {
     params.headers['Content-Type'] = defaultContentType;
   }
 
