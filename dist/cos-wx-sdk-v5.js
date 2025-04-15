@@ -9396,7 +9396,7 @@ function putObject(params, callback) {
   var headers = params.Headers;
   if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
   if (!headers['Content-Type'] && !headers['content-type']) {
-    headers['Content-Type'] = mime.getType(params.Key) || '';
+    headers['Content-Type'] = mime.getType(params.Key) || 'application/octet-stream';
   }
   var needCalcMd5 = params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5 || self.options.UploadCheckContentMd5;
   var tracker = params.tracker;
@@ -10095,7 +10095,7 @@ function multipartInit(params, callback) {
   // 特殊处理 Cache-Control、Content-Type
   if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
   if (!headers['Content-Type'] && !headers['content-type']) {
-    headers['Content-Type'] = mime.getType(params.Key) || '';
+    headers['Content-Type'] = mime.getType(params.Key) || 'application/octet-stream';
   }
   submitRequest.call(self, {
     Action: 'name/cos:InitiateMultipartUpload',
