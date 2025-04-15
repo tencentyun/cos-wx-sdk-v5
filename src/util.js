@@ -741,8 +741,14 @@ var compareVersion = function (v1, v2) {
 };
 
 var canFileSlice = (function () {
-  var appBaseInfo = wx.getAppBaseInfo() || {};
-  var deviceInfo = wx.getDeviceInfo() || {};
+  var appBaseInfo = {};
+  var deviceInfo = {};
+  if (wx.canIUse('getAppBaseInfo')) {
+    appBaseInfo = wx.getAppBaseInfo() || {};
+  }
+  if (wx.canIUse('getDeviceInfo')) {
+    deviceInfo = wx.getDeviceInfo() || {};
+  }
   var sdkVersion = appBaseInfo.SDKVersion;
   var platform = deviceInfo.platform;
   var support = compareVersion(sdkVersion, '2.10.0') >= 0;

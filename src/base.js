@@ -2112,7 +2112,7 @@ function putObject(params, callback) {
   var headers = params.Headers;
   if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
   if (!headers['Content-Type'] && !headers['content-type']) {
-    headers['Content-Type'] = mime.getType(params.Key) || '';
+    headers['Content-Type'] = mime.getType(params.Key) || 'application/octet-stream';
   }
 
   var needCalcMd5 = params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5 || self.options.UploadCheckContentMd5;
@@ -2860,7 +2860,7 @@ function multipartInit(params, callback) {
   // 特殊处理 Cache-Control、Content-Type
   if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
   if (!headers['Content-Type'] && !headers['content-type']) {
-    headers['Content-Type'] = mime.getType(params.Key) || '';
+    headers['Content-Type'] = mime.getType(params.Key) || 'application/octet-stream';
   }
 
   submitRequest.call(
@@ -3561,9 +3561,7 @@ function getAuthorizationAsync(params, callback) {
   var headers = util.clone(params.Headers);
   var headerHost = '';
   util.each(headers, function (v, k) {
-    if (v === '') {
-      delete headers[k];
-    }
+    (v === '' || ['content-type', 'cache-control'].indexOf(k.toLowerCase()) > -1) && delete headers[k];
     if (k.toLowerCase() === 'host') headerHost = v;
   });
 
@@ -3893,40 +3891,6 @@ function submitRequest(params, callback) {
 
   var Query = util.clone(params.qs);
   params.action && (Query[params.action] = '');
-
-  var contentType;
-  var contentLength = 0;
-  // 指定一个默认的 content-type，如不指定小程序默认会指定 application/json
-  var defaultContentType = 'application/json';
-  util.each(params.headers, function (value, key) {
-    if (key.toLowerCase() === 'content-type') {
-      contentType = value;
-    }
-    if (key.toLowerCase() === 'content-length') {
-      contentLength = value;
-    }
-  });
-
-  var method = params.method.toLowerCase();
-  var body = params.body;
-  if (body) {
-    if (!contentLength && typeof body === 'string') {
-      // 传了请求体需补充 content-length
-      const buffer = Buffer.from(body, 'utf-8');
-      const contentLength = buffer.length;
-      params.headers['Content-Length'] = contentLength;
-    }
-  } else {
-    // 非 get、head 请求的空请求体需补充 content-length = 0
-    var noContentLengthMethods = ['get', 'head'].includes(method);
-    if (!noContentLengthMethods) {
-      params.headers['Content-Length'] = 0;
-    }
-  }
-  // 补充默认 content-type，(putObject/multipartInit 不需要补充)
-  if (contentType === undefined) {
-    params.headers['Content-Type'] = defaultContentType;
-  }
 
   var paramsUrl = params.url || params.Url;
   var SignHost =
