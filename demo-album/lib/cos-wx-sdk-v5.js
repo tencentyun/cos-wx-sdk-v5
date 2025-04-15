@@ -10958,6 +10958,7 @@ var getSkewTime = function getSkewTime(offset) {
   return Date.now() + (offset || 0);
 };
 var compareVersion = function compareVersion(v1, v2) {
+  if (!v1 || !v2) return -1;
   v1 = v1.split('.');
   v2 = v2.split('.');
   var len = Math.max(v1.length, v2.length);
