@@ -12067,8 +12067,14 @@ var utils = {
       wxSystem: 'can_not_get_system_info',
       wxSdkVersion: 'can_not_get_system_info'
     };
-    var appBaseInfo = wx.getAppBaseInfo() || {};
-    var deviceInfo = wx.getDeviceInfo() || {};
+    var appBaseInfo = {};
+    var deviceInfo = {};
+    if (wx.canIUse('getAppBaseInfo')) {
+      appBaseInfo = wx.getAppBaseInfo() || {};
+    }
+    if (wx.canIUse('getDeviceInfo')) {
+      deviceInfo = wx.getDeviceInfo() || {};
+    }
     var sdkVersion = appBaseInfo.SDKVersion || 'can_not_get_system_info';
     var version = appBaseInfo.version || 'can_not_get_system_info';
     var platform = deviceInfo.platform || 'can_not_get_system_info';
@@ -13116,8 +13122,14 @@ var compareVersion = function compareVersion(v1, v2) {
   return 0;
 };
 var canFileSlice = function () {
-  var appBaseInfo = wx.getAppBaseInfo() || {};
-  var deviceInfo = wx.getDeviceInfo() || {};
+  var appBaseInfo = {};
+  var deviceInfo = {};
+  if (wx.canIUse('getAppBaseInfo')) {
+    appBaseInfo = wx.getAppBaseInfo() || {};
+  }
+  if (wx.canIUse('getDeviceInfo')) {
+    deviceInfo = wx.getDeviceInfo() || {};
+  }
   var sdkVersion = appBaseInfo.SDKVersion;
   var platform = deviceInfo.platform;
   var support = compareVersion(sdkVersion, '2.10.0') >= 0;

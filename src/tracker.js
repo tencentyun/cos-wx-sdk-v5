@@ -62,8 +62,15 @@ const utils = {
       wxSystem: 'can_not_get_system_info',
       wxSdkVersion: 'can_not_get_system_info',
     };
-    const appBaseInfo = wx.getAppBaseInfo() || {};
-    const deviceInfo = wx.getDeviceInfo() || {};
+
+    let appBaseInfo = {};
+    let deviceInfo = {};
+    if (wx.canIUse('getAppBaseInfo')) {
+      appBaseInfo = wx.getAppBaseInfo() || {};
+    }
+    if (wx.canIUse('getDeviceInfo')) {
+      deviceInfo = wx.getDeviceInfo() || {};
+    }
     const sdkVersion = appBaseInfo.SDKVersion || 'can_not_get_system_info';
     const version = appBaseInfo.version || 'can_not_get_system_info';
     const platform = deviceInfo.platform || 'can_not_get_system_info';
