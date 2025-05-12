@@ -8869,7 +8869,15 @@ function allowRetry(err) {
         canRetry = true;
       }
     } else if (Math.floor(err.statusCode / 100) === 5) {
-      canRetry = true;
+      return {
+        canRetry: true,
+        networkError: false
+      };
+    } else if (err.message === 'timeout') {
+      return {
+        canRetry: true,
+        networkError: self.options.AutoSwitchHost
+      };
     }
     /**
      * 归为网络错误
@@ -8877,8 +8885,8 @@ function allowRetry(err) {
      * 2、statusCode === 3xx || 4xx || 5xx && no requestId
      */
     if (!err.statusCode) {
-      canRetry = self.options.AutoSwitchHost;
-      networkError = true;
+      canRetry = true;
+      networkError = self.options.AutoSwitchHost;
     } else {
       var statusCode = Math.floor(err.statusCode / 100);
       var requestId = (err === null || err === void 0 ? void 0 : err.headers) && (err === null || err === void 0 ? void 0 : err.headers['x-cos-request-id']);
@@ -8981,7 +8989,7 @@ function submitRequest(params, callback) {
         tracker && tracker.setParams({
           httpEndTime: new Date().getTime()
         });
-        if (err && tryTimes < 2 && canRetry) {
+        if (err && tryTimes < 4 && canRetry) {
           if (params.headers) {
             delete params.headers.Authorization;
             delete params.headers['token'];
@@ -8997,8 +9005,8 @@ function submitRequest(params, callback) {
             networkError: networkError
           });
           params.SwitchHost = switchHost;
-          // 重试时增加请求头
-          params.headers['x-cos-sdk-retry'] = true;
+          // 重试时增加请求头，小程序里传字符串类型
+          params.headers['x-cos-sdk-retry'] = 'true';
           next(tryTimes + 1);
         } else {
           callback(err, data);
