@@ -8,7 +8,7 @@
     "dev": "cross-env NODE_ENV=development node build.js --mode=development",
     "build": "cross-env NODE_ENV=production node build.js --mode=production",
     "sts.js": "node server/sts.js",
-    "postinstall": "patch-package"
+    "postinstall": "node scripts/patch-check.js"
   },
   "repository": {
     "type": "git",

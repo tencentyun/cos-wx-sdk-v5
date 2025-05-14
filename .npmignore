@@ -1,8 +1,11 @@
+.idea/
+.vscode/
 .github/
 coverage/
 demo/
 demo-album/
 server/
+patches/
 .babelrc
 .prettierrc
 build.js
