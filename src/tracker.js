@@ -62,7 +62,6 @@ const utils = {
       wxSystem: 'can_not_get_system_info',
       wxSdkVersion: 'can_not_get_system_info',
     };
-
     let appBaseInfo = {};
     let deviceInfo = {};
     if (wx.canIUse('getAppBaseInfo')) {

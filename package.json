@@ -1,6 +1,6 @@
 {
   "name": "cos-wx-sdk-v5",
-  "version": "1.9.0-beta.0",
+  "version": "1.9.0-beta.1",
   "description": "小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)",
   "main": "dist/cos-wx-sdk-v5.min.js",
   "scripts": {
@@ -8,7 +8,7 @@
     "dev": "cross-env NODE_ENV=development node build.js --mode=development",
     "build": "cross-env NODE_ENV=production node build.js --mode=production",
     "sts.js": "node server/sts.js",
-    "postinstall": "patch-package"
+    "postinstall": "node scripts/patch-check.js"
   },
   "repository": {
     "type": "git",
