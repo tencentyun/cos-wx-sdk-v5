@@ -87,7 +87,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
 /******/
 /******/ 	// __webpack_public_path__
-/******/ 	__webpack_require__.p = "/Users/chrisftian/Documents/projects/cos-sdk/cos-wx-sdk-v5/demo/lib";
+/******/ 	__webpack_require__.p = "/Users/chrisftian/Documents/projects/cos-sdk/cos-wx-sdk-v5/dist";
 /******/
 /******/
 /******/ 	// Load entry module and return exports
@@ -1405,6 +1405,36 @@ module.exports = {
 
 /***/ }),
 
+/***/ "./node_modules/fast-xml-parser/src/ignoreAttributes.js":
+/*!**************************************************************!*\
+  !*** ./node_modules/fast-xml-parser/src/ignoreAttributes.js ***!
+  \**************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+function getIgnoreAttributesFn(ignoreAttributes) {
+    if (typeof ignoreAttributes === 'function') {
+        return ignoreAttributes
+    }
+    if (Array.isArray(ignoreAttributes)) {
+        return (attrName) => {
+            for (const pattern of ignoreAttributes) {
+                if (typeof pattern === 'string' && attrName === pattern) {
+                    return true
+                }
+                if (pattern instanceof RegExp && pattern.test(attrName)) {
+                    return true
+                }
+            }
+        }
+    }
+    return () => false
+}
+
+module.exports = getIgnoreAttributesFn
+
+/***/ }),
+
 /***/ "./node_modules/fast-xml-parser/src/util.js":
 /*!**************************************************!*\
   !*** ./node_modules/fast-xml-parser/src/util.js ***!
@@ -1937,6 +1967,7 @@ function getPositionFromMatch(match) {
 
 //parse Empty Node as self closing node
 const buildFromOrderedJs = __webpack_require__(/*! ./orderedJs2Xml */ "./node_modules/fast-xml-parser/src/xmlbuilder/orderedJs2Xml.js");
+const getIgnoreAttributesFn = __webpack_require__(/*! ../ignoreAttributes */ "./node_modules/fast-xml-parser/src/ignoreAttributes.js")
 
 const defaultOptions = {
   attributeNamePrefix: '@_',
@@ -1974,11 +2005,12 @@ const defaultOptions = {
 
 function Builder(options) {
   this.options = Object.assign({}, defaultOptions, options);
-  if (this.options.ignoreAttributes || this.options.attributesGroupName) {
+  if (this.options.ignoreAttributes === true || this.options.attributesGroupName) {
     this.isAttribute = function(/*a*/) {
       return false;
     };
   } else {
+    this.ignoreAttributesFn = getIgnoreAttributesFn(this.options.ignoreAttributes)
     this.attrPrefixLen = this.options.attributeNamePrefix.length;
     this.isAttribute = isAttribute;
   }
@@ -2007,13 +2039,14 @@ Builder.prototype.build = function(jObj) {
         [this.options.arrayNodeName] : jObj
       }
     }
-    return this.j2x(jObj, 0).val;
+    return this.j2x(jObj, 0, []).val;
   }
 };
 
-Builder.prototype.j2x = function(jObj, level) {
+Builder.prototype.j2x = function(jObj, level, ajPath) {
   let attrStr = '';
   let val = '';
+  const jPath = ajPath.join('.')
   for (let key in jObj) {
     if(!Object.prototype.hasOwnProperty.call(jObj, key)) continue;
     if (typeof jObj[key] === 'undefined') {
@@ -2036,9 +2069,9 @@ Builder.prototype.j2x = function(jObj, level) {
     } else if (typeof jObj[key] !== 'object') {
       //premitive type
       const attr = this.isAttribute(key);
-      if (attr) {
+      if (attr && !this.ignoreAttributesFn(attr, jPath)) {
         attrStr += this.buildAttrPairStr(attr, '' + jObj[key]);
-      }else {
+      } else if (!attr) {
         //tag value
         if (key === this.options.textNodeName) {
           let newval = this.options.tagValueProcessor(key, '' + jObj[key]);
@@ -2051,6 +2084,7 @@ Builder.prototype.j2x = function(jObj, level) {
       //repeated nodes
       const arrLen = jObj[key].length;
       let listTagVal = "";
+      let listTagAttr = "";
       for (let j = 0; j < arrLen; j++) {
         const item = jObj[key][j];
         if (typeof item === 'undefined') {
@@ -2060,17 +2094,27 @@ Builder.prototype.j2x = function(jObj, level) {
           else val += this.indentate(level) + '<' + key + '/' + this.tagEndChar;
           // val += this.indentate(level) + '<' + key + '/' + this.tagEndChar;
         } else if (typeof item === 'object') {
-          if(this.options.oneListGroup ){
-            listTagVal += this.j2x(item, level + 1).val;
+          if(this.options.oneListGroup){
+            const result = this.j2x(item, level + 1, ajPath.concat(key));
+            listTagVal += result.val;
+            if (this.options.attributesGroupName && item.hasOwnProperty(this.options.attributesGroupName)) {
+              listTagAttr += result.attrStr
+            }
           }else{
-            listTagVal += this.processTextOrObjNode(item, key, level)
+            listTagVal += this.processTextOrObjNode(item, key, level, ajPath)
           }
         } else {
-          listTagVal += this.buildTextValNode(item, key, '', level);
+          if (this.options.oneListGroup) {
+            let textValue = this.options.tagValueProcessor(key, item);
+            textValue = this.replaceEntitiesValue(textValue);
+            listTagVal += textValue;
+          } else {
+            listTagVal += this.buildTextValNode(item, key, '', level);
+          }
         }
       }
       if(this.options.oneListGroup){
-        listTagVal = this.buildObjectNode(listTagVal, key, '', level);
+        listTagVal = this.buildObjectNode(listTagVal, key, listTagAttr, level);
       }
       val += listTagVal;
     } else {
@@ -2082,7 +2126,7 @@ Builder.prototype.j2x = function(jObj, level) {
           attrStr += this.buildAttrPairStr(Ks[j], '' + jObj[key][Ks[j]]);
         }
       } else {
-        val += this.processTextOrObjNode(jObj[key], key, level)
+        val += this.processTextOrObjNode(jObj[key], key, level, ajPath)
       }
     }
   }
@@ -2097,8 +2141,8 @@ Builder.prototype.buildAttrPairStr = function(attrName, val){
   } else return ' ' + attrName + '="' + val + '"';
 }
 
-function processTextOrObjNode (object, key, level) {
-  const result = this.j2x(object, level + 1);
+function processTextOrObjNode (object, key, level, ajPath) {
+  const result = this.j2x(object, level + 1, ajPath.concat(key));
   if (object[this.options.textNodeName] !== undefined && Object.keys(object).length === 1) {
     return this.buildTextValNode(object[this.options.textNodeName], key, result.attrStr, level);
   } else {
@@ -2590,6 +2634,7 @@ const util = __webpack_require__(/*! ../util */ "./node_modules/fast-xml-parser/
 const xmlNode = __webpack_require__(/*! ./xmlNode */ "./node_modules/fast-xml-parser/src/xmlparser/xmlNode.js");
 const readDocType = __webpack_require__(/*! ./DocTypeReader */ "./node_modules/fast-xml-parser/src/xmlparser/DocTypeReader.js");
 const toNumber = __webpack_require__(/*! strnum */ "./node_modules/strnum/strnum.js");
+const getIgnoreAttributesFn = __webpack_require__(/*! ../ignoreAttributes */ "./node_modules/fast-xml-parser/src/ignoreAttributes.js")
 
 // const regx =
 //   '<((!\\[CDATA\\[([\\s\\S]*?)(]]>))|((NAME:)?(NAME))([^>]*)>|((\\/)(NAME)\\s*>))([^<]*)'
@@ -2638,6 +2683,7 @@ class OrderedObjParser{
     this.readStopNodeData = readStopNodeData;
     this.saveTextToParentTag = saveTextToParentTag;
     this.addChild = addChild;
+    this.ignoreAttributesFn = getIgnoreAttributesFn(this.options.ignoreAttributes)
   }
 
 }
@@ -2710,7 +2756,7 @@ function resolveNameSpace(tagname) {
 const attrsRegx = new RegExp('([^\\s=]+)\\s*(=\\s*([\'"])([\\s\\S]*?)\\3)?', 'gm');
 
 function buildAttributesMap(attrStr, jPath, tagName) {
-  if (!this.options.ignoreAttributes && typeof attrStr === 'string') {
+  if (this.options.ignoreAttributes !== true && typeof attrStr === 'string') {
     // attrStr = attrStr.replace(/\r?\n/g, ' ');
     //attrStr = attrStr || attrStr.trim();
 
@@ -2719,6 +2765,9 @@ function buildAttributesMap(attrStr, jPath, tagName) {
     const attrs = {};
     for (let i = 0; i < len; i++) {
       const attrName = this.resolveNameSpace(matches[i][1]);
+      if (this.ignoreAttributesFn(attrName, jPath)) {
+        continue
+      }
       let oldVal = matches[i][4];
       let aName = this.options.attributeNamePrefix + attrName;
       if (attrName.length) {
@@ -2764,7 +2813,7 @@ function buildAttributesMap(attrStr, jPath, tagName) {
 }
 
 const parseXml = function(xmlData) {
-  xmlData = xmlData.replace(/\r\n?/g, "\n"); //TODO: remove this line
+  // xmlData = xmlData.replace(/\r\n?/g, "\n"); //TODO: remove this line
   const xmlObj = new xmlNode('!xml');
   let currentNode = xmlObj;
   let textData = "";
@@ -3753,7 +3802,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, scripts, repository, author, license, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.7.2\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"demo/lib/cos-wx-sdk-v5.min.js\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo-sdk.js demo/test.js demo/ciDemo\",\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"fast-xml-parser\":\"^4.4.0\",\"mime\":\"^2.4.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-wx-sdk-v5\",\"version\":\"1.8.0\",\"description\":\"小程序 SDK for [腾讯云对象存储服务](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-wx-sdk-v5.min.js\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo-sdk.js demo/test.js demo/ciDemo\",\"dev\":\"cross-env NODE_ENV=development node build.js --mode=development\",\"build\":\"cross-env NODE_ENV=production node build.js --mode=production\",\"sts.js\":\"node server/sts.js\",\"postinstall\":\"patch-package\"},\"repository\":{\"type\":\"git\",\"url\":\"http://github.com/tencentyun/cos-wx-sdk-v5.git\"},\"author\":\"carsonxu\",\"license\":\"ISC\",\"dependencies\":{\"fast-xml-parser\":\"4.5.0\",\"mime\":\"^2.4.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^7.0.3\",\"express\":\"^4.17.1\",\"patch-package\":\"^8.0.0\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -7239,7 +7288,9 @@ function putObject(params, callback) {
   // 特殊处理 Cache-Control、Content-Type，避免代理更改这两个字段导致写入到 Object 属性里
   var headers = params.Headers;
   if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
-  if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = mime.getType(params.Key) || 'application/octet-stream';
+  if (!headers['Content-Type'] && !headers['content-type']) {
+    headers['Content-Type'] = mime.getType(params.Key) || 'application/octet-stream';
+  }
   var needCalcMd5 = params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5 || self.options.UploadCheckContentMd5;
   var tracker = params.tracker;
   needCalcMd5 && tracker && tracker.setParams({
@@ -7936,7 +7987,9 @@ function multipartInit(params, callback) {
 
   // 特殊处理 Cache-Control、Content-Type
   if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
-  if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = mime.getType(params.Key) || 'application/octet-stream';
+  if (!headers['Content-Type'] && !headers['content-type']) {
+    headers['Content-Type'] = mime.getType(params.Key) || 'application/octet-stream';
+  }
   submitRequest.call(self, {
     Action: 'name/cos:InitiateMultipartUpload',
     method: 'POST',
@@ -8088,7 +8141,7 @@ function multipartComplete(params, callback) {
       protocol: self.options.Protocol,
       domain: self.options.Domain,
       bucket: params.Bucket,
-      region: params.Region,
+      region: !self.options.UseAccelerate ? params.Region : 'accelerate',
       object: params.Key,
       isLocation: true
     });
@@ -8816,7 +8869,15 @@ function allowRetry(err) {
         canRetry = true;
       }
     } else if (Math.floor(err.statusCode / 100) === 5) {
-      canRetry = true;
+      return {
+        canRetry: true,
+        networkError: false
+      };
+    } else if (err.message === 'timeout') {
+      return {
+        canRetry: true,
+        networkError: self.options.AutoSwitchHost
+      };
     }
     /**
      * 归为网络错误
@@ -8824,8 +8885,8 @@ function allowRetry(err) {
      * 2、statusCode === 3xx || 4xx || 5xx && no requestId
      */
     if (!err.statusCode) {
-      canRetry = self.options.AutoSwitchHost;
-      networkError = true;
+      canRetry = true;
+      networkError = self.options.AutoSwitchHost;
     } else {
       var statusCode = Math.floor(err.statusCode / 100);
       var requestId = (err === null || err === void 0 ? void 0 : err.headers) && (err === null || err === void 0 ? void 0 : err.headers['x-cos-request-id']);
@@ -8928,7 +8989,7 @@ function submitRequest(params, callback) {
         tracker && tracker.setParams({
           httpEndTime: new Date().getTime()
         });
-        if (err && tryTimes < 2 && canRetry) {
+        if (err && tryTimes < 4 && canRetry) {
           if (params.headers) {
             delete params.headers.Authorization;
             delete params.headers['token'];
@@ -8944,7 +9005,8 @@ function submitRequest(params, callback) {
             networkError: networkError
           });
           params.SwitchHost = switchHost;
-          params.retry = true;
+          // 重试时增加请求头，小程序里传字符串类型
+          params.headers['x-cos-sdk-retry'] = 'true';
           next(tryTimes + 1);
         } else {
           callback(err, data);
@@ -9025,9 +9087,6 @@ function _submitRequest(params, callback) {
 
   // 清理 undefined 和 null 字段
   opt.headers && (opt.headers = util.clearKey(opt.headers));
-  if (params.retry) {
-    opt.headers['x-cos-sdk-retry'] = true;
-  }
   opt = util.clearKey(opt);
 
   // progress
@@ -9866,62 +9925,38 @@ var utils = {
   },
   // 获取系统信息
   getSystemInfo: function getSystemInfo() {
-    var defaultInfo = {
-      devicePlatform: '',
-      wxVersion: '',
-      wxSystem: '',
-      wxSdkVersion: ''
+    var baseInfo = {
+      // ↓上报项
+      devicePlatform: 'can_not_get_system_info',
+      // ios/anroid/windows/mac/devtools
+      wxVersion: 'can_not_get_system_info',
+      wxSystem: 'can_not_get_system_info',
+      wxSdkVersion: 'can_not_get_system_info'
     };
-    return new Promise(function (resolve) {
-      if (wx.canIUse('getSystemInfo')) {
-        try {
-          wx.getSystemInfo({
-            success: function success(res) {
-              var platform = res.platform,
-                version = res.version,
-                system = res.system,
-                SDKVersion = res.SDKVersion;
-              Object.assign(defaultInfo, {
-                devicePlatform: platform,
-                wxVersion: version,
-                wxSystem: system,
-                wxSdkVersion: SDKVersion
-              });
-              resolve(defaultInfo);
-            }
-          });
-        } catch (e) {
-          resolve({
-            devicePlatform: 'can_not_get_system_info',
-            wxVersion: 'can_not_get_system_info',
-            wxSystem: 'can_not_get_system_info',
-            wxSdkVersion: 'can_not_get_system_info'
-          });
-        }
-      } else {
-        resolve({
-          devicePlatform: 'can_not_get_system_info',
-          wxVersion: 'can_not_get_system_info',
-          wxSystem: 'can_not_get_system_info',
-          wxSdkVersion: 'can_not_get_system_info'
-        });
-      }
+    var appBaseInfo = {};
+    var deviceInfo = {};
+    if (wx.canIUse('getAppBaseInfo')) {
+      appBaseInfo = wx.getAppBaseInfo() || {};
+    }
+    if (wx.canIUse('getDeviceInfo')) {
+      deviceInfo = wx.getDeviceInfo() || {};
+    }
+    var sdkVersion = appBaseInfo.SDKVersion || 'can_not_get_system_info';
+    var version = appBaseInfo.version || 'can_not_get_system_info';
+    var platform = deviceInfo.platform || 'can_not_get_system_info';
+    var system = deviceInfo.system || 'can_not_get_system_info';
+    Object.assign(baseInfo, {
+      devicePlatform: platform,
+      wxVersion: version,
+      wxSystem: system,
+      wxSdkVersion: sdkVersion
     });
+    return baseInfo;
   }
 };
 
 // 设备信息，只取一次值
-var deviceInfo = {
-  // ↓上报项
-  devicePlatform: '',
-  // ios/anroid/windows/mac/devtools
-  wxVersion: '',
-  wxSystem: '',
-  wxSdkVersion: ''
-};
-utils.getSystemInfo().then(function (res) {
-  Object.assign(deviceInfo, res);
-});
+var deviceInfo = utils.getSystemInfo();
 var transApiName = function transApiName(api) {
   if (['putObject', 'sliceUploadFile', 'uploadFile', 'uploadFiles'].includes(api)) {
     return 'UploadTask';
@@ -10269,14 +10304,37 @@ var xmlParser = new XMLParser({
   // 忽略 XML 声明
   ignoreAttributes: true,
   // 忽略属性
-  parseTagValue: false // 关闭自动解析
+  parseTagValue: false,
+  // 关闭自动解析
+  trimValues: false // 关闭默认 trim
 });
 var xmlBuilder = new XMLBuilder();
 
+// 删掉不需要的#text
+var textNodeName = '#text';
+var deleteTextNodes = function deleteTextNodes(obj) {
+  if (!isObject(obj)) return;
+  for (var i in obj) {
+    var item = obj[i];
+    if (typeof item === 'string') {
+      if (i === textNodeName) {
+        delete obj[i];
+      }
+    } else if (Array.isArray(item)) {
+      item.forEach(function (i) {
+        deleteTextNodes(i);
+      });
+    } else if (isObject(item)) {
+      deleteTextNodes(item);
+    }
+  }
+};
+
 // XML 对象转 JSON 对象
 var xml2json = function xml2json(bodyStr) {
-  var d = xmlParser.parse(bodyStr);
-  return d;
+  var json = xmlParser.parse(bodyStr);
+  deleteTextNodes(json);
+  return json;
 };
 
 // JSON 对象转 XML 对象
@@ -10322,12 +10380,12 @@ var obj2str = function obj2str(obj, lowerCaseKey) {
 };
 
 // 可以签入签名的headers
-var signHeaders = ['cache-control', 'content-disposition', 'content-encoding', 'content-length', 'content-md5', 'expect', 'expires', 'host', 'if-match', 'if-modified-since', 'if-none-match', 'if-unmodified-since', 'origin', 'range', 'transfer-encoding', 'pic-operations'];
+var signHeaders = ['cache-control', 'content-disposition', 'content-encoding', 'content-length', 'content-md5', 'content-type', 'expect', 'expires', 'host', 'if-match', 'if-modified-since', 'if-none-match', 'if-unmodified-since', 'origin', 'range', 'transfer-encoding', 'pic-operations'];
 var getSignHeaderObj = function getSignHeaderObj(headers) {
   var signHeaderObj = {};
   for (var i in headers) {
     var key = i.toLowerCase();
-    if (key.indexOf('x-cos-') > -1 || signHeaders.indexOf(key) > -1) {
+    if (key.indexOf('x-cos-') > -1 || key.indexOf('x-ci-') > -1 || signHeaders.indexOf(key) > -1) {
       signHeaderObj[i] = headers[i];
     }
   }
@@ -10476,6 +10534,9 @@ function extend(target, source) {
 }
 function isArray(arr) {
   return arr instanceof Array;
+}
+function isObject(obj) {
+  return Object.prototype.toString.call(obj) === '[object Object]';
 }
 function isInArray(arr, item) {
   var flag = false;
@@ -10673,8 +10734,8 @@ var apiWrapper = function apiWrapper(apiName, apiFn) {
     // 代理回调函数
     var formatResult = function formatResult(result) {
       if (result && result.headers) {
-        result.headers['x-cos-request-id'] && (result.RequestId = result.headers['x-cos-request-id']);
         result.headers['x-ci-request-id'] && (result.RequestId = result.headers['x-ci-request-id']);
+        result.headers['x-cos-request-id'] && (result.RequestId = result.headers['x-cos-request-id']);
         result.headers['x-cos-version-id'] && (result.VersionId = result.headers['x-cos-version-id']);
         result.headers['x-cos-delete-marker'] && (result.DeleteMarker = result.headers['x-cos-delete-marker']);
       }
@@ -10905,6 +10966,7 @@ var getSkewTime = function getSkewTime(offset) {
   return Date.now() + (offset || 0);
 };
 var compareVersion = function compareVersion(v1, v2) {
+  if (!v1 || !v2) return -1;
   v1 = v1.split('.');
   v2 = v2.split('.');
   var len = Math.max(v1.length, v2.length);
@@ -10926,9 +10988,18 @@ var compareVersion = function compareVersion(v1, v2) {
   return 0;
 };
 var canFileSlice = function () {
-  var systemInfo = wx.getSystemInfoSync();
-  var support = compareVersion(systemInfo.SDKVersion, '2.10.0') >= 0;
-  var needWarning = !support && systemInfo.platform === 'devtools';
+  var appBaseInfo = {};
+  var deviceInfo = {};
+  if (wx.canIUse('getAppBaseInfo')) {
+    appBaseInfo = wx.getAppBaseInfo() || {};
+  }
+  if (wx.canIUse('getDeviceInfo')) {
+    deviceInfo = wx.getDeviceInfo() || {};
+  }
+  var sdkVersion = appBaseInfo.SDKVersion;
+  var platform = deviceInfo.platform;
+  var support = compareVersion(sdkVersion, '2.10.0') >= 0;
+  var needWarning = !support && platform === 'devtools';
   return function () {
     if (needWarning) console.warn('当前小程序版本小于 2.10.0，不支持分片上传，请更新软件。');
     needWarning = false;

@@ -11,13 +11,35 @@ var xmlParser = new XMLParser({
   ignoreDeclaration: true, // 忽略 XML 声明
   ignoreAttributes: true, // 忽略属性
   parseTagValue: false, // 关闭自动解析
+  trimValues: false, // 关闭默认 trim
 });
 var xmlBuilder = new XMLBuilder();
 
+// 删掉不需要的#text
+var textNodeName = '#text';
+var deleteTextNodes = function (obj) {
+  if (!isObject(obj)) return;
+  for (let i in obj) {
+    var item = obj[i];
+    if (typeof item === 'string') {
+      if (i === textNodeName) {
+        delete obj[i];
+      }
+    } else if (Array.isArray(item)) {
+      item.forEach(function (i) {
+        deleteTextNodes(i);
+      });
+    } else if (isObject(item)) {
+      deleteTextNodes(item);
+    }
+  }
+};
+
 // XML 对象转 JSON 对象
 var xml2json = function (bodyStr) {
-  var d = xmlParser.parse(bodyStr);
-  return d;
+  var json = xmlParser.parse(bodyStr);
+  deleteTextNodes(json);
+  return json;
 };
 
 // JSON 对象转 XML 对象
@@ -76,6 +98,7 @@ var signHeaders = [
   'content-encoding',
   'content-length',
   'content-md5',
+  'content-type',
   'expect',
   'expires',
   'host',
@@ -93,7 +116,7 @@ var getSignHeaderObj = function (headers) {
   var signHeaderObj = {};
   for (var i in headers) {
     var key = i.toLowerCase();
-    if (key.indexOf('x-cos-') > -1 || signHeaders.indexOf(key) > -1) {
+    if (key.indexOf('x-cos-') > -1 || key.indexOf('x-ci-') > -1 || signHeaders.indexOf(key) > -1) {
       signHeaderObj[i] = headers[i];
     }
   }
@@ -258,6 +281,10 @@ function extend(target, source) {
 
 function isArray(arr) {
   return arr instanceof Array;
+}
+
+function isObject(obj) {
+  return Object.prototype.toString.call(obj) === '[object Object]';
 }
 
 function isInArray(arr, item) {
@@ -479,8 +506,8 @@ var apiWrapper = function (apiName, apiFn) {
     // 代理回调函数
     var formatResult = function (result) {
       if (result && result.headers) {
-        result.headers['x-cos-request-id'] && (result.RequestId = result.headers['x-cos-request-id']);
         result.headers['x-ci-request-id'] && (result.RequestId = result.headers['x-ci-request-id']);
+        result.headers['x-cos-request-id'] && (result.RequestId = result.headers['x-cos-request-id']);
         result.headers['x-cos-version-id'] && (result.VersionId = result.headers['x-cos-version-id']);
         result.headers['x-cos-delete-marker'] && (result.DeleteMarker = result.headers['x-cos-delete-marker']);
       }
@@ -687,6 +714,7 @@ var getSkewTime = function (offset) {
 };
 
 var compareVersion = function (v1, v2) {
+  if (!v1 || !v2) return -1;
   v1 = v1.split('.');
   v2 = v2.split('.');
   var len = Math.max(v1.length, v2.length);
@@ -713,9 +741,18 @@ var compareVersion = function (v1, v2) {
 };
 
 var canFileSlice = (function () {
-  var systemInfo = wx.getSystemInfoSync();
-  var support = compareVersion(systemInfo.SDKVersion, '2.10.0') >= 0;
-  var needWarning = !support && systemInfo.platform === 'devtools';
+  var appBaseInfo = {};
+  var deviceInfo = {};
+  if (wx.canIUse('getAppBaseInfo')) {
+    appBaseInfo = wx.getAppBaseInfo() || {};
+  }
+  if (wx.canIUse('getDeviceInfo')) {
+    deviceInfo = wx.getDeviceInfo() || {};
+  }
+  var sdkVersion = appBaseInfo.SDKVersion;
+  var platform = deviceInfo.platform;
+  var support = compareVersion(sdkVersion, '2.10.0') >= 0;
+  var needWarning = !support && platform === 'devtools';
   return function () {
     if (needWarning) console.warn('当前小程序版本小于 2.10.0，不支持分片上传，请更新软件。');
     needWarning = false;

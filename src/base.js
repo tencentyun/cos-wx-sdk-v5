@@ -2111,8 +2111,9 @@ function putObject(params, callback) {
   // 特殊处理 Cache-Control、Content-Type，避免代理更改这两个字段导致写入到 Object 属性里
   var headers = params.Headers;
   if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
-  if (!headers['Content-Type'] && !headers['content-type'])
+  if (!headers['Content-Type'] && !headers['content-type']) {
     headers['Content-Type'] = mime.getType(params.Key) || 'application/octet-stream';
+  }
 
   var needCalcMd5 = params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5 || self.options.UploadCheckContentMd5;
   var tracker = params.tracker;
@@ -2858,8 +2859,9 @@ function multipartInit(params, callback) {
 
   // 特殊处理 Cache-Control、Content-Type
   if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
-  if (!headers['Content-Type'] && !headers['content-type'])
+  if (!headers['Content-Type'] && !headers['content-type']) {
     headers['Content-Type'] = mime.getType(params.Key) || 'application/octet-stream';
+  }
 
   submitRequest.call(
     self,
@@ -3017,7 +3019,7 @@ function multipartComplete(params, callback) {
         protocol: self.options.Protocol,
         domain: self.options.Domain,
         bucket: params.Bucket,
-        region: params.Region,
+        region: !self.options.UseAccelerate ? params.Region : 'accelerate',
         object: params.Key,
         isLocation: true,
       });
@@ -3832,16 +3834,18 @@ function allowRetry(err) {
         canRetry = true;
       }
     } else if (Math.floor(err.statusCode / 100) === 5) {
-      canRetry = true;
-    }
+      return { canRetry: true, networkError: false };
+    } else if (err.message === 'timeout') {
+      return { canRetry: true, networkError: self.options.AutoSwitchHost };
+    } 
     /**
      * 归为网络错误
      * 1、no statusCode
      * 2、statusCode === 3xx || 4xx || 5xx && no requestId
      */
     if (!err.statusCode) {
-      canRetry = self.options.AutoSwitchHost;
-      networkError = true;
+      canRetry = true;
+      networkError = self.options.AutoSwitchHost;
     } else {
       const statusCode = Math.floor(err.statusCode / 100);
       const requestId = err?.headers && err?.headers['x-cos-request-id'];
@@ -3932,7 +3936,7 @@ function submitRequest(params, callback) {
             networkError = info.networkError;
           }
           tracker && tracker.setParams({ httpEndTime: new Date().getTime() });
-          if (err && tryTimes < 2 && canRetry) {
+          if (err && tryTimes < 4 && canRetry) {
             if (params.headers) {
               delete params.headers.Authorization;
               delete params.headers['token'];
@@ -3948,7 +3952,8 @@ function submitRequest(params, callback) {
               networkError,
             });
             params.SwitchHost = switchHost;
-            params.retry = true;
+            // 重试时增加请求头，小程序里传字符串类型
+            params.headers['x-cos-sdk-retry'] = 'true';
             next(tryTimes + 1);
           } else {
             callback(err, data);
@@ -4037,9 +4042,6 @@ function _submitRequest(params, callback) {
 
   // 清理 undefined 和 null 字段
   opt.headers && (opt.headers = util.clearKey(opt.headers));
-  if (params.retry) {
-    opt.headers['x-cos-sdk-retry'] = true;
-  }
   opt = util.clearKey(opt);
 
   // progress

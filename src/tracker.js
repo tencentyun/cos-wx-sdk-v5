@@ -55,58 +55,38 @@ const utils = {
   },
   // 获取系统信息
   getSystemInfo() {
-    const defaultInfo = {
-      devicePlatform: '',
-      wxVersion: '',
-      wxSystem: '',
-      wxSdkVersion: '',
+    const baseInfo = {
+      // ↓上报项
+      devicePlatform: 'can_not_get_system_info', // ios/anroid/windows/mac/devtools
+      wxVersion: 'can_not_get_system_info',
+      wxSystem: 'can_not_get_system_info',
+      wxSdkVersion: 'can_not_get_system_info',
     };
-    return new Promise((resolve) => {
-      if (wx.canIUse('getSystemInfo')) {
-        try {
-          wx.getSystemInfo({
-            success(res) {
-              const { platform, version, system, SDKVersion } = res;
-              Object.assign(defaultInfo, {
-                devicePlatform: platform,
-                wxVersion: version,
-                wxSystem: system,
-                wxSdkVersion: SDKVersion,
-              });
-              resolve(defaultInfo);
-            },
-          });
-        } catch (e) {
-          resolve({
-            devicePlatform: 'can_not_get_system_info',
-            wxVersion: 'can_not_get_system_info',
-            wxSystem: 'can_not_get_system_info',
-            wxSdkVersion: 'can_not_get_system_info',
-          });
-        }
-      } else {
-        resolve({
-          devicePlatform: 'can_not_get_system_info',
-          wxVersion: 'can_not_get_system_info',
-          wxSystem: 'can_not_get_system_info',
-          wxSdkVersion: 'can_not_get_system_info',
-        });
-      }
+    let appBaseInfo = {};
+    let deviceInfo = {};
+    if (wx.canIUse('getAppBaseInfo')) {
+      appBaseInfo = wx.getAppBaseInfo() || {};
+    }
+    if (wx.canIUse('getDeviceInfo')) {
+      deviceInfo = wx.getDeviceInfo() || {};
+    }
+    const sdkVersion = appBaseInfo.SDKVersion || 'can_not_get_system_info';
+    const version = appBaseInfo.version || 'can_not_get_system_info';
+    const platform = deviceInfo.platform || 'can_not_get_system_info';
+    const system = deviceInfo.system || 'can_not_get_system_info';
+
+    Object.assign(baseInfo, {
+      devicePlatform: platform,
+      wxVersion: version,
+      wxSystem: system,
+      wxSdkVersion: sdkVersion,
     });
+    return baseInfo;
   },
 };
 
 // 设备信息，只取一次值
-const deviceInfo = {
-  // ↓上报项
-  devicePlatform: '', // ios/anroid/windows/mac/devtools
-  wxVersion: '',
-  wxSystem: '',
-  wxSdkVersion: '',
-};
-utils.getSystemInfo().then((res) => {
-  Object.assign(deviceInfo, res);
-});
+const deviceInfo = utils.getSystemInfo();
 
 const transApiName = (api) => {
   if (['putObject', 'sliceUploadFile', 'uploadFile', 'uploadFiles'].includes(api)) {
