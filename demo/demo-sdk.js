@@ -61,23 +61,34 @@ function uploadFile() {
       }
     );
   };
-  wx.chooseMessageFile({
-    count: 10,
-    type: 'all',
+  wx.chooseMedia({
+    count: 1,
+    mediaType: ['image', 'video'],
+    sizeType: ['original'],
+    sourceType: ['album', 'camera'],
     success: function (res) {
-      uploadFile(res.tempFiles[0]);
+      const file = res.tempFiles[0];
+      const filePath = file.tempFilePath;
+      const filename = filePath.substr(filePath.lastIndexOf('/') + 1);
+      uploadFile({
+        name: filename,
+        path: filePath,
+        size: file.size,
+      });
     },
   });
 }
 
 function uploadFiles() {
-  var uploadFiles = function (files) {
+  const uploadFiles = function (files) {
     const fileList = files.map(function (file) {
-      return Object.assign(file, {
+      const filePath = file.tempFilePath;
+      const filename = filePath.substr(filePath.lastIndexOf('/') + 1);
+      return Object.assign({
         Bucket: config.Bucket,
         Region: config.Region,
-        Key: file.name,
-        FilePath: file.path,
+        Key: filename,
+        FilePath: filePath,
       });
     });
     cos.uploadFiles(
@@ -98,9 +109,11 @@ function uploadFiles() {
       }
     );
   };
-  wx.chooseMessageFile({
-    count: 10,
-    type: 'all',
+  wx.chooseMedia({
+    count: 9,
+    mediaType: ['image', 'video'],
+    sizeType: ['original'],
+    sourceType: ['album', 'camera'],
     success: function (res) {
       uploadFiles(res.tempFiles);
     },
@@ -109,13 +122,15 @@ function uploadFiles() {
 
 function sliceUploadFile() {
   var sliceUploadFile = function (file) {
-    var key = file.name;
+    const filePath = file.tempFilePath;
+    const filename = filePath.substr(filePath.lastIndexOf('/') + 1);
+    var key = filename;
     cos.sliceUploadFile(
       {
         Bucket: config.Bucket,
         Region: config.Region,
         Key: key,
-        FilePath: file.path,
+        FilePath: filePath,
         FileSize: file.size,
         CacheControl: 'max-age=7200',
         Headers: {
@@ -137,9 +152,11 @@ function sliceUploadFile() {
       requestCallback
     );
   };
-  wx.chooseMessageFile({
-    count: 10,
-    type: 'all',
+  wx.chooseMedia({
+    count: 1,
+    mediaType: ['image', 'video'],
+    sizeType: ['original'],
+    sourceType: ['album', 'camera'],
     success: function (res) {
       sliceUploadFile(res.tempFiles[0]);
     },
@@ -163,10 +180,11 @@ function sliceUploadFile() {
 }
 
 function postObject() {
-  wx.chooseImage({
+  wx.chooseMedia({
     count: 1, // 默认9
-    sizeType: ['original'], // 可以指定是原图还是压缩图，默认二者都有
-    sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有
+    mediaType: ['image', 'video'],
+    sizeType: ['original'],
+    sourceType: ['album', 'camera'],
     success: function (res) {
       var file = res.tempFiles[0];
       cos.postObject(
@@ -174,7 +192,7 @@ function postObject() {
           Bucket: config.Bucket,
           Region: config.Region,
           Key: '1.png',
-          FilePath: file.path,
+          FilePath: file.tempFilePath,
           onTaskReady: function (taskId) {
             TaskId = taskId;
           },
@@ -189,19 +207,23 @@ function postObject() {
 }
 
 function putObject() {
-  wx.chooseMessageFile({
+  wx.chooseMedia({
     count: 10,
-    type: 'all',
+    mediaType: ['image', 'video'],
+    sizeType: ['original'],
+    sourceType: ['album', 'camera'],
     success: function (res) {
-      var file = res.tempFiles[0];
+      const file = res.tempFiles[0];
+      const filePath = file.tempFilePath;
+      const filename = filePath.substr(filePath.lastIndexOf('/') + 1);
       wxfs.readFile({
-        filePath: file.path,
+        filePath: filePath,
         success: function (res) {
           cos.putObject(
             {
               Bucket: config.Bucket,
               Region: config.Region,
-              Key: file.name,
+              Key: filename,
               Body: res.data, // 在小程序里，putObject 接口只允许传字符串的内容，不支持 TaskReady 和 onProgress，上传请使用 cos.postObject 接口
               Headers: {
                 // 万象持久化接口，上传时持久化。例子：通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
@@ -529,7 +551,7 @@ var objectDao = {
       {
         Bucket: config.Bucket,
         Region: config.Region,
-        Key: '1.zip'
+        Key: '1.zip',
       },
       requestCallback
     );
@@ -539,13 +561,15 @@ var objectDao = {
 var advanceObjectDao = {
   'sliceUploadFile 分块上传': function () {
     var sliceUploadFile = function (file) {
-      var key = file.name;
+      const filePath = file.tempFilePath;
+      const filename = filePath.substr(filePath.lastIndexOf('/') + 1);
+      var key = filename;
       cos.sliceUploadFile(
         {
           Bucket: config.Bucket,
           Region: config.Region,
           Key: key,
-          FilePath: file.path,
+          FilePath: filePath,
           FileSize: file.size,
           CacheControl: 'max-age=7200',
           Headers: {
@@ -567,9 +591,11 @@ var advanceObjectDao = {
         requestCallback
       );
     };
-    wx.chooseMessageFile({
-      count: 10,
-      type: 'all',
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['image', 'video'],
+      sizeType: ['original'],
+      sourceType: ['album', 'camera'],
       success: function (res) {
         sliceUploadFile(res.tempFiles[0]);
       },

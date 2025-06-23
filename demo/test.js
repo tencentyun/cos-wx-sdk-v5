@@ -157,13 +157,17 @@ var group = (function (name, fn) {
       }
     );
   };
-  wx.chooseMessageFile({
+  wx.chooseMedia({
     count: 10,
-    type: 'all',
+    mediaType: ['image', 'video'],
+    sizeType: ['original'],
+    sourceType: ['album', 'camera'],
     success: function (res) {
       res.tempFiles &&
         res.tempFiles.forEach((v) => {
-          testFile[v.name] = v.path;
+          const filePath = v.tempFilePath;
+          const filename = filePath.substr(filePath.lastIndexOf('/') + 1);
+          testFile[v.name] = filePath;
         });
       startTest();
     },

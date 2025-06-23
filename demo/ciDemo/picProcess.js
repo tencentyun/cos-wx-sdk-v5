@@ -54,31 +54,29 @@ const picProcessDao = {
   'getImgCompress 下载时使用图片压缩': getImgCompress,
 };
 function uploadImg() {
-  wx.chooseMessageFile({
-    count: 10,
-    type: 'all',
+  wx.chooseMedia({
+    count: 1, // 默认9
+    mediaType: ['image', 'video'],
+    sizeType: ['original'],
+    sourceType: ['album', 'camera'],
     success: function (res) {
-      var file = res.tempFiles[0];
-      wxfs.readFile({
-        filePath: file.path,
-        success: function (res) {
-          cos.putObject(
-            {
-              Bucket: config.Bucket, // Bucket 格式：test-1250000000
-              Region: config.Region,
-              Key: file.name,
-              Body: res.data,
-              Headers: {
-                // 通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
-                'Pic-Operations':
-                  '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/thumbnail/200x/"}]}',
-              },
-            },
-            requestCallback
-          );
+      const file = res.tempFiles[0];
+      const filePath = file.tempFilePath;
+      const filename = filePath.substr(filePath.lastIndexOf('/') + 1);
+      cos.uploadFile(
+        {
+          Bucket: config.Bucket, // Bucket 格式：test-1250000000
+          Region: config.Region,
+          Key: filename,
+          FilePath: filePath,
+          Headers: {
+            // 通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
+            'Pic-Operations':
+              '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/thumbnail/200x/"}]}',
+          },
         },
-        fail: (err) => console.error(err),
-      });
+        requestCallback
+      );
     },
     fail: (err) => console.error(err),
   });
@@ -1211,19 +1209,23 @@ function getOriginImage() {
 }
 
 function uploadImgAnimate() {
-  wx.chooseMessageFile({
-    count: 2,
-    type: 'all',
+  wx.chooseMedia({
+    count: 1,
+    mediaType: ['image', 'video'],
+    sizeType: ['original'],
+    sourceType: ['album', 'camera'],
     success: function (res) {
-      var file = res.tempFiles[0];
+      const file = res.tempFiles[0];
+      const filePath = file.tempFilePath;
+      const filename = filePath.substr(filePath.lastIndexOf('/') + 1);
       wxfs.readFile({
-        filePath: file.path,
+        filePath: filePath,
         success: function (res) {
           cos.putObject(
             {
               Bucket: config.Bucket, // Bucket 格式：test-1250000000
               Region: config.Region,
-              Key: file.name,
+              Key: filename,
               Body: res.data,
               Headers: {
                 'Pic-Operations':
@@ -1271,19 +1273,23 @@ function getImgAnimate() {
 }
 
 function uploadImgWatermark() {
-  wx.chooseMessageFile({
-    count: 2,
-    type: 'all',
+  wx.chooseMedia({
+    count: 1,
+    mediaType: ['image', 'video'],
+    sizeType: ['original'],
+    sourceType: ['album', 'camera'],
     success: function (res) {
-      var file = res.tempFiles[0];
+      const file = res.tempFiles[0];
+      const filePath = file.tempFilePath;
+      const filename = filePath.substr(filePath.lastIndexOf('/') + 1);
       wxfs.readFile({
-        filePath: file.path,
+        filePath: filePath,
         success: function (res) {
           cos.putObject(
             {
               Bucket: config.Bucket, // Bucket 格式：test-1250000000
               Region: config.Region,
-              Key: file.name,
+              Key: filename,
               Body: res.data,
               Headers: {
                 'Pic-Operations':
@@ -1331,19 +1337,23 @@ function getImgWatermark() {
 }
 
 function uploadImgWatermarkText() {
-  wx.chooseMessageFile({
-    count: 2,
-    type: 'all',
+  wx.chooseMedia({
+    count: 1,
+    mediaType: ['image', 'video'],
+    sizeType: ['original'],
+    sourceType: ['album', 'camera'],
     success: function (res) {
-      var file = res.tempFiles[0];
+      const file = res.tempFiles[0];
+      const filePath = file.tempFilePath;
+      const filename = filePath.substr(filePath.lastIndexOf('/') + 1);
       wxfs.readFile({
-        filePath: file.path,
+        filePath: filePath,
         success: function (res) {
           cos.putObject(
             {
               Bucket: config.Bucket, // Bucket 格式：test-1250000000
               Region: config.Region,
-              Key: file.name,
+              Key: filename,
               Body: res.data,
               Headers: {
                 'Pic-Operations':
@@ -1391,19 +1401,23 @@ function getImgWatermarkText() {
 }
 
 function uploadImgCompress() {
-  wx.chooseMessageFile({
-    count: 2,
-    type: 'all',
+  wx.chooseMedia({
+    count: 1,
+    mediaType: ['image', 'video'],
+    sizeType: ['original'],
+    sourceType: ['album', 'camera'],
     success: function (res) {
-      var file = res.tempFiles[0];
+      const file = res.tempFiles[0];
+      const filePath = file.tempFilePath;
+      const filename = filePath.substr(filePath.lastIndexOf('/') + 1);
       wxfs.readFile({
-        filePath: file.path,
+        filePath: filePath,
         success: function (res) {
           cos.putObject(
             {
               Bucket: config.Bucket, // Bucket 格式：test-1250000000
               Region: config.Region,
-              Key: file.name,
+              Key: filename,
               Body: res.data,
               Headers: {
                 // 通过 imageMogr2 接口进行 webp 压缩，可以根据需要压缩的类型填入不同的压缩格式：webp/heif/tpg/avif/svgc
