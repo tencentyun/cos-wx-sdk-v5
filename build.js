@@ -39,7 +39,7 @@ var config = {
     entry: path.resolve(__dirname, './index.js'),
     output: {
         path: path.resolve(__dirname, './dist/'),
-        publicPath: path.resolve(__dirname, './dist/'),
+        publicPath: '',
         filename: 'cos-wx-sdk-v5.js',
         libraryTarget: 'umd',
         library: 'COS'
