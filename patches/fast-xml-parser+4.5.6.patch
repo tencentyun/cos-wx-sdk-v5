@@ -1,0 +1,45 @@
+diff --git a/node_modules/fast-xml-parser/src/xmlparser/OptionsBuilder.js b/node_modules/fast-xml-parser/src/xmlparser/OptionsBuilder.js
+--- a/node_modules/fast-xml-parser/src/xmlparser/OptionsBuilder.js
++++ b/node_modules/fast-xml-parser/src/xmlparser/OptionsBuilder.js
+@@ -99,13 +99,13 @@
+   if (typeof value === 'object' && value !== null) {
+     return {
+       enabled: value.enabled !== false,
+-      maxEntitySize: Math.max(1, value.maxEntitySize ?? 10000),
+-      maxExpansionDepth: Math.max(1, value.maxExpansionDepth ?? 10000),
+-      maxTotalExpansions: Math.max(1, value.maxTotalExpansions ?? Infinity),
+-      maxExpandedLength: Math.max(1, value.maxExpandedLength ?? 100000),
+-      maxEntityCount: Math.max(1, value.maxEntityCount ?? 1000),
+-      allowedTags: value.allowedTags ?? null,
+-      tagFilter: value.tagFilter ?? null
++      maxEntitySize: Math.max(1, value.maxEntitySize != null ? value.maxEntitySize : 10000),
++      maxExpansionDepth: Math.max(1, value.maxExpansionDepth != null ? value.maxExpansionDepth : 10000),
++      maxTotalExpansions: Math.max(1, value.maxTotalExpansions != null ? value.maxTotalExpansions : Infinity),
++      maxExpandedLength: Math.max(1, value.maxExpandedLength != null ? value.maxExpandedLength : 100000),
++      maxEntityCount: Math.max(1, value.maxEntityCount != null ? value.maxEntityCount : 1000),
++      allowedTags: value.allowedTags != null ? value.allowedTags : null,
++      tagFilter: value.tagFilter != null ? value.tagFilter : null
+     };
+   }
+ 
+diff --git a/node_modules/fast-xml-parser/src/xmlparser/OrderedObjParser.js b/node_modules/fast-xml-parser/src/xmlparser/OrderedObjParser.js
+--- a/node_modules/fast-xml-parser/src/xmlparser/OrderedObjParser.js
++++ b/node_modules/fast-xml-parser/src/xmlparser/OrderedObjParser.js
+@@ -201,7 +201,7 @@
+ }
+ 
+ const parseXml = function (xmlData) {
+-  xmlData = xmlData.replace(/\r\n?/g, "\n"); //TODO: remove this line
++  // xmlData = xmlData.replace(/\r\n?/g, "\n"); //TODO: remove this line
+   const xmlObj = new xmlNode('!xml');
+   let currentNode = xmlObj;
+   let textData = "";
+@@ -652,7 +652,7 @@
+   let attrExpPresent = true;
+   if (separatorIndex !== -1) {//separate tag name and attributes expression
+     tagName = tagExp.substring(0, separatorIndex);
+-    tagExp = tagExp.substring(separatorIndex + 1).trimStart();
++    tagExp = tagExp.substring(separatorIndex + 1).replace(/^\s+/, '');
+   }
+ 
+   const rawTagName = tagName;
