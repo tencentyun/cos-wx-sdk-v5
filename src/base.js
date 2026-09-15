@@ -3029,6 +3029,10 @@ function multipartComplete(params, callback) {
         statusCode: data.statusCode,
         headers: data.headers,
       });
+      // 配置了 x-cos-callback 时，COS 会把业务回调响应返回；透传原始 body，避免被吞
+      if (!data.CompleteMultipartUploadResult) {
+        result.CallbackBody = data;
+      }
       callback(null, result);
     }
   );
