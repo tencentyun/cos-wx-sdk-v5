@@ -3861,6 +3861,22 @@ function getHeaderValue(headers, key) {
 }
 
 /**
+ * 判断是否是 copy 类接口（putObjectCopy / uploadPartCopy）
+ * 特征：method 为 PUT，且 Scope 是包含 GetObject + PutObject 两个 action 的数组（顺序无关）
+ */
+function isCopyApi(params) {
+  if (!params || params.method !== 'PUT') return false;
+  var scope = params.Scope;
+  if (!util.isArray(scope) || scope.length !== 2) return false;
+  var action0 = scope[0] && scope[0].action;
+  var action1 = scope[1] && scope[1].action;
+  return (
+    (action0 === 'name/cos:GetObject' && action1 === 'name/cos:PutObject') ||
+    (action0 === 'name/cos:PutObject' && action1 === 'name/cos:GetObject')
+  );
+}
+
+/**
  * 判断当前请求出错时能否重试
  * 如果支持重试，是否需要切换备用域名
  *
@@ -3921,6 +3937,17 @@ function allowRetry(err, opts) {
       self.options.SystemClockOffset = serverTime - Date.now();
       return { canRetry: true, switchHost: false };
     }
+  } else if (
+    isCopyApi(opts.params) &&
+    err.statusCode &&
+    Math.floor(err.statusCode / 100) === 2 &&
+    err.error &&
+    ['InternalError', 'SlowDown', 'ServiceUnavailable'].indexOf(err.error.Code) > -1
+  ) {
+    // copy 类接口（putObjectCopy / uploadPartCopy）的假 2xx 错误：
+    // 状态码 2xx 但 body 里是 InternalError / SlowDown / ServiceUnavailable，支持重试，不涉及切换域名
+    // 注意：wx 的错误对象没有 err.code，错误码在 err.error.Code
+    return { canRetry: true, switchHost: false };
   } else if (Math.floor(err.statusCode / 100) === 5) {
     // 5xx：支持重试；最后一次重试满足切换条件则切备用域名
     return { canRetry: true, switchHost: Boolean(allowSwitchHost && tryTimes === 3) };
@@ -4009,7 +4036,7 @@ function submitRequest(params, callback) {
           let canRetry = false;
           let switchHost = false;
           if (err) {
-            const info = allowRetry.call(self, err, { authData: AuthData, tryTimes: tryTimes });
+            const info = allowRetry.call(self, err, { authData: AuthData, tryTimes: tryTimes, params: params });
             canRetry = info.canRetry || oldClockOffset !== self.options.SystemClockOffset;
             switchHost = info.switchHost;
           }
@@ -4029,11 +4056,10 @@ function submitRequest(params, callback) {
             params.headers['x-cos-sdk-retry'] = 'true';
             next(tryTimes + 1);
           } else {
-            // 分块上传场景：把最终尝试的 SwitchHost 状态挂回 err，
-            // 供外层 Async.retry（advance.js#uploadSliceItem）在分块级重试时保持粘性，
-            // 避免下一轮又从主域名开始重试。
+            // 分块上传场景：与 node-sdk 保持一致，把本次 allowRetry 计算出的 switchHost 挂回 err，
+            // 供外层 Async.retry（advance.js#uploadSliceItem）作为下一轮分块级重试的 SwitchHost 入参。
             if (err && params.Action === 'name/cos:UploadPart') {
-              err.switchHost = Boolean(params.SwitchHost);
+              err.switchHost = switchHost;
             }
             callback(err, data);
           }
@@ -4308,6 +4334,15 @@ var API_MAP = {
   request: request,
   getObjectUrl: getObjectUrl,
   getAuth: getAuth,
+};
+
+// 仅测试用途：暴露主备域名切换相关的纯函数，供单测直接校验分支逻辑
+// 不进入 API_MAP，不挂到 COS.prototype，对运行时零副作用
+module.exports.__internals__ = {
+  getRequestHostType: getRequestHostType,
+  getBackupHost: getBackupHost,
+  allowRetry: allowRetry,
+  isCopyApi: isCopyApi,
 };
 
 module.exports.init = function (COS, task) {
