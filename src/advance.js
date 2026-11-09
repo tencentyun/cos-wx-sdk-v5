@@ -64,7 +64,12 @@ function sliceUploadFile(params, callback) {
     var metaHeaders = {};
     util.each(params.Headers, function (val, k) {
       var shortKey = k.toLowerCase();
-      if (shortKey.indexOf('x-cos-meta-') === 0 || shortKey === 'pic-operations') {
+      if (
+        shortKey.indexOf('x-cos-meta-') === 0 ||
+        shortKey === 'pic-operations' ||
+        shortKey === 'x-cos-callback' ||
+        shortKey === 'x-cos-callback-var'
+      ) {
         metaHeaders[k] = val;
       }
     });
@@ -692,6 +697,9 @@ function uploadSliceItem(params, callback) {
     var md5 = util.getFileMd5(Body);
     var contentMd5 = md5 ? util.binaryBase64(md5) : null;
     var PartItem = UploadData.PartList[PartNumber - 1];
+    // 分块级切换粘性：submitRequest 内 4 次重试的最后一次若已切到备用域名，
+    // 这里外层 Async.retry 的下一轮会带着 SwitchHost=true 继续，避免重新从主域名开始。
+    var switchHost = false;
     Async.retry(
       ChunkRetryTimes,
       function (tryCallback) {
@@ -712,10 +720,12 @@ function uploadSliceItem(params, callback) {
             ContentMD5: contentMd5,
             calledBySdk: 'sliceUploadFile',
             tracker: params.tracker,
+            SwitchHost: switchHost,
           },
           function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
             if (err) {
+              switchHost = err.switchHost || false;
               return tryCallback(err);
             } else {
               PartItem.Uploaded = true;
@@ -726,6 +736,8 @@ function uploadSliceItem(params, callback) {
       },
       function (err, data) {
         if (!self._isRunningTask(TaskId)) return;
+        // 内部字段不透出到业务回调
+        if (err) delete err.switchHost;
         return callback(err, data);
       }
     );
